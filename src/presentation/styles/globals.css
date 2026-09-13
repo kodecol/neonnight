@@ -1,0 +1,256 @@
+@import "tailwindcss";
+
+/*
+ * Tokens de Neon Night. Fuente de verdad del look de la tienda.
+ * Derivados del handoff (docs/handoff/README.md §4) y del design system
+ * Modernist, invertidos sobre fondo negro. Radio 0 en todo, sin sombras.
+ */
+@theme {
+  /* Color */
+  --color-*: initial;
+  --color-bg: #000000;
+  --color-surface: #0e0e0e;
+  --color-surface-elevated: #0a0a0a;
+  --color-ink: #ffffff;
+  --color-ink-2: #a1a1a1;
+  --color-ink-3: #515151;
+  --color-accent: #ff006e;
+  --color-divider: hsla(0, 0%, 59%, 0.3);
+  --color-border: hsla(0, 0%, 59%, 0.4);
+  --color-border-strong: hsla(0, 0%, 59%, 0.5);
+  --color-scrim: rgba(0, 0, 0, 0.5);
+  --color-glass: rgba(0, 0, 0, 0.7);
+  --color-glass-deep: rgba(0, 0, 0, 0.72);
+  --color-transparent: transparent;
+  --color-current: currentColor;
+
+  /* Tipografía */
+  --font-sans: var(--font-archivo), system-ui, sans-serif;
+  --text-display: 88px;
+  --text-display--line-height: 88px;
+  --text-display--letter-spacing: -2px;
+  --text-display--font-weight: 500;
+  --text-display-md: 64px;
+  --text-display-md--line-height: 64px;
+  --text-display-md--letter-spacing: -1.5px;
+  --text-display-md--font-weight: 500;
+  --text-display-sm: 44px;
+  --text-display-sm--line-height: 46px;
+  --text-display-sm--letter-spacing: -1px;
+  --text-display-sm--font-weight: 500;
+  --text-h2: 44px;
+  --text-h2--line-height: 48px;
+  --text-h2--letter-spacing: -1px;
+  --text-h2--font-weight: 500;
+  --text-h2-sm: 32px;
+  --text-h2-sm--line-height: 36px;
+  --text-h2-sm--letter-spacing: -0.5px;
+  --text-h2-sm--font-weight: 500;
+  --text-h3: 22px;
+  --text-h3--line-height: 24px;
+  --text-h3--font-weight: 500;
+  --text-number: 36px;
+  --text-number--line-height: 40px;
+  --text-number--letter-spacing: -0.5px;
+  --text-number--font-weight: 500;
+  --text-menu: 36px;
+  --text-menu--line-height: 40px;
+  --text-menu--letter-spacing: -0.5px;
+  --text-menu--font-weight: 500;
+  --text-lead: 22px;
+  --text-lead--line-height: 32px;
+  --text-lead--letter-spacing: 0.2px;
+  --text-lead--font-weight: 200;
+  --text-body: 18px;
+  --text-body--line-height: 26px;
+  --text-body--font-weight: 200;
+  --text-meta: 16px;
+  --text-meta--line-height: 24px;
+  --text-meta--font-weight: 200;
+  --text-small: 15px;
+  --text-small--line-height: 22px;
+  --text-small--font-weight: 200;
+  --text-kicker: 14px;
+  --text-kicker--line-height: 20px;
+  --text-kicker--letter-spacing: 0.18em;
+  --text-kicker--font-weight: 400;
+  --text-label: 12px;
+  --text-label--line-height: 16px;
+  --text-label--letter-spacing: 0.16em;
+  --text-label--font-weight: 600;
+  --text-label-lg: 13px;
+  --text-label-lg--line-height: 16px;
+  --text-label-lg--letter-spacing: 0.16em;
+  --text-label-lg--font-weight: 600;
+  --text-label-sm: 11px;
+  --text-label-sm--line-height: 14px;
+  --text-label-sm--letter-spacing: 0.14em;
+  --text-label-sm--font-weight: 600;
+  --text-legal: 13px;
+  --text-legal--line-height: 18px;
+  --text-legal--font-weight: 200;
+
+  /* Espaciado */
+  --spacing-page: 56px;
+  --spacing-page-md: 32px;
+  --spacing-page-sm: 20px;
+  --spacing-section: 120px;
+  --spacing-section-md: 88px;
+  --spacing-section-sm: 64px;
+  --spacing-section-tight: 64px;
+  --spacing-header: 72px;
+
+  /* Radio: 0 en todo, sin excepción */
+  --radius-*: initial;
+  --radius-none: 0px;
+
+  /* Sombras: ninguna. La jerarquía la dan los rules y el contraste. */
+  --shadow-*: initial;
+
+  /* Easings */
+  --ease-reveal: cubic-bezier(0.215, 0.61, 0.355, 1);
+  --ease-bar: cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Breakpoints */
+  --breakpoint-*: initial;
+  --breakpoint-md: 768px;
+  --breakpoint-lg: 1024px;
+  --breakpoint-xl: 1280px;
+}
+
+/* Utilidades de layout compartidas */
+@utility px-page {
+  padding-inline: var(--spacing-page-sm);
+  @media (width >= 768px) { padding-inline: var(--spacing-page-md); }
+  @media (width >= 1024px) { padding-inline: var(--spacing-page); }
+}
+@utility pl-page {
+  padding-left: var(--spacing-page-sm);
+  @media (width >= 768px) { padding-left: var(--spacing-page-md); }
+  @media (width >= 1024px) { padding-left: var(--spacing-page); }
+}
+@utility py-section {
+  padding-block: var(--spacing-section-sm);
+  @media (width >= 768px) { padding-block: var(--spacing-section-md); }
+  @media (width >= 1024px) { padding-block: var(--spacing-section); }
+}
+@utility pt-section {
+  padding-top: var(--spacing-section-sm);
+  @media (width >= 768px) { padding-top: var(--spacing-section-md); }
+  @media (width >= 1024px) { padding-top: var(--spacing-section); }
+}
+@utility pb-section {
+  padding-bottom: var(--spacing-section-sm);
+  @media (width >= 768px) { padding-bottom: var(--spacing-section-md); }
+  @media (width >= 1024px) { padding-bottom: var(--spacing-section); }
+}
+@utility text-display-fluid {
+  font-size: var(--text-display-sm);
+  line-height: var(--text-display-sm--line-height);
+  letter-spacing: var(--text-display-sm--letter-spacing);
+  font-weight: 500;
+  @media (width >= 768px) {
+    font-size: var(--text-display-md);
+    line-height: var(--text-display-md--line-height);
+    letter-spacing: var(--text-display-md--letter-spacing);
+  }
+  @media (width >= 1024px) {
+    font-size: var(--text-display);
+    line-height: var(--text-display--line-height);
+    letter-spacing: var(--text-display--letter-spacing);
+  }
+}
+@utility text-h2-fluid {
+  font-size: var(--text-h2-sm);
+  line-height: var(--text-h2-sm--line-height);
+  letter-spacing: var(--text-h2-sm--letter-spacing);
+  font-weight: 500;
+  @media (width >= 768px) {
+    font-size: var(--text-h2);
+    line-height: var(--text-h2--line-height);
+    letter-spacing: var(--text-h2--letter-spacing);
+  }
+}
+@utility backdrop-glass {
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+@utility backdrop-header {
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+@layer base {
+  html {
+    background: var(--color-bg);
+    scroll-behavior: smooth;
+  }
+  body {
+    margin: 0;
+    background: var(--color-bg);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+  ::selection {
+    background: var(--color-accent);
+    color: var(--color-ink);
+  }
+  :focus { outline: none; }
+  :focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+  button { font: inherit; }
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+  }
+}
+
+/* ── Animación de entrada (mejora progresiva) ───────────────────────────
+   El contenido parte visible. Solo se oculta cuando <html> lleva .nn-armed,
+   que añade el hook useReveal al montar si hay IntersectionObserver. */
+.nn-armed [data-reveal] {
+  opacity: 0;
+  transform: translateY(28px);
+  transition:
+    opacity 0.9s var(--ease-reveal),
+    transform 0.9s var(--ease-reveal);
+}
+.nn-armed [data-reveal].nn-in {
+  opacity: 1;
+  transform: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .nn-armed [data-reveal] {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
+
+/* ── Hover swap de las tarjetas (frontal → trasera) ────────────────────── */
+.nn-swap > * {
+  transition: opacity 0.5s var(--ease-reveal);
+}
+.nn-swap > *:last-child { opacity: 0; }
+.nn-swap:hover > *:last-child,
+.nn-swap:focus-within > *:last-child { opacity: 1; }
+.nn-swap:hover > *:first-child,
+.nn-swap:focus-within > *:first-child { opacity: 0; }
+
+/* ── Pantalla de carga ──────────────────────────────────────────────────── */
+@keyframes nn-bar { from { width: 0%; } to { width: 100%; } }
+@keyframes nn-out { to { opacity: 0; visibility: hidden; } }
+@keyframes nn-mark {
+  from { opacity: 0; letter-spacing: 0.8em; }
+  to { opacity: 1; letter-spacing: 0.34em; }
+}
+.nn-loader { animation: nn-out 0.5s linear 1.7s forwards; }
+.nn-loader-bar { animation: nn-bar 1.6s var(--ease-bar) forwards; }
+.nn-loader-mark { animation: nn-mark 1.4s var(--ease-reveal) forwards; }

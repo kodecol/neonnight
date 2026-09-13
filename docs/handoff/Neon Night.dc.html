@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="_ds/modernist-b00308c0-61d3-442e-bee9-c69f09e317c1/styles.css">
+<script src="_ds/modernist-b00308c0-61d3-442e-bee9-c69f09e317c1/_ds_bundle.js"></script>
+<script src="./image-slot.js"></script>
+<style>
+  html { background: #000; }
+  body { margin: 0; background: #000; color: #fff; font-family: var(--font-heading), system-ui, sans-serif; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+  a { color: #fff; text-decoration: none; }
+  a:hover { color: #FF006E; }
+  ::selection { background: #FF006E; color: #fff; }
+  @keyframes nnBar { from { width: 0%; } to { width: 100%; } }
+  @keyframes nnOut { to { opacity: 0; visibility: hidden; } }
+  @keyframes nnMark { from { opacity: 0; letter-spacing: .8em; } to { opacity: 1; letter-spacing: .34em; } }
+  .nn-armed [data-reveal] { opacity: 0; transform: translateY(28px); transition: opacity .9s cubic-bezier(.215,.61,.355,1), transform .9s cubic-bezier(.215,.61,.355,1); }
+  .nn-armed [data-reveal].nn-in { opacity: 1; transform: none; }
+  .nn-swap > *:last-child { opacity: 0; }
+  .nn-swap:hover > *:last-child { opacity: 1; }
+  .nn-swap:hover > *:first-child { opacity: 0; }
+  .nn-swap > * { transition: opacity .5s cubic-bezier(.215,.61,.355,1); }
+</style>
+</helmet>
+
+<div style="background:#000;min-height:100vh;position:relative">
+
+  <div ref="{{ loaderRef }}" style="position:fixed;inset:0;z-index:9999;background:#000;display:flex;align-items:center;justify-content:center;animation:nnOut .5s linear 1.7s forwards">
+    <div style="position:absolute;top:0;left:0;height:3px;background:#fff;animation:nnBar 1.6s cubic-bezier(.4,0,.2,1) forwards"></div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:22px">
+      <img src="assets/isotipo-mono.png" alt="Neon Night" style="width:64px;filter:invert(1);opacity:.9">
+      <div style="font-size:13px;font-weight:600;letter-spacing:.34em;color:#fff;animation:nnMark 1.4s cubic-bezier(.215,.61,.355,1) forwards">NEON NIGHT</div>
+    </div>
+  </div>
+
+  <header ref="{{ headerRef }}" style="position:fixed;top:0;left:0;right:0;height:72px;z-index:51;display:flex;align-items:center;justify-content:space-between;padding:0 56px;transition:background .4s ease;backdrop-filter:blur(6px)">
+    <button onClick="{{ toggleMenu }}" style="display:flex;align-items:center;gap:14px;background:none;border:0;cursor:pointer;padding:0;color:#fff">
+      <span style="display:flex;flex-direction:column;gap:6px;width:26px">
+        <span style="display:block;height:2px;background:#fff"></span>
+        <span style="display:block;height:2px;background:#fff"></span>
+      </span>
+      <span style="font-size:12px;font-weight:600;letter-spacing:.16em">MENÚ</span>
+    </button>
+    <a href="#" onClick="{{ goHome }}" style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);display:flex;align-items:center;gap:12px">
+      <img src="assets/isotipo-mono.png" alt="" style="width:26px;filter:invert(1)">
+      <span style="font-size:14px;font-weight:600;letter-spacing:.3em">NEON NIGHT</span>
+    </a>
+    <div style="display:flex;align-items:center;gap:34px;font-size:12px;font-weight:600;letter-spacing:.16em">
+      <a href="#" onClick="{{ goCollection }}">COLECCIÓN</a>
+      <span style="color:#A1A1A1">COP</span>
+      <button onClick="{{ toggleCart }}" style="background:none;border:0;color:#fff;cursor:pointer;font:inherit;letter-spacing:.16em;display:flex;align-items:center;gap:8px;padding:0">
+        BOLSA
+        <span style="min-width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;background:#FF006E;color:#fff;font-size:11px;letter-spacing:0">{{ cartCount }}</span>
+      </button>
+    </div>
+  </header>
+
+  <sc-if value="{{ menuOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.5);backdrop-filter:blur(10px)" onClick="{{ closeMenu }}">
+      <nav style="width:41.7vw;max-width:640px;height:100%;background:rgba(0,0,0,.72);border-right:1px solid hsla(0,0%,59%,.3);padding:112px 56px 48px;display:flex;flex-direction:column;justify-content:space-between">
+        <div style="display:flex;flex-direction:column;gap:18px">
+          <a href="#" onClick="{{ goCollection }}" style="font-size:36px;font-weight:500;letter-spacing:-.5px;text-transform:uppercase">Colección</a>
+          <a href="#" onClick="{{ goProduct }}" style="font-size:36px;font-weight:500;letter-spacing:-.5px;text-transform:uppercase">Novedades</a>
+          <a href="#" onClick="{{ goHome }}" style="font-size:36px;font-weight:500;letter-spacing:-.5px;text-transform:uppercase">Autenticidad</a>
+          <a href="#" onClick="{{ goHome }}" style="font-size:36px;font-weight:500;letter-spacing:-.5px;text-transform:uppercase">Showroom</a>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:14px;font-size:15px;color:#A1A1A1;font-weight:200">
+          <a href="#" style="color:#A1A1A1">Asesoría por WhatsApp</a>
+          <a href="#" style="color:#A1A1A1">Instagram</a>
+          <span style="height:1px;background:hsla(0,0%,59%,.3);margin:10px 0"></span>
+          <span style="font-size:13px;color:#515151">Envíos asegurados en Colombia · Pago contra verificación</span>
+        </div>
+      </nav>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ cartOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed;inset:0;z-index:70;background:rgba(0,0,0,.5);backdrop-filter:blur(10px);display:flex;justify-content:flex-end" onClick="{{ closeCart }}">
+      <aside style="width:min(480px,100vw);height:100%;background:#0A0A0A;border-left:1px solid hsla(0,0%,59%,.3);padding:100px 40px 40px;display:flex;flex-direction:column">
+        <div style="font-size:22px;font-weight:500;text-transform:uppercase;letter-spacing:-.3px;margin-bottom:28px">Tu bolsa</div>
+        <div style="flex:1;display:flex;flex-direction:column;gap:0;overflow:auto">
+          <sc-for list="{{ cart }}" as="line" hint-placeholder-count="0">
+            <div style="display:flex;justify-content:space-between;gap:20px;padding:20px 0;border-bottom:1px solid hsla(0,0%,59%,.3)">
+              <div style="display:flex;flex-direction:column;gap:6px">
+                <span style="font-size:15px;font-weight:500;text-transform:uppercase">{{ line.name }}</span>
+                <span style="font-size:13px;color:#A1A1A1;font-weight:200">{{ line.sub }}</span>
+              </div>
+              <span style="font-size:14px;color:#fff;white-space:nowrap">{{ line.price }}</span>
+            </div>
+          </sc-for>
+          <sc-if value="{{ cartEmpty }}" hint-placeholder-val="{{ true }}">
+            <div style="font-size:15px;color:#515151;font-weight:200;padding:8px 0">Aún no has añadido ninguna pieza.</div>
+          </sc-if>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:24px 0;border-top:1px solid hsla(0,0%,59%,.3);font-size:15px">
+          <span style="color:#A1A1A1">Total</span>
+          <span>{{ cartTotal }}</span>
+        </div>
+        <a href="#" style="display:block;background:#FF006E;color:#fff;padding:20px 24px;font-size:13px;font-weight:600;letter-spacing:.16em">FINALIZAR COMPRA</a>
+        <a href="#" style="display:block;color:#A1A1A1;padding:18px 0 0;font-size:13px;font-weight:600;letter-spacing:.16em">O CERRAR POR WHATSAPP</a>
+      </aside>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ isHome }}" hint-placeholder-val="{{ true }}">
+  <main>
+    <section style="position:relative;height:100vh;overflow:hidden;background:#0E0E0E">
+      <div data-parallax="0.12" style="position:absolute;left:0;right:0;top:-12%;height:124%">
+        <video ref="{{ videoRef }}" src="assets/hero-day-date.mp4" autoPlay="{{ true }}" muted="{{ true }}" loop="{{ true }}" playsInline="{{ true }}" style="width:100%;height:100%;object-fit:cover;display:block"></video>
+      </div>
+      <span style="position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.85) 0%,rgba(0,0,0,.15) 55%,rgba(0,0,0,.5) 100%);pointer-events:none"></span>
+      <div style="position:absolute;inset:0;padding:0 56px 88px;display:flex;flex-direction:column;justify-content:flex-end;pointer-events:none">
+        <span style="font-size:14px;font-weight:400;letter-spacing:.18em;text-transform:uppercase;color:#fff">Rolex · Nueva referencia</span>
+        <h1 style="font-size:88px;line-height:88px;letter-spacing:-2px;font-weight:500;text-transform:uppercase;margin:14px 0 12px">Day-Date 36</h1>
+        <p style="font-size:22px;line-height:32px;letter-spacing:.2px;font-weight:200;color:#fff;max-width:620px;margin:0;text-wrap:pretty">El reloj que buscas, al precio que debió tener siempre.</p>
+        <div style="display:flex;gap:16px;margin-top:34px;pointer-events:auto">
+          <a href="#" onClick="{{ goProduct }}" style="background:#FF006E;padding:18px 30px;font-size:12px;font-weight:600;letter-spacing:.16em">VER LA PIEZA</a>
+          <a href="#" onClick="{{ goCollection }}" style="border:1px solid hsla(0,0%,59%,.5);padding:18px 30px;font-size:12px;font-weight:600;letter-spacing:.16em">TODA LA COLECCIÓN</a>
+        </div>
+      </div>
+      <div style="position:absolute;bottom:34px;left:50%;transform:translateX(-50%);width:44px;height:44px;border:1px solid hsla(0,0%,59%,.5);border-radius:50%;display:flex;align-items:center;justify-content:center">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><polyline points="2,5 7,10 12,5" stroke="#fff" stroke-width="1.4"></polyline></svg>
+      </div>
+    </section>
+
+    <section style="padding:120px 56px 40px;border-bottom:1px solid hsla(0,0%,59%,.3)" data-reveal="1">
+      <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:40px;flex-wrap:wrap">
+        <div>
+          <span style="font-size:14px;letter-spacing:.18em;text-transform:uppercase;color:#A1A1A1">Catálogo</span>
+          <h2 style="font-size:44px;line-height:48px;letter-spacing:-1px;font-weight:500;text-transform:uppercase;margin:16px 0 0;max-width:16ch">Vendemos relojes de marcas que conoces, a precios que no conocías</h2>
+        </div>
+        <a href="#" onClick="{{ goCollection }}" style="font-size:12px;font-weight:600;letter-spacing:.16em;padding-bottom:6px;border-bottom:1px solid #FF006E">VER LAS {{ totalLabel }} REFERENCIAS</a>
+      </div>
+    </section>
+
+    <section style="padding:64px 56px 120px">
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:64px 40px">
+        <sc-for list="{{ homeProducts }}" as="p" hint-placeholder-count="6">
+          <article data-reveal="1" style="display:flex;flex-direction:column">
+            <a href="#" onClick="{{ p.open }}" style="display:block">
+              <div class="nn-swap" style="position:relative;aspect-ratio:1/1;background:#0E0E0E;overflow:hidden">
+                <div style="position:absolute;inset:0"><image-slot id="{{ p.slotA }}" src="{{ p.srcA }}" shape="rect" fit="contain" placeholder="Vista frontal · PNG transparente"></image-slot></div>
+                <div style="position:absolute;inset:0"><image-slot id="{{ p.slotB }}" src="{{ p.srcB }}" shape="rect" fit="contain" placeholder="Vista trasera · hover"></image-slot></div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:6px;padding-top:22px">
+                <span style="font-size:22px;line-height:24px;font-weight:500;text-transform:uppercase">{{ p.name }}</span>
+                <span style="font-size:16px;font-weight:200;color:#A1A1A1">{{ p.sub }}</span>
+                <span style="font-size:16px;color:#fff;padding-top:6px">{{ p.price }}</span>
+              </div>
+            </a>
+            <div style="display:flex;gap:10px;padding-top:18px">
+              <button onClick="{{ p.add }}" style="flex:1;background:#FF006E;color:#fff;border:0;padding:14px 16px;font:inherit;font-size:11px;font-weight:600;letter-spacing:.14em;cursor:pointer;text-align:left">AÑADIR A LA BOLSA</button>
+              <a href="#" style="border:1px solid hsla(0,0%,59%,.4);padding:14px 16px;font-size:11px;font-weight:600;letter-spacing:.14em;color:#A1A1A1">WHATSAPP</a>
+            </div>
+          </article>
+        </sc-for>
+      </div>
+    </section>
+
+    <section style="position:relative;height:78vh;overflow:hidden;background:#0E0E0E">
+      <div data-parallax="0.18" style="position:absolute;left:0;right:0;top:-16%;height:132%">
+        <image-slot id="nn-band-1" shape="rect" placeholder="Imagen full-width · detalle de calibre"></image-slot>
+      </div>
+      <span style="position:absolute;inset:0;background:rgba(0,0,0,.4);pointer-events:none"></span>
+      <div style="position:absolute;inset:0;display:flex;align-items:center;padding:0 56px;pointer-events:none">
+        <h2 style="font-size:44px;line-height:48px;letter-spacing:-1px;font-weight:500;text-transform:uppercase;max-width:20ch;margin:0">Cada pieza pasa por verificación antes de salir</h2>
+      </div>
+    </section>
+
+    <section style="padding:120px 56px;border-bottom:1px solid hsla(0,0%,59%,.3)" data-reveal="1">
+      <span style="font-size:14px;letter-spacing:.18em;text-transform:uppercase;color:#A1A1A1">Garantía y autenticidad</span>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:48px;margin-top:56px">
+        <div style="border-top:2px solid #fff;padding-top:24px">
+          <div style="font-size:36px;font-weight:500;letter-spacing:-.5px">01</div>
+          <h3 style="font-size:22px;font-weight:500;text-transform:uppercase;margin:18px 0 12px">Verificación en mano</h3>
+          <p style="font-size:18px;line-height:26px;font-weight:200;color:#A1A1A1;margin:0;text-wrap:pretty">Revisión de calibre, número de serie y caja antes de despachar. Informe fotográfico incluido.</p>
+        </div>
+        <div style="border-top:2px solid #fff;padding-top:24px">
+          <div style="font-size:36px;font-weight:500;letter-spacing:-.5px">02</div>
+          <h3 style="font-size:22px;font-weight:500;text-transform:uppercase;margin:18px 0 12px">Garantía de 24 meses</h3>
+          <p style="font-size:18px;line-height:26px;font-weight:200;color:#A1A1A1;margin:0;text-wrap:pretty">Cobertura de movimiento y hermeticidad, con servicio en Colombia.</p>
+        </div>
+        <div style="border-top:2px solid #FF006E;padding-top:24px">
+          <div style="font-size:36px;font-weight:500;letter-spacing:-.5px;color:#FF006E">03</div>
+          <h3 style="font-size:22px;font-weight:500;text-transform:uppercase;margin:18px 0 12px">Devolución en 10 días</h3>
+          <p style="font-size:18px;line-height:26px;font-weight:200;color:#A1A1A1;margin:0;text-wrap:pretty">Si la pieza no es lo que esperabas, la recogemos y devolvemos el pago completo.</p>
+        </div>
+      </div>
+    </section>
+
+    <section style="padding:120px 56px;display:grid;grid-template-columns:1fr 1fr;gap:80px;align-items:center" data-reveal="1">
+      <div>
+        <span style="font-size:14px;letter-spacing:.18em;text-transform:uppercase;color:#A1A1A1">En movimiento</span>
+        <h2 style="font-size:44px;line-height:48px;letter-spacing:-1px;font-weight:500;text-transform:uppercase;margin:16px 0 20px">Video vertical de cada referencia</h2>
+        <p style="font-size:22px;line-height:32px;font-weight:200;color:#A1A1A1;margin:0 0 30px;max-width:44ch;text-wrap:pretty">Un clip corto por pieza, grabado en el showroom: dial, corona, cierre y muñeca. El mismo material que enviamos por WhatsApp antes de la compra.</p>
+        <a href="#" style="border-bottom:1px solid #FF006E;padding-bottom:6px;font-size:12px;font-weight:600;letter-spacing:.16em">PEDIR EL VIDEO DE UNA PIEZA</a>
+      </div>
+      <div style="display:flex;justify-content:flex-end">
+        <div style="width:100%;max-width:420px;aspect-ratio:540/676;background:#0E0E0E;position:relative">
+          <div style="position:absolute;inset:0"><image-slot id="nn-video" shape="rect" placeholder="Fotograma de respaldo"></image-slot></div>
+          <video ref="{{ verticalRef }}" src="assets/vertical-daytona.mp4" autoPlay="{{ true }}" muted="{{ true }}" loop="{{ true }}" playsInline="{{ true }}" preload="auto" onError="{{ hideVertical }}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block"></video>
+        </div>
+      </div>
+    </section>
+
+    <section style="padding:0 56px 120px" data-reveal="1">
+      <div style="display:flex;justify-content:space-between;align-items:flex-end;padding-bottom:28px;border-bottom:1px solid hsla(0,0%,59%,.3)">
+        <h2 style="font-size:28px;line-height:30px;font-weight:500;text-transform:uppercase;margin:0">@neonnight</h2>
+        <a href="#" style="font-size:12px;font-weight:600;letter-spacing:.16em;color:#A1A1A1">SEGUIR EN INSTAGRAM</a>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:32px">
+        <div style="aspect-ratio:1/1;background:#0E0E0E"><image-slot id="nn-ig-1" shape="rect" placeholder="Post"></image-slot></div>
+        <div style="aspect-ratio:1/1;background:#0E0E0E"><image-slot id="nn-ig-2" shape="rect" placeholder="Post"></image-slot></div>
+        <div style="aspect-ratio:1/1;background:#0E0E0E"><image-slot id="nn-ig-3" shape="rect" placeholder="Post"></image-slot></div>
+        <div style="aspect-ratio:1/1;background:#0E0E0E"><image-slot id="nn-ig-4" shape="rect" placeholder="Post"></image-slot></div>
+      </div>
+    </section>
+  </main>
+  </sc-if>
+
+  <sc-if value="{{ isCollection }}" hint-placeholder-val="{{ false }}">
+  <main style="padding-top:72px">
+    <section style="position:relative;padding:96px 56px 40px;border-bottom:1px solid hsla(0,0%,59%,.3)">
+      <span style="font-size:14px;letter-spacing:.18em;text-transform:uppercase;color:#515151">Inicio / Colección</span>
+      <h1 style="font-size:88px;line-height:88px;letter-spacing:-2px;font-weight:500;text-transform:uppercase;margin:22px 0 0">Colección</h1>
+      <div style="display:flex;gap:14px;margin-top:38px;flex-wrap:wrap">
+        <span style="border:1px solid #fff;padding:12px 22px;font-size:12px;font-weight:600;letter-spacing:.14em">TODAS</span>
+        <span style="border:1px solid hsla(0,0%,59%,.4);padding:12px 22px;font-size:12px;font-weight:600;letter-spacing:.14em;color:#A1A1A1">AUTOMÁTICOS</span>
+        <span style="border:1px solid hsla(0,0%,59%,.4);padding:12px 22px;font-size:12px;font-weight:600;letter-spacing:.14em;color:#A1A1A1">CRONÓGRAFOS</span>
+        <span style="border:1px solid hsla(0,0%,59%,.4);padding:12px 22px;font-size:12px;font-weight:600;letter-spacing:.14em;color:#A1A1A1">HASTA $15.000.000</span>
+      </div>
+    </section>
+    <section style="padding:64px 56px 120px">
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:56px 32px">
+        <sc-for list="{{ products }}" as="p" hint-placeholder-count="8">
+          <article data-reveal="1">
+            <a href="#" onClick="{{ p.open }}" style="display:block">
+              <div class="nn-swap" style="position:relative;aspect-ratio:4/5;background:#0E0E0E;overflow:hidden">
+                <div style="position:absolute;inset:0"><image-slot id="{{ p.slotC }}" src="{{ p.srcA }}" shape="rect" fit="contain" placeholder="Frontal"></image-slot></div>
+                <div style="position:absolute;inset:0"><image-slot id="{{ p.slotD }}" src="{{ p.srcB }}" shape="rect" fit="contain" placeholder="Trasera"></image-slot></div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:6px;padding-top:20px">
+                <span style="font-size:22px;line-height:24px;font-weight:500;text-transform:uppercase">{{ p.name }}</span>
+                <span style="font-size:16px;font-weight:200;color:#A1A1A1">{{ p.sub }}</span>
+                <span style="font-size:16px;padding-top:4px">{{ p.price }}</span>
+              </div>
+            </a>
+          </article>
+        </sc-for>
+      </div>
+    </section>
+  </main>
+  </sc-if>
+
+  <sc-if value="{{ isProduct }}" hint-placeholder-val="{{ false }}">
+  <main>
+    <section style="position:relative;height:100vh;overflow:hidden;background:#0E0E0E">
+      <div data-parallax="0.12" style="position:absolute;left:0;right:0;top:-12%;height:124%">
+        <image-slot id="nn-p-hero" shape="rect" placeholder="Hero del producto · imagen o video"></image-slot>
+      </div>
+      <span style="position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.85),rgba(0,0,0,.15) 60%);pointer-events:none"></span>
+      <div style="position:absolute;inset:0;padding:0 56px 96px;display:flex;flex-direction:column;justify-content:flex-end;pointer-events:none">
+        <span style="font-size:14px;letter-spacing:.18em;text-transform:uppercase">{{ activeSub }}</span>
+        <h1 style="font-size:88px;line-height:88px;letter-spacing:-2px;font-weight:500;text-transform:uppercase;margin:14px 0 10px">{{ activeName }}</h1>
+        <span style="font-size:22px;font-weight:200;color:#fff">{{ activePrice }}</span>
+      </div>
+    </section>
+
+    <div style="position:sticky;top:72px;z-index:40;background:rgba(0,0,0,.7);backdrop-filter:blur(10px);border-bottom:1px solid hsla(0,0%,59%,.3);display:flex;gap:40px;padding:0 56px;align-items:center;height:60px;font-size:12px;font-weight:600;letter-spacing:.16em">
+      <span style="border-bottom:2px solid #FF006E;height:100%;display:flex;align-items:center">LA PIEZA</span>
+      <span style="color:#A1A1A1">DETALLES</span>
+      <span style="color:#A1A1A1">ESPECIFICACIONES</span>
+      <span style="color:#A1A1A1">COMPRA</span>
+    </div>
+
+    <section style="padding:120px 56px;display:grid;grid-template-columns:1fr 1fr;gap:80px;border-bottom:1px solid hsla(0,0%,59%,.3)" data-reveal="1">
+      <h2 style="font-size:44px;line-height:48px;letter-spacing:-1px;font-weight:500;text-transform:uppercase;margin:0">Una referencia conocida, sin el sobreprecio de la vitrina</h2>
+      <p style="font-size:22px;line-height:32px;font-weight:200;color:#A1A1A1;margin:0;text-wrap:pretty">Placeholder de descripción. Aquí va el texto de la pieza: origen, estado, historia del movimiento y qué incluye la entrega. Dos o tres párrafos cortos funcionan mejor que uno largo.</p>
+    </section>
+
+    <section style="padding:120px 56px;display:grid;grid-template-columns:1fr 1fr;gap:40px" data-reveal="1">
+      <div>
+        <div data-parallax="0.06" style="aspect-ratio:3/4;background:#0E0E0E"><image-slot id="nn-p-g1" shape="rect" placeholder="Detalle · dial"></image-slot></div>
+        <p style="font-size:16px;font-weight:200;color:#A1A1A1;margin:20px 0 0">Dial y agujas</p>
+      </div>
+      <div style="margin-top:80px">
+        <div data-parallax="-0.06" style="aspect-ratio:3/4;background:#0E0E0E"><image-slot id="nn-p-g2" shape="rect" placeholder="Detalle · caja"></image-slot></div>
+        <p style="font-size:16px;font-weight:200;color:#A1A1A1;margin:20px 0 0">Caja y corona</p>
+      </div>
+    </section>
+
+    <section style="position:relative;height:80vh;overflow:hidden;background:#0E0E0E">
+      <div data-parallax="0.18" style="position:absolute;left:0;right:0;top:-16%;height:132%">
+        <image-slot id="nn-p-band" shape="rect" placeholder="Imagen full-width del producto"></image-slot>
+      </div>
+    </section>
+
+    <section style="padding:120px 56px;border-bottom:1px solid hsla(0,0%,59%,.3)" data-reveal="1">
+      <span style="font-size:14px;letter-spacing:.18em;text-transform:uppercase;color:#A1A1A1">Especificaciones</span>
+      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:0 80px;margin-top:44px">
+        <div style="display:flex;justify-content:space-between;padding:22px 0;border-bottom:1px solid hsla(0,0%,59%,.3)"><span style="font-size:16px;color:#A1A1A1;font-weight:200">Movimiento</span><span style="font-size:16px">Automático</span></div>
+        <div style="display:flex;justify-content:space-between;padding:22px 0;border-bottom:1px solid hsla(0,0%,59%,.3)"><span style="font-size:16px;color:#A1A1A1;font-weight:200">Reserva de marcha</span><span style="font-size:16px">00 horas</span></div>
+        <div style="display:flex;justify-content:space-between;padding:22px 0;border-bottom:1px solid hsla(0,0%,59%,.3)"><span style="font-size:16px;color:#A1A1A1;font-weight:200">Caja</span><span style="font-size:16px">00 mm · acero</span></div>
+        <div style="display:flex;justify-content:space-between;padding:22px 0;border-bottom:1px solid hsla(0,0%,59%,.3)"><span style="font-size:16px;color:#A1A1A1;font-weight:200">Cristal</span><span style="font-size:16px">Zafiro</span></div>
+        <div style="display:flex;justify-content:space-between;padding:22px 0;border-bottom:1px solid hsla(0,0%,59%,.3)"><span style="font-size:16px;color:#A1A1A1;font-weight:200">Hermeticidad</span><span style="font-size:16px">00 m</span></div>
+        <div style="display:flex;justify-content:space-between;padding:22px 0;border-bottom:1px solid hsla(0,0%,59%,.3)"><span style="font-size:16px;color:#A1A1A1;font-weight:200">Incluye</span><span style="font-size:16px">Caja y papeles</span></div>
+      </div>
+    </section>
+
+    <section style="padding:120px 56px;display:grid;grid-template-columns:1fr auto;gap:60px;align-items:end" data-reveal="1">
+      <div>
+        <span style="font-size:14px;letter-spacing:.18em;text-transform:uppercase;color:#A1A1A1">Disponible</span>
+        <h2 style="font-size:44px;line-height:48px;letter-spacing:-1px;font-weight:500;text-transform:uppercase;margin:16px 0 12px">{{ activeName }}</h2>
+        <span style="font-size:22px;font-weight:200;color:#fff">{{ activePrice }}</span>
+      </div>
+      <div style="display:flex;gap:14px">
+        <button onClick="{{ addActive }}" style="background:#FF006E;color:#fff;border:0;padding:20px 34px;font:inherit;font-size:12px;font-weight:600;letter-spacing:.16em;cursor:pointer">AÑADIR A LA BOLSA</button>
+        <a href="#" style="border:1px solid hsla(0,0%,59%,.5);padding:20px 34px;font-size:12px;font-weight:600;letter-spacing:.16em">HABLAR POR WHATSAPP</a>
+      </div>
+    </section>
+  </main>
+  </sc-if>
+
+  <footer style="border-top:1px solid hsla(0,0%,59%,.3);padding:80px 56px 40px">
+    <div style="display:flex;flex-wrap:wrap;justify-content:space-between;gap:56px">
+      <div style="display:flex;flex-direction:column;gap:22px;max-width:280px">
+        <img src="assets/isotipo-mono.png" alt="Neon Night" style="width:52px;filter:invert(1)">
+        <p style="font-size:16px;line-height:24px;font-weight:200;color:#A1A1A1;margin:0;text-wrap:pretty">El reloj que buscas, al precio que debió tener siempre.</p>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:14px;font-size:16px;font-weight:200">
+        <span style="font-size:12px;font-weight:600;letter-spacing:.16em;color:#515151;margin-bottom:6px">COMPRAR</span>
+        <a href="#" onClick="{{ goCollection }}" style="color:#A1A1A1">Colección</a>
+        <a href="#" style="color:#A1A1A1">Novedades</a>
+        <a href="#" style="color:#A1A1A1">Financiación</a>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:14px;font-size:16px;font-weight:200">
+        <span style="font-size:12px;font-weight:600;letter-spacing:.16em;color:#515151;margin-bottom:6px">CONFIANZA</span>
+        <a href="#" style="color:#A1A1A1">Autenticidad</a>
+        <a href="#" style="color:#A1A1A1">Garantía</a>
+        <a href="#" style="color:#A1A1A1">Envíos y devoluciones</a>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:14px;font-size:16px;font-weight:200">
+        <span style="font-size:12px;font-weight:600;letter-spacing:.16em;color:#515151;margin-bottom:6px">CONTACTO</span>
+        <a href="#" style="color:#A1A1A1">WhatsApp</a>
+        <a href="#" style="color:#A1A1A1">Instagram</a>
+        <a href="#" style="color:#A1A1A1">Showroom Bogotá</a>
+      </div>
+    </div>
+    <div style="display:flex;justify-content:space-between;gap:24px;flex-wrap:wrap;margin-top:64px;padding-top:24px;border-top:1px solid hsla(0,0%,59%,.3);font-size:13px;color:#515151;font-weight:200">
+      <span>© 2026 Neon Night</span>
+      <span>Términos · Privacidad · Cambios y devoluciones</span>
+    </div>
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;showPrices&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Conversión&quot;},&quot;productCount&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:8,&quot;min&quot;:4,&quot;max&quot;:8,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Catálogo&quot;}}">
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.loaderRef = React.createRef();
+    this.headerRef = React.createRef();
+    this.videoRef = React.createRef();
+    this.verticalRef = React.createRef();
+    this.state = { view: 'home', menuOpen: false, cartOpen: false, cart: [], active: 0 };
+  }
+
+  baseProducts() {
+    const rows = [
+      ['Modelo 01', 'Automático · 41 mm', 12900000],
+      ['Modelo 02', 'Cronógrafo · 40 mm', 9400000],
+      ['Modelo 03', 'Automático · 39 mm', 18600000],
+      ['Modelo 04', 'GMT · 42 mm', 15200000],
+      ['Modelo 05', 'Automático · 36 mm', 7800000],
+      ['Modelo 06', 'Cronógrafo · 43 mm', 22500000],
+      ['Modelo 07', 'Automático · 40 mm', 11300000],
+      ['Modelo 08', 'Buceo · 42 mm', 16900000]
+    ];
+    return rows.map((r, i) => ({ id: i, name: r[0], sub: r[1], value: r[2] }));
+  }
+
+  money(v) {
+    return '$ ' + v.toLocaleString('es-CO') + ' COP';
+  }
+
+  nav(view) {
+    return (e) => {
+      if (e) e.preventDefault();
+      this.setState({ view: view, menuOpen: false, cartOpen: false });
+      window.scrollTo(0, 0);
+    };
+  }
+
+  componentDidMount() {
+    this.onScroll = () => {
+      const vh = window.innerHeight;
+      document.querySelectorAll('[data-parallax]').forEach((el) => {
+        const r = el.getBoundingClientRect();
+        if (r.bottom < -400 || r.top > vh + 400) return;
+        const s = parseFloat(el.dataset.parallax) || 0;
+        el.style.transform = 'translate3d(0,' + ((r.top + r.height / 2 - vh / 2) * s).toFixed(1) + 'px,0)';
+      });
+      const h = this.headerRef.current;
+      if (h) h.style.background = window.scrollY > 40 ? 'rgba(0,0,0,0.7)' : 'transparent';
+    };
+    document.addEventListener('scroll', this.onScroll, { capture: true, passive: true });
+    window.addEventListener('resize', this.onScroll);
+    if ('IntersectionObserver' in window && !document.hidden) {
+      this.io = new IntersectionObserver((entries) => {
+        entries.forEach((en) => { if (en.isIntersecting) { en.target.classList.add('nn-in'); this.io.unobserve(en.target); } });
+      }, { rootMargin: '0px 0px -6% 0px' });
+      document.documentElement.classList.add('nn-armed');
+      this.fallback = setTimeout(() => { if (!document.querySelector('[data-reveal].nn-in')) this.unGate(); }, 1400);
+    }
+    this.onVis = () => { if (document.hidden) this.unGate(); };
+    document.addEventListener('visibilitychange', this.onVis);
+    this.sync();
+  }
+
+  componentDidUpdate() { this.sync(); }
+
+  unGate() {
+    document.documentElement.classList.remove('nn-armed');
+    document.querySelectorAll('[data-reveal]').forEach((el) => el.classList.add('nn-in'));
+  }
+
+  sync() {
+    const pass = () => {
+      if (this.io) document.querySelectorAll('[data-reveal]:not(.nn-in)').forEach((el) => this.io.observe(el));
+      if (this.onScroll) this.onScroll();
+    };
+    pass();
+    document.querySelectorAll('video').forEach((v) => { v.muted = true; const p = v.play(); if (p && p.catch) p.catch(() => {}); });
+    if (!document.hidden) requestAnimationFrame(pass); else this.unGate();
+  }
+
+  componentWillUnmount() {
+    document.removeEventListener('scroll', this.onScroll, { capture: true });
+    window.removeEventListener('resize', this.onScroll);
+    document.removeEventListener('visibilitychange', this.onVis);
+    clearTimeout(this.fallback);
+    document.documentElement.classList.remove('nn-armed');
+    if (this.io) this.io.disconnect();
+  }
+
+  add(p) {
+    return (e) => {
+      if (e) e.preventDefault();
+      this.setState((s) => ({ cart: s.cart.concat([{ name: p.name, sub: p.sub, price: this.money(p.value) }]), cartOpen: true }));
+    };
+  }
+
+  renderVals() {
+    const count = Math.max(1, Math.min(8, this.props.productCount ?? 8));
+    const showPrices = this.props.showPrices ?? true;
+    const all = this.baseProducts().slice(0, count).map((p) => Object.assign({}, p, {
+      price: showPrices ? this.money(p.value) : 'Precio a consultar',
+      slotA: 'nn-a-' + p.id, slotB: 'nn-b-' + p.id, slotC: 'nn-c-' + p.id, slotD: 'nn-d-' + p.id,
+      srcA: p.id === 0 ? 'assets/ref01-front.png' : '',
+      srcB: p.id === 0 ? 'assets/ref01-back.png' : '',
+      add: this.add(p),
+      open: (e) => { if (e) e.preventDefault(); this.setState({ view: 'product', active: p.id, menuOpen: false }); window.scrollTo(0, 0); }
+    }));
+    const active = all.find((p) => p.id === this.state.active) || all[0];
+    const total = this.state.cart.reduce((a, l) => a + (this.baseProducts().find((p) => p.name === l.name) || { value: 0 }).value, 0);
+    return {
+      loaderRef: this.loaderRef,
+      videoRef: this.videoRef,
+      verticalRef: this.verticalRef,
+      hideVertical: () => { const v = this.verticalRef.current; if (v) v.style.display = 'none'; },
+      headerRef: this.headerRef,
+      isHome: this.state.view === 'home',
+      isCollection: this.state.view === 'collection',
+      isProduct: this.state.view === 'product',
+      menuOpen: this.state.menuOpen,
+      cartOpen: this.state.cartOpen,
+      cart: this.state.cart,
+      cartEmpty: this.state.cart.length === 0,
+      cartCount: this.state.cart.length,
+      cartTotal: this.money(total),
+      products: all,
+      homeProducts: all.slice(0, 6),
+      totalLabel: String(all.length),
+      activeName: active.name,
+      activeSub: active.sub,
+      activePrice: active.price,
+      addActive: this.add(active),
+      goHome: this.nav('home'),
+      goCollection: this.nav('collection'),
+      goProduct: (e) => { if (e) e.preventDefault(); this.setState({ view: 'product', menuOpen: false }); window.scrollTo(0, 0); },
+      toggleMenu: (e) => { if (e) e.preventDefault(); this.setState((s) => ({ menuOpen: !s.menuOpen })); },
+      closeMenu: () => this.setState({ menuOpen: false }),
+      toggleCart: (e) => { if (e) e.preventDefault(); this.setState((s) => ({ cartOpen: !s.cartOpen })); },
+      closeCart: () => this.setState({ cartOpen: false })
+    };
+  }
+}
+</script>
+</body>
+</html>

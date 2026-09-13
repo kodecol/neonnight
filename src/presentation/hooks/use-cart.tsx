@@ -1,0 +1,112 @@
+"use client";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+
+export interface CartItem {
+  watchId: string;
+  slug: string;
+  name: string;
+  subtitle: string;
+  priceCents: number;
+}
+
+interface CartState {
+  items: CartItem[];
+  hydrated: boolean;
+  isOpen: boolean;
+}
+
+interface CartApi extends CartState {
+  count: number;
+  totalCents: number;
+  add: (item: CartItem) => void;
+  remove: (watchId: string) => void;
+  clear: () => void;
+  open: () => void;
+  close: () => void;
+  toggle: () => void;
+}
+
+const STORAGE_KEY = "neonnight.cart.v1";
+const CartContext = createContext<CartApi | null>(null);
+
+function readStorage(): CartItem[] {
+  try {
+    const raw = window.localStorage.getItem(STORAGE_KEY);
+    if (!raw) return [];
+    const parsed: unknown = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter(
+      (i): i is CartItem =>
+        typeof i === "object" && i !== null && typeof (i as CartItem).watchId === "string" && typeof (i as CartItem).priceCents === "number",
+    );
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Provider de la bolsa. Persiste en localStorage e hidrata en useEffect para
+ * no romper el SSR (el servidor siempre renderiza la bolsa vacía).
+ * Los precios aquí son solo informativos: el checkout recalcula en el servidor.
+ */
+export function CartProvider({ children }: { children: ReactNode }) {
+  const [state, setState] = useState<CartState>({ items: [], hydrated: false, isOpen: false });
+
+  useEffect(() => {
+    setState((s) => ({ ...s, items: readStorage(), hydrated: true }));
+  }, []);
+
+  useEffect(() => {
+    if (!state.hydrated) return;
+    try {
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state.items));
+    } catch {
+      /* almacenamiento no disponible: la bolsa vive solo en memoria */
+    }
+  }, [state.items, state.hydrated]);
+
+  useEffect(() => {
+    if (!state.isOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setState((s) => ({ ...s, isOpen: false }));
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [state.isOpen]);
+
+  const add = useCallback((item: CartItem) => {
+    setState((s) => {
+      // Piezas únicas: una línea por reloj.
+      const items = s.items.some((i) => i.watchId === item.watchId) ? s.items : [...s.items, item];
+      return { ...s, items, isOpen: true };
+    });
+  }, []);
+  const remove = useCallback((watchId: string) => setState((s) => ({ ...s, items: s.items.filter((i) => i.watchId !== watchId) })), []);
+  const clear = useCallback(() => setState((s) => ({ ...s, items: [] })), []);
+  const open = useCallback(() => setState((s) => ({ ...s, isOpen: true })), []);
+  const close = useCallback(() => setState((s) => ({ ...s, isOpen: false })), []);
+  const toggle = useCallback(() => setState((s) => ({ ...s, isOpen: !s.isOpen })), []);
+
+  const value = useMemo<CartApi>(
+    () => ({
+      ...state,
+      count: state.items.length,
+      totalCents: state.items.reduce((n, i) => n + i.priceCents, 0),
+      add,
+      remove,
+      clear,
+      open,
+      close,
+      toggle,
+    }),
+    [state, add, remove, clear, open, close, toggle],
+  );
+
+  return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
+}
+
+export function useCart(): CartApi {
+  const ctx = useContext(CartContext);
+  if (!ctx) throw new Error("useCart debe usarse dentro de <CartProvider>.");
+  return ctx;
+}
