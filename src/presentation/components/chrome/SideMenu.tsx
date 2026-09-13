@@ -2,16 +2,21 @@
 import Link from "next/link";
 import { useEffect, useRef } from "react";
 import { useBodyLock } from "@/presentation/hooks/use-body-lock";
-import { ROUTES } from "@/presentation/lib/site";
+import type { SiteContent } from "@/application/dto/site-content.dto";
 
-const LINKS = [
-  { href: ROUTES.collection, label: "Colección" },
-  { href: `${ROUTES.collection}?orden=novedades`, label: "Novedades" },
-  { href: "/#autenticidad", label: "Autenticidad" },
-  { href: "/#showroom", label: "Showroom" },
-];
-
-export function SideMenu({ open, onClose, whatsappUrl, instagramUrl }: { open: boolean; onClose: () => void; whatsappUrl: string | null; instagramUrl: string }) {
+export function SideMenu({
+  open,
+  onClose,
+  whatsappUrl,
+  instagramUrl,
+  content,
+}: {
+  open: boolean;
+  onClose: () => void;
+  whatsappUrl: string | null;
+  instagramUrl: string;
+  content: SiteContent["navigation"];
+}) {
   const panelRef = useRef<HTMLElement>(null);
   useBodyLock(open);
 
@@ -54,7 +59,7 @@ export function SideMenu({ open, onClose, whatsappUrl, instagramUrl }: { open: b
         className="flex h-full w-full max-w-[640px] flex-col justify-between border-r border-divider bg-glass-deep px-page pb-12 pt-[112px] md:w-[41.7vw]"
       >
         <div className="flex flex-col gap-[18px]">
-          {LINKS.map((l) => (
+          {content.menu.map((l) => (
             <Link key={l.label} href={l.href} onClick={onClose} className="text-menu uppercase hover:text-accent">
               {l.label}
             </Link>
@@ -63,16 +68,16 @@ export function SideMenu({ open, onClose, whatsappUrl, instagramUrl }: { open: b
         <div className="flex flex-col gap-3.5 text-small text-ink-2">
           {whatsappUrl ? (
             <a href={whatsappUrl} target="_blank" rel="noopener noreferrer" className="hover:text-ink">
-              Asesoría por WhatsApp
+              {content.menuFooter.whatsappLabel}
             </a>
           ) : (
-            <span className="text-ink-3">Asesoría por WhatsApp (próximamente)</span>
+            <span className="text-ink-3">{content.menuFooter.whatsappLabel} (próximamente)</span>
           )}
           <a href={instagramUrl} target="_blank" rel="noopener noreferrer" className="hover:text-ink">
-            Instagram
+            {content.menuFooter.instagramLabel}
           </a>
           <span className="my-2.5 h-px bg-divider" />
-          <span className="text-legal text-ink-3">Envíos asegurados en Colombia · Pago contra verificación</span>
+          <span className="text-legal text-ink-3">{content.menuFooter.note}</span>
         </div>
       </nav>
     </div>

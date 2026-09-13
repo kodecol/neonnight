@@ -2,15 +2,8 @@
 import { useEffect, useState } from "react";
 import { cn } from "@/presentation/lib/cn";
 
-const TABS = [
-  { id: "pieza", label: "La pieza" },
-  { id: "detalles", label: "Detalles" },
-  { id: "especificaciones", label: "Especificaciones" },
-  { id: "compra", label: "Compra" },
-];
-
-export function ProductSubNav() {
-  const [active, setActive] = useState("pieza");
+export function ProductSubNav({ tabs }: { tabs: Array<{ id: string; label: string }> }) {
+  const [active, setActive] = useState(tabs[0]?.id ?? "");
 
   useEffect(() => {
     if (!("IntersectionObserver" in window)) return;
@@ -21,19 +14,19 @@ export function ProductSubNav() {
       },
       { rootMargin: "-40% 0px -50% 0px", threshold: [0, 0.25, 0.5] },
     );
-    TABS.forEach((t) => {
+    tabs.forEach((t) => {
       const el = document.getElementById(t.id);
       if (el) io.observe(el);
     });
     return () => io.disconnect();
-  }, []);
+  }, [tabs]);
 
   return (
     <nav
       aria-label="Secciones del producto"
       className="backdrop-glass sticky top-header z-40 flex h-[60px] items-center gap-6 overflow-x-auto border-b border-divider bg-glass px-page text-label uppercase md:gap-10"
     >
-      {TABS.map((t) => (
+      {tabs.map((t) => (
         <a
           key={t.id}
           href={`#${t.id}`}

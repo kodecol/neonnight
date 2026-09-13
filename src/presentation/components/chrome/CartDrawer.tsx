@@ -5,12 +5,22 @@ import { useCart } from "@/presentation/hooks/use-cart";
 import { useBodyLock } from "@/presentation/hooks/use-body-lock";
 import { formatCop } from "@/presentation/lib/format-money";
 import { Button } from "@/presentation/components/primitives/Button";
+import type { SiteContent } from "@/application/dto/site-content.dto";
+import { fill } from "@/application/lib/template";
 
 /**
  * Drawer derecho de la bolsa. El total mostrado es informativo: al finalizar,
  * POST /api/checkout recalcula precio y disponibilidad en el servidor.
  */
-export function CartDrawer({ whatsappNumberConfigured, whatsappBase }: { whatsappNumberConfigured: boolean; whatsappBase: string | null }) {
+export function CartDrawer({
+  whatsappNumberConfigured,
+  whatsappBase,
+  content,
+}: {
+  whatsappNumberConfigured: boolean;
+  whatsappBase: string | null;
+  content: SiteContent["cart"];
+}) {
   const cart = useCart();
   const router = useRouter();
   const panelRef = useRef<HTMLElement>(null);
@@ -27,7 +37,7 @@ export function CartDrawer({ whatsappNumberConfigured, whatsappBase }: { whatsap
   const whatsappHref =
     whatsappBase && cart.items.length > 0
       ? `${whatsappBase}?text=${encodeURIComponent(
-          `Hola, quiero cerrar por WhatsApp mi bolsa: ${cart.items.map((i) => i.name).join(", ")}. Total ${formatCop(cart.totalCents)}.`,
+          fill(content.whatsappMessageTemplate, { items: cart.items.map((i) => i.name).join(", "), total: formatCop(cart.totalCents) }),
         )}`
       : null;
 
@@ -62,14 +72,14 @@ export function CartDrawer({ whatsappNumberConfigured, whatsappBase }: { whatsap
         ref={panelRef}
         role="dialog"
         aria-modal="true"
-        aria-label="Tu bolsa"
+        aria-label={content.title}
         onClick={(e) => e.stopPropagation()}
         className="flex h-full w-full max-w-[480px] flex-col border-l border-divider bg-surface-elevated px-6 pb-10 pt-[100px] md:px-10"
       >
         <div className="mb-7 flex items-center justify-between">
-          <h2 className="m-0 text-h3 uppercase tracking-[-0.3px]">Tu bolsa</h2>
+          <h2 className="m-0 text-h3 uppercase tracking-[-0.3px]">{content.title}</h2>
           <button type="button" onClick={cart.close} className="cursor-pointer border-0 bg-transparent p-0 text-label uppercase text-ink-2 hover:text-ink" aria-label="Cerrar la bolsa">
-            Cerrar
+            {content.close}
           </button>
         </div>
 
@@ -80,17 +90,17 @@ export function CartDrawer({ whatsappNumberConfigured, whatsappBase }: { whatsap
                 <span className="text-small font-medium uppercase">{line.name}</span>
                 <span className="text-legal text-ink-2">{line.subtitle}</span>
                 <button type="button" onClick={() => cart.remove(line.watchId)} className="mt-1 w-fit cursor-pointer border-0 bg-transparent p-0 text-left text-label-sm uppercase text-ink-3 hover:text-ink">
-                  Quitar
+                  {content.remove}
                 </button>
               </div>
               <span className="whitespace-nowrap text-[14px]">{formatCop(line.priceCents)}</span>
             </li>
           ))}
-          {cart.items.length === 0 && <li className="py-2 text-small text-ink-3">Aún no has añadido ninguna pieza.</li>}
+          {cart.items.length === 0 && <li className="py-2 text-small text-ink-3">{content.empty}</li>}
         </ul>
 
         <div className="flex justify-between border-t border-divider py-6 text-small">
-          <span className="text-ink-2">Total</span>
+          <span className="text-ink-2">{content.total}</span>
           <span data-testid="cart-total">{formatCop(cart.totalCents)}</span>
         </div>
 
@@ -100,14 +110,14 @@ export function CartDrawer({ whatsappNumberConfigured, whatsappBase }: { whatsap
           </p>
         )}
         <Button onClick={checkout} disabled={cart.items.length === 0 || submitting} className="w-full justify-start px-6 py-5 text-label-lg" data-testid="checkout-button">
-          {submitting ? "Procesando…" : "Finalizar compra"}
+          {submitting ? "Procesando…" : content.checkout}
         </Button>
         {whatsappHref ? (
           <a href={whatsappHref} target="_blank" rel="noopener noreferrer" className="block pt-[18px] text-label-lg uppercase text-ink-2 hover:text-ink">
-            O cerrar por WhatsApp
+            {content.whatsapp}
           </a>
         ) : (
-          <span className="block pt-[18px] text-label-lg uppercase text-ink-3">{whatsappNumberConfigured ? "O cerrar por WhatsApp" : "WhatsApp: número pendiente"}</span>
+          <span className="block pt-[18px] text-label-lg uppercase text-ink-3">{whatsappNumberConfigured ? content.whatsapp : content.whatsappPending}</span>
         )}
       </aside>
     </div>

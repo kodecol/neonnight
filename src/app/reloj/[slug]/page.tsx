@@ -12,7 +12,7 @@ import { ParallaxBand } from "@/presentation/components/blocks/ParallaxBand";
 import { SpecTable } from "@/presentation/components/blocks/SpecTable";
 import { ClosingCta } from "@/presentation/components/blocks/ClosingCta";
 import { JsonLd } from "@/presentation/components/seo/JsonLd";
-import { ROUTES, SITE_NAME, absoluteUrl } from "@/presentation/lib/site";
+import { ROUTES, absoluteUrl } from "@/presentation/lib/site";
 
 export const revalidate = 3600;
 export const dynamicParams = true;
@@ -37,13 +37,14 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   const { slug } = await params;
   const watch = await load(slug);
   if (!watch) return { title: "Pieza no encontrada" };
+  const { brand } = await getContainer().content.get();
   const title = `${watch.brand} ${watch.model}`;
   const description = `${watch.name} ref. ${watch.reference} · ${watch.subtitle} · ${watch.price.formatted}. Verificado en mano, garantía de 24 meses.`;
   return {
     title,
     description,
     alternates: { canonical: absoluteUrl(ROUTES.watch(watch.slug)) },
-    openGraph: { title: `${title} — ${SITE_NAME}`, description, type: "website", url: absoluteUrl(ROUTES.watch(watch.slug)) },
+    openGraph: { title: `${title} — ${brand.name}`, description, type: "website", url: absoluteUrl(ROUTES.watch(watch.slug)) },
   };
 }
 
@@ -55,7 +56,8 @@ export default async function WatchPage({ params }: { params: Params }) {
   const watch = await load(slug);
   if (!watch) notFound();
 
-  const { whatsapp, analytics } = getContainer();
+  const { whatsapp, analytics, content } = getContainer();
+  const site = await content.get();
   const canonical = absoluteUrl(ROUTES.watch(watch.slug));
   const whatsappUrl = whatsapp.forWatch({ name: watch.name, reference: watch.reference, canonicalUrl: canonical });
   void analytics.track({ name: "view_item", watchId: watch.id, slug: watch.slug, priceCents: watch.price.cents });
@@ -79,16 +81,16 @@ export default async function WatchPage({ params }: { params: Params }) {
             priceCurrency: watch.price.currency,
             availability: SCHEMA_AVAILABILITY[watch.availability],
             itemCondition: SCHEMA_CONDITION[watch.condition],
-            seller: { "@type": "Organization", name: SITE_NAME },
+            seller: { "@type": "Organization", name: site.brand.name },
           },
         }}
       />
       <ProductHero watch={watch} />
-      <ProductSubNav />
-      <Description paragraphs={watch.description} />
-      <Gallery images={watch.gallery} name={watch.name} />
+      <ProductSubNav tabs={site.product.subnav} />
+      <Description title={site.product.descriptionTitle} paragraphs={watch.description} />
+      <Gallery images={watch.gallery} name={watch.name} captions={site.product.galleryCaptions} />
       <ParallaxBand image={watch.band} height="80vh" overlay={false} label={`${watch.name} imagen completa`} />
-      <SpecTable specs={watch.specs} />
+      <SpecTable specs={watch.specs} kicker={site.product.specsKicker} />
       <ClosingCta watch={watch} whatsappUrl={whatsappUrl} />
     </main>
   );

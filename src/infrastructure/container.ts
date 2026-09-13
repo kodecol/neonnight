@@ -4,6 +4,7 @@ import type { PaymentGateway } from "@/application/ports/payment-gateway";
 import type { Analytics } from "@/application/ports/analytics";
 import type { WhatsAppLinkBuilder } from "@/application/ports/whatsapp-link-builder";
 import type { Clock, IdGenerator } from "@/application/ports/clock";
+import type { SiteContentRepository } from "@/application/ports/site-content-repository";
 import { InMemoryWatchRepository } from "./repositories/in-memory-watch-repository";
 import { InMemoryOrderRepository } from "./repositories/in-memory-order-repository";
 import { NoopPaymentGateway } from "./payments/noop-payment-gateway";
@@ -11,6 +12,8 @@ import { ConsoleAnalytics } from "./analytics/console-analytics";
 import { WaMeLinkBuilder } from "./whatsapp/wa-me-link-builder";
 import { RandomIdGenerator, SystemClock } from "./system";
 import { SEED_WATCHES } from "./cms/seed";
+import { SITE_CONTENT } from "./content/site-content";
+import { StaticSiteContentRepository } from "./content/static-site-content-repository";
 
 /**
  * Contenedor tipado y explícito. Sin framework de DI.
@@ -25,6 +28,7 @@ export interface Container {
   whatsapp: WhatsAppLinkBuilder;
   clock: Clock;
   ids: IdGenerator;
+  content: SiteContentRepository;
 }
 
 let container: Container | null = null;
@@ -35,9 +39,14 @@ export function createContainer(overrides: Partial<Container> = {}): Container {
     orders: overrides.orders ?? new InMemoryOrderRepository(),
     payments: overrides.payments ?? new NoopPaymentGateway(),
     analytics: overrides.analytics ?? new ConsoleAnalytics(),
-    whatsapp: overrides.whatsapp ?? new WaMeLinkBuilder(process.env.NEXT_PUBLIC_WHATSAPP_NUMBER),
+    whatsapp: overrides.whatsapp ?? new WaMeLinkBuilder(process.env.NEXT_PUBLIC_WHATSAPP_NUMBER, {
+        product: SITE_CONTENT.whatsapp.productMessageTemplate,
+        generic: SITE_CONTENT.whatsapp.genericMessage,
+        cart: SITE_CONTENT.cart.whatsappMessageTemplate,
+      }),
     clock: overrides.clock ?? new SystemClock(),
     ids: overrides.ids ?? new RandomIdGenerator(),
+    content: overrides.content ?? new StaticSiteContentRepository(),
   };
 }
 

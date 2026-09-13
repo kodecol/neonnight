@@ -9,3 +9,6 @@ export * from "./use-cases/get-watch-by-slug";
 export * from "./use-cases/get-featured-watch";
 export * from "./use-cases/resolve-cart";
 export * from "./use-cases/checkout";
+export * from "./dto/site-content.dto";
+export * from "./ports/site-content-repository";
+export * from "./lib/template";

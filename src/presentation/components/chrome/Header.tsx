@@ -7,7 +7,19 @@ import { ROUTES } from "@/presentation/lib/site";
 import { cn } from "@/presentation/lib/cn";
 import { SideMenu } from "./SideMenu";
 
-export function Header({ whatsappUrl, instagramUrl }: { whatsappUrl: string | null; instagramUrl: string }) {
+import type { SiteContent } from "@/application/dto/site-content.dto";
+
+export function Header({
+  whatsappUrl,
+  instagramUrl,
+  navigation,
+  brand,
+}: {
+  whatsappUrl: string | null;
+  instagramUrl: string;
+  navigation: SiteContent["navigation"];
+  brand: SiteContent["brand"];
+}) {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const cart = useCart();
@@ -38,20 +50,20 @@ export function Header({ whatsappUrl, instagramUrl }: { whatsappUrl: string | nu
             <span className="block h-0.5 bg-ink" />
             <span className="block h-0.5 bg-ink" />
           </span>
-          <span className="text-label uppercase">Menú</span>
+          <span className="text-label uppercase">{navigation.header.menuLabel}</span>
         </button>
 
-        <Link href={ROUTES.home} className="absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center gap-3" aria-label="Neon Night, inicio">
+        <Link href={ROUTES.home} className="absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center gap-3" aria-label={`${brand.name}, inicio`}>
           <Isotype size={26} />
-          <span className="hidden text-[14px] font-semibold uppercase tracking-[0.3em] leading-none sm:inline">Neon Night</span>
+          <span className="hidden text-[14px] font-semibold uppercase tracking-[0.3em] leading-none sm:inline">{brand.wordmark}</span>
         </Link>
 
         <nav className="flex items-center gap-5 text-label uppercase md:gap-[34px]" aria-label="Principal">
           <Link href={ROUTES.collection} className="hidden hover:text-accent md:inline">
-            Colección
+            {navigation.header.collectionLabel}
           </Link>
-          <span className="hidden text-ink-2 md:inline" aria-label="Divisa: pesos colombianos">
-            COP
+          <span className="hidden text-ink-2 md:inline" aria-label={`Divisa: ${brand.currencyLabel}`}>
+            {brand.currencyLabel}
           </span>
           <button
             type="button"
@@ -60,7 +72,7 @@ export function Header({ whatsappUrl, instagramUrl }: { whatsappUrl: string | nu
             aria-controls="cart-drawer"
             className="flex cursor-pointer items-center gap-2 border-0 bg-transparent p-0 text-label uppercase text-ink"
           >
-            Bolsa
+            {navigation.header.cartLabel}
             <span
               className="inline-flex h-5 min-w-5 items-center justify-center bg-accent px-1 text-[11px] leading-none tracking-normal text-ink"
               data-testid="cart-count"
@@ -71,7 +83,7 @@ export function Header({ whatsappUrl, instagramUrl }: { whatsappUrl: string | nu
           </button>
         </nav>
       </header>
-      <SideMenu open={menuOpen} onClose={() => setMenuOpen(false)} whatsappUrl={whatsappUrl} instagramUrl={instagramUrl} />
+      <SideMenu open={menuOpen} onClose={() => setMenuOpen(false)} whatsappUrl={whatsappUrl} instagramUrl={instagramUrl} content={navigation} />
     </>
   );
 }

@@ -10,7 +10,7 @@ const TOTAL_MS = 1700 + 500;
  * contenido a los rastreadores. Se desmonta del DOM al terminar, no se
  * renderiza bajo prefers-reduced-motion y solo aparece una vez por sesión.
  */
-export function LoadingScreen() {
+export function LoadingScreen({ wordmark }: { wordmark: string }) {
   const [show, setShow] = useState(false);
 
   useEffect(() => {
@@ -33,7 +33,7 @@ export function LoadingScreen() {
       <div className="nn-loader-bar absolute left-0 top-0 h-[3px] bg-ink" />
       <div className="flex flex-col items-center gap-[22px]">
         <Isotype size={64} className="opacity-90" priority />
-        <div className="nn-loader-mark text-label-lg uppercase tracking-[0.34em] text-ink">NEON NIGHT</div>
+        <div className="nn-loader-mark text-label-lg uppercase tracking-[0.34em] text-ink">{wordmark}</div>
       </div>
     </div>
   );

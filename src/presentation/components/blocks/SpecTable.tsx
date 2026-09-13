@@ -1,7 +1,7 @@
 import type { WatchDetailDto } from "@/application/dto/watch.dto";
 import { Kicker } from "@/presentation/components/primitives/Kicker";
 
-export function SpecTable({ specs }: { specs: WatchDetailDto["specs"] }) {
+export function SpecTable({ specs, kicker }: { specs: WatchDetailDto["specs"]; kicker: string }) {
   const rows: Array<[string, string]> = [
     ["Movimiento", specs.movement],
     ["Reserva de marcha", specs.powerReserve],
@@ -13,7 +13,7 @@ export function SpecTable({ specs }: { specs: WatchDetailDto["specs"] }) {
   return (
     <section id="especificaciones" className="border-b border-divider px-page py-section" data-reveal="1" aria-labelledby="specs-kicker">
       <Kicker as="p" className="m-0">
-        <span id="specs-kicker">Especificaciones</span>
+        <span id="specs-kicker">{kicker}</span>
       </Kicker>
       <dl className="m-0 mt-11 grid grid-cols-1 gap-x-20 md:grid-cols-2">
         {rows.map(([k, v]) => (

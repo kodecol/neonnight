@@ -1,7 +1,7 @@
 import type { ImageDto } from "@/application/dto/watch.dto";
 import { MediaSlot } from "@/presentation/components/primitives/MediaSlot";
 
-export function Gallery({ images, name }: { images: ImageDto[]; name: string }) {
+export function Gallery({ images, name, captions }: { images: ImageDto[]; name: string; captions: [string, string] }) {
   const [a, b] = [images[0] ?? null, images[1] ?? null];
   const sizes = "(min-width:768px) 45vw, 100vw";
   return (
@@ -10,13 +10,13 @@ export function Gallery({ images, name }: { images: ImageDto[]; name: string }) 
         <div data-parallax={0.06} className="aspect-[3/4] bg-surface">
           <MediaSlot image={a} fit="contain" sizes={sizes} className="h-full w-full" label={`${name} detalle dial`} />
         </div>
-        <figcaption className="mt-5 text-meta text-ink-2">Dial y agujas</figcaption>
+        <figcaption className="mt-5 text-meta text-ink-2">{captions[0]}</figcaption>
       </figure>
       <figure className="m-0 md:mt-20">
         <div data-parallax={-0.06} className="aspect-[3/4] bg-surface">
           <MediaSlot image={b} fit="contain" sizes={sizes} className="h-full w-full" label={`${name} detalle caja`} />
         </div>
-        <figcaption className="mt-5 text-meta text-ink-2">Caja y corona</figcaption>
+        <figcaption className="mt-5 text-meta text-ink-2">{captions[1]}</figcaption>
       </figure>
     </section>
   );

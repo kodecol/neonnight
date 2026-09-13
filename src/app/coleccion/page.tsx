@@ -6,7 +6,7 @@ import { Breadcrumb } from "@/presentation/components/blocks/Breadcrumb";
 import { FilterChips, type FilterState } from "@/presentation/components/blocks/FilterChips";
 import { ProductGrid } from "@/presentation/components/blocks/ProductGrid";
 import { JsonLd } from "@/presentation/components/seo/JsonLd";
-import { ROUTES, SITE_NAME, absoluteUrl } from "@/presentation/lib/site";
+import { ROUTES, absoluteUrl } from "@/presentation/lib/site";
 
 export const revalidate = 3600;
 
@@ -34,7 +34,8 @@ export async function generateMetadata({ searchParams }: { searchParams: SearchP
 
 export default async function CollectionPage({ searchParams }: { searchParams: SearchParams }) {
   const state = parse(await searchParams);
-  const { watches, whatsapp } = getContainer();
+  const { watches, whatsapp, content } = getContainer();
+  const site = await content.get();
   const list = await new ListWatches(watches).execute({
     category: (state.categoria as WatchCategory | null) ?? undefined,
     maxPriceUnits: state.max ?? undefined,
@@ -53,28 +54,28 @@ export default async function CollectionPage({ searchParams }: { searchParams: S
             {
               "@type": "BreadcrumbList",
               itemListElement: [
-                { "@type": "ListItem", position: 1, name: "Inicio", item: absoluteUrl("/") },
-                { "@type": "ListItem", position: 2, name: "Colección", item: absoluteUrl(ROUTES.collection) },
+                { "@type": "ListItem", position: 1, name: site.collection.breadcrumbHome, item: absoluteUrl("/") },
+                { "@type": "ListItem", position: 2, name: site.collection.title, item: absoluteUrl(ROUTES.collection) },
               ],
             },
             {
               "@type": "ItemList",
-              name: `Colección ${SITE_NAME}`,
+              name: `${site.collection.title} ${site.brand.name}`,
               itemListElement: list.map((w, i) => ({ "@type": "ListItem", position: i + 1, url: absoluteUrl(ROUTES.watch(w.slug)), name: w.name })),
             },
           ],
         }}
       />
       <section className="relative border-b border-divider px-page pb-10 pt-16 md:pt-24">
-        <Breadcrumb items={[{ label: "Inicio", href: ROUTES.home }, { label: "Colección" }]} />
-        <h1 className="mb-0 mt-[22px] text-display-fluid uppercase">Colección</h1>
-        <FilterChips state={state} />
+        <Breadcrumb items={[{ label: site.collection.breadcrumbHome, href: ROUTES.home }, { label: site.collection.title }]} />
+        <h1 className="mb-0 mt-[22px] text-display-fluid uppercase">{site.collection.title}</h1>
+        <FilterChips state={state} filters={site.collection.filters} />
       </section>
       <section className="px-page pb-section pt-16">
         {items.length > 0 ? (
           <ProductGrid items={items} columns={4} actions={false} />
         ) : (
-          <p className="m-0 text-lead text-ink-2">No hay referencias que coincidan con este filtro.</p>
+          <p className="m-0 text-lead text-ink-2">{site.collection.emptyMessage}</p>
         )}
       </section>
     </main>

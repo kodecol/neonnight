@@ -1,10 +1,11 @@
 import { expect, test } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 
-const PAGES = ["/", "/coleccion", "/reloj/rolex-day-date-36"];
+const PAGES = ["/", "/coleccion", "/reloj/rolex-sky-dweller-326938"];
 
 for (const path of PAGES) {
   test(`axe sin violaciones serias o críticas en ${path}`, async ({ page }) => {
+    test.setTimeout(120_000); // axe recorre todo el DOM con imágenes; en máquinas lentas supera los 30 s
     await page.goto(path);
     await page.waitForTimeout(2600); // deja terminar la pantalla de carga
     // Excepciones conocidas del diseño hi-fi (ver README "Accesibilidad"): el label blanco sobre el

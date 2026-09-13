@@ -1,53 +1,221 @@
-import { watchId, type Watch, type WatchCategory } from "@/domain/entities/watch";
+import { watchId, type Watch, type WatchCategory, type WatchImage } from "@/domain/entities/watch";
 import { Money } from "@/domain/value-objects/money";
 import { Slug } from "@/domain/value-objects/slug";
 import { Reference } from "@/domain/value-objects/reference";
 
 /**
- * Los 8 productos del prototipo (docs/handoff/Neon Night.dc.html, baseProducts()).
- * PENDIENTE (handoff §7): referencias 02–08 son placeholders; precios inventados;
- * solo la 01 tiene imágenes definitivas. Sustituir por el adaptador del CMS.
+ * Catálogo de mockup: 8 referencias reales con foto frontal y trasera.
+ *
+ * Las 8 referencias usan fotografías de catálogo de terceros recortadas a
+ * PNG transparente SOLO para el mockup
+ * (ver README "Nota legal"): en producción deben sustituirse por fotografía
+ * propia de las piezas en inventario. Precios orientativos en COP; el CMS
+ * será la fuente autoritativa.
  */
-const UPDATED_AT = new Date("2026-09-01T00:00:00.000Z");
+const UPDATED_AT = new Date("2026-09-13T00:00:00.000Z");
 
 interface SeedRow {
   n: string;
+  slug: string;
   brand: string;
   model: string;
   reference: string;
   subtitle: string;
   category: WatchCategory;
-  caseMm: number;
   priceUnits: number;
   movement: string;
   powerReserve: number | null;
-  waterResistance: number | null;
+  caseMm: number;
   material: string;
+  waterResistance: number | null;
+  description: string[];
+  includes: string[];
+  imgSize: { w: number; h: number };
 }
 
 const rows: SeedRow[] = [
-  { n: "01", brand: "Rolex", model: "Day-Date 36", reference: "128238", subtitle: "Automático · 36 mm", category: "automatico", caseMm: 36, priceUnits: 12_900_000, movement: "Automático · Cal. 3255", powerReserve: 70, waterResistance: 100, material: "oro amarillo" },
-  { n: "02", brand: "Modelo", model: "02", reference: "REF-02", subtitle: "Cronógrafo · 40 mm", category: "cronografo", caseMm: 40, priceUnits: 9_400_000, movement: "Automático", powerReserve: null, waterResistance: null, material: "acero" },
-  { n: "03", brand: "Modelo", model: "03", reference: "REF-03", subtitle: "Automático · 39 mm", category: "automatico", caseMm: 39, priceUnits: 18_600_000, movement: "Automático", powerReserve: null, waterResistance: null, material: "acero" },
-  { n: "04", brand: "Modelo", model: "04", reference: "REF-04", subtitle: "GMT · 42 mm", category: "gmt", caseMm: 42, priceUnits: 15_200_000, movement: "Automático GMT", powerReserve: null, waterResistance: null, material: "acero" },
-  { n: "05", brand: "Modelo", model: "05", reference: "REF-05", subtitle: "Automático · 36 mm", category: "automatico", caseMm: 36, priceUnits: 7_800_000, movement: "Automático", powerReserve: null, waterResistance: null, material: "acero" },
-  { n: "06", brand: "Modelo", model: "06", reference: "REF-06", subtitle: "Cronógrafo · 43 mm", category: "cronografo", caseMm: 43, priceUnits: 22_500_000, movement: "Automático", powerReserve: null, waterResistance: null, material: "acero" },
-  { n: "07", brand: "Modelo", model: "07", reference: "REF-07", subtitle: "Automático · 40 mm", category: "automatico", caseMm: 40, priceUnits: 11_300_000, movement: "Automático", powerReserve: null, waterResistance: null, material: "acero" },
-  { n: "08", brand: "Modelo", model: "08", reference: "REF-08", subtitle: "Buceo · 42 mm", category: "buceo", caseMm: 42, priceUnits: 16_900_000, movement: "Automático", powerReserve: null, waterResistance: 300, material: "acero" },
+  {
+    n: "01",
+    slug: "rolex-sky-dweller-326938",
+    brand: "Rolex",
+    model: "Sky-Dweller",
+    reference: "326938",
+    subtitle: "GMT · Calendario anual · 42 mm",
+    category: "gmt",
+    priceUnits: 168_000_000,
+    movement: "Automático · Cal. 9001",
+    powerReserve: 72,
+    caseMm: 42,
+    material: "oro amarillo",
+    waterResistance: 100,
+    description: [
+      "El Rolex más complicado del catálogo, en oro amarillo de 18 quilates con dial champán y numerales arábigos. Segunda zona horaria en disco descentrado y calendario anual Saros.",
+      "Bisel Ring Command para ajustar las funciones desde la corona. Calibre 9001 con 72 horas de reserva de marcha. Pieza completa con caja, tarjeta y eslabones.",
+    ],
+    includes: ["Caja y papeles", "Tarjeta de garantía"],
+    imgSize: { w: 1200, h: 1200 },
+  },
+  {
+    n: "02",
+    slug: "rolex-cosmograph-daytona-126500ln",
+    brand: "Rolex",
+    model: "Cosmograph Daytona",
+    reference: "126500LN",
+    subtitle: "Cronógrafo · 40 mm",
+    category: "cronografo",
+    priceUnits: 132_000_000,
+    movement: "Automático · Cal. 4131",
+    powerReserve: 72,
+    caseMm: 40,
+    material: "Oystersteel",
+    waterResistance: 100,
+    description: [
+      "El Daytona de acero con dial blanco y contadores negros, el «panda» que define al cronógrafo moderno. Bisel Cerachrom negro con escala taquimétrica.",
+      "Generación 2023 con calibre 4131: escape Chronergy, 72 horas de reserva y certificación Superlative Chronometer. Pieza completa con caja, tarjeta y eslabones.",
+    ],
+    includes: ["Caja y papeles", "Tarjeta de garantía"],
+    imgSize: { w: 1200, h: 1200 },
+  },
+  {
+    n: "03",
+    slug: "tudor-black-bay-fifty-eight-79030n",
+    brand: "Tudor",
+    model: "Black Bay Fifty-Eight",
+    reference: "79030N",
+    subtitle: "Automático · 39 mm",
+    category: "automatico",
+    priceUnits: 16_900_000,
+    movement: "Automático · Cal. MT5402",
+    powerReserve: 70,
+    caseMm: 39,
+    material: "acero",
+    waterResistance: 200,
+    description: [
+      "Buceo de 39 mm con proporciones vintage: bisel de aluminio negro con marcas doradas, dial abombado y brazalete de acero remachado.",
+      "Calibre de manufactura MT5402 certificado COSC. Corona a rosca, 200 metros de hermeticidad y solo 11,9 mm de grosor.",
+    ],
+    includes: ["Caja y papeles"],
+    imgSize: { w: 1200, h: 1200 },
+  },
+  {
+    n: "04",
+    slug: "rolex-gmt-master-ii-126710blnr",
+    brand: "Rolex",
+    model: "GMT-Master II",
+    reference: "126710BLNR",
+    subtitle: "GMT · 40 mm",
+    category: "gmt",
+    priceUnits: 79_500_000,
+    movement: "Automático GMT · Cal. 3285",
+    powerReserve: 70,
+    caseMm: 40,
+    material: "Oystersteel",
+    waterResistance: 100,
+    description: [
+      "El «Batman»: bisel Cerachrom bicolor azul y negro, dial negro con Chromalight y brazalete Jubilee de cinco eslabones.",
+      "Segunda zona horaria con aguja 24 h independiente. Calibre 3285 con escape Chronergy y 70 horas de reserva de marcha.",
+    ],
+    includes: ["Caja y papeles", "Tarjeta de garantía"],
+    imgSize: { w: 1200, h: 1200 },
+  },
+  {
+    n: "05",
+    slug: "rolex-datejust-36-126234",
+    brand: "Rolex",
+    model: "Datejust 36",
+    reference: "126234",
+    subtitle: "Automático · 36 mm",
+    category: "automatico",
+    priceUnits: 46_500_000,
+    movement: "Automático · Cal. 3235",
+    powerReserve: 70,
+    caseMm: 36,
+    material: "Rolesor blanco",
+    waterResistance: 100,
+    description: [
+      "El Datejust clásico en Rolesor blanco: caja de acero, bisel estriado de oro blanco y dial azul con índices aplicados.",
+      "Brazalete Jubilee con cierre Oysterclasp y extensión Easylink. Calibre 3235 con 70 horas de reserva.",
+    ],
+    includes: ["Caja y papeles"],
+    imgSize: { w: 1200, h: 1200 },
+  },
+  {
+    n: "06",
+    slug: "omega-speedmaster-moonwatch-sapphire",
+    brand: "Omega",
+    model: "Speedmaster Moonwatch",
+    reference: "310.30.42.50.01.002",
+    subtitle: "Cronógrafo · 42 mm",
+    category: "cronografo",
+    priceUnits: 34_900_000,
+    movement: "Manual · Cal. 3861 Co-Axial Master Chronometer",
+    powerReserve: 50,
+    caseMm: 42,
+    material: "acero",
+    waterResistance: 50,
+    description: [
+      "El Moonwatch «sapphire sandwich»: cristal de zafiro al frente y fondo transparente que deja ver el calibre 3861.",
+      "Caja asimétrica de 42 mm, bisel de aluminio negro con escala taquimétrica y brazalete de acero con cierre ajustable. Certificado Master Chronometer por METAS.",
+    ],
+    includes: ["Caja y papeles", "Tarjeta de garantía"],
+    imgSize: { w: 1200, h: 1200 },
+  },
+  {
+    n: "07",
+    slug: "cartier-santos-de-cartier-large-wssa0018",
+    brand: "Cartier",
+    model: "Santos de Cartier",
+    reference: "WSSA0018",
+    subtitle: "Automático · 39,8 mm",
+    category: "automatico",
+    priceUnits: 32_500_000,
+    movement: "Automático · Cal. 1847 MC",
+    powerReserve: 42,
+    caseMm: 40,
+    material: "acero",
+    waterResistance: 100,
+    description: [
+      "El modelo grande del Santos: caja cuadrada de acero con tornillos a la vista, dial opalino plateado con números romanos y agujas espada azuladas.",
+      "Sistema QuickSwitch para cambiar el brazalete sin herramientas y SmartLink para ajustar la talla. Calibre 1847 MC de manufactura.",
+    ],
+    includes: ["Caja y papeles", "Correa de piel adicional"],
+    imgSize: { w: 1200, h: 1200 },
+  },
+  {
+    n: "08",
+    slug: "omega-seamaster-diver-300m",
+    brand: "Omega",
+    model: "Seamaster Diver 300M",
+    reference: "210.30.42.20.01.001",
+    subtitle: "Buceo · 42 mm",
+    category: "buceo",
+    priceUnits: 22_900_000,
+    movement: "Automático · Cal. 8800 Co-Axial Master Chronometer",
+    powerReserve: 55,
+    caseMm: 42,
+    material: "acero",
+    waterResistance: 300,
+    description: [
+      "El Seamaster de 2018: dial negro de cerámica con ondas grabadas a láser, bisel de cerámica negra y válvula de escape de helio.",
+      "Calibre 8800 antimagnético hasta 15.000 gauss, fondo de zafiro y 300 metros de hermeticidad. Brazalete de acero con cierre de buzo.",
+    ],
+    includes: ["Caja y papeles"],
+    imgSize: { w: 1200, h: 1200 },
+  },
 ];
 
-const PLACEHOLDER_DESCRIPTION = [
-  "Placeholder de descripción. Aquí va el texto de la pieza: origen, estado, historia del movimiento y qué incluye la entrega.",
-  "Dos o tres párrafos cortos funcionan mejor que uno largo.",
-];
+function img(row: SeedRow, view: "front" | "back", alt: string): WatchImage {
+  return { src: `/assets/ref${row.n}-${view}.png`, alt, width: row.imgSize.w, height: row.imgSize.h };
+}
 
 function build(row: SeedRow): Watch {
   const isRef01 = row.n === "01";
   const name = `${row.brand} ${row.model}`;
-  const slug = isRef01 ? "rolex-day-date-36" : `modelo-${row.n}`;
+  const front = img(row, "front", `${name} vista frontal`);
+  const back = img(row, "back", `${name} vista trasera`);
   return {
     id: watchId(`w-${row.n}`),
-    slug: Slug.of(slug),
+    slug: Slug.of(row.slug),
     brand: row.brand,
     model: row.model,
     reference: Reference.of(row.reference),
@@ -55,12 +223,7 @@ function build(row: SeedRow): Watch {
     category: row.category,
     condition: "excelente",
     subtitle: row.subtitle,
-    description: isRef01
-      ? [
-          "Una referencia conocida, sin el sobreprecio de la vitrina. Caja de 36 mm en oro amarillo con bisel estriado y brazalete President.",
-          "Verificada en mano: calibre, número de serie y caja revisados antes del despacho. Informe fotográfico incluido.",
-        ]
-      : PLACEHOLDER_DESCRIPTION,
+    description: row.description,
     specs: {
       movement: row.movement,
       powerReserveHours: row.powerReserve,
@@ -69,20 +232,18 @@ function build(row: SeedRow): Watch {
       crystal: "Zafiro",
       waterResistanceM: row.waterResistance,
     },
-    media: isRef01
-      ? {
-          front: { src: "/assets/ref01-front.png", alt: `${name} vista frontal`, width: 1233, height: 1275 },
-          back: { src: "/assets/ref01-back.png", alt: `${name} vista trasera`, width: 1233, height: 1275 },
-          hero: { src: "/assets/hero-day-date.mp4", poster: "/assets/hero-day-date-poster.jpg" },
-          gallery: [
-            { src: "/assets/ref01-front.png", alt: `${name} dial y agujas`, width: 1233, height: 1275 },
-            { src: "/assets/ref01-back.png", alt: `${name} caja y corona`, width: 1233, height: 1275 },
-          ],
-          band: { src: "/assets/hero-day-date-poster.jpg", alt: `${name} detalle`, width: 1920, height: 1080 },
-          video: { src: "/assets/vertical-daytona.mp4", poster: "/assets/vertical-daytona-poster.jpg" },
-        }
-      : { front: null, back: null, hero: null, gallery: [], band: null, video: null },
-    includes: ["Caja y papeles"],
+    media: {
+      front,
+      back,
+      hero: isRef01 ? { src: "/assets/hero-day-date.mp4", poster: "/assets/hero-day-date-poster.jpg" } : null,
+      gallery: [
+        { ...front, alt: `${name} dial y agujas` },
+        { ...back, alt: `${name} caja y corona` },
+      ],
+      band: isRef01 ? { src: "/assets/hero-day-date-poster.jpg", alt: `${name} detalle`, width: 1920, height: 1080 } : { ...front, alt: `${name} detalle` },
+      video: isRef01 ? { src: "/assets/vertical-daytona.mp4", poster: "/assets/vertical-daytona-poster.jpg" } : null,
+    },
+    includes: row.includes,
     availability: "disponible",
     featured: isRef01,
     updatedAt: UPDATED_AT,

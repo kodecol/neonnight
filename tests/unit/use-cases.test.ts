@@ -23,18 +23,18 @@ describe("ListWatches", () => {
   it("devuelve los 8 productos del prototipo", async () => {
     const all = await uc.execute();
     expect(all).toHaveLength(8);
-    expect(all[0]?.name).toBe("Rolex Day-Date 36");
-    expect(all[0]?.price.formatted).toBe("$ 12.900.000 COP");
+    expect(all[0]?.name).toBe("Rolex Sky-Dweller");
+    expect(all[0]?.price.formatted).toBe("$ 168.000.000 COP");
   });
 
   it("filtra por categoría", async () => {
     const cronos = await uc.execute({ category: "cronografo" });
-    expect(cronos.map((w) => w.subtitle)).toEqual(["Cronógrafo · 40 mm", "Cronógrafo · 43 mm"]);
+    expect(cronos.map((w) => w.subtitle)).toEqual(["Cronógrafo · 40 mm", "Cronógrafo · 42 mm"]);
   });
 
-  it("filtra por precio máximo (HASTA $15.000.000)", async () => {
-    const cheap = await uc.execute({ maxPriceUnits: 15_000_000 });
-    expect(cheap.every((w) => w.price.units <= 15_000_000)).toBe(true);
+  it("filtra por precio máximo (HASTA $35.000.000)", async () => {
+    const cheap = await uc.execute({ maxPriceUnits: 35_000_000 });
+    expect(cheap.every((w) => w.price.units <= 35_000_000)).toBe(true);
     expect(cheap).toHaveLength(4);
   });
 
@@ -47,10 +47,10 @@ describe("GetWatchBySlug", () => {
   const uc = new GetWatchBySlug(new InMemoryWatchRepository(SEED_WATCHES));
 
   it("devuelve el detalle con specs formateadas", async () => {
-    const w = await uc.execute("rolex-day-date-36");
-    expect(w.reference).toBe("128238");
-    expect(w.specs.case).toBe("36 mm · oro amarillo");
-    expect(w.specs.powerReserve).toBe("70 horas");
+    const w = await uc.execute("rolex-sky-dweller-326938");
+    expect(w.reference).toBe("326938");
+    expect(w.specs.case).toBe("42 mm · oro amarillo");
+    expect(w.specs.powerReserve).toBe("72 horas");
     expect(w.hero?.kind).toBe("video");
   });
 
@@ -63,7 +63,7 @@ describe("GetWatchBySlug", () => {
 describe("GetFeaturedWatch", () => {
   it("devuelve la referencia 01", async () => {
     const w = await new GetFeaturedWatch(new InMemoryWatchRepository(SEED_WATCHES)).execute();
-    expect(w?.slug).toBe("rolex-day-date-36");
+    expect(w?.slug).toBe("rolex-sky-dweller-326938");
   });
 });
 
@@ -79,8 +79,8 @@ describe("ResolveCart", () => {
       { watchId: "w-03", quantity: 99 },
     ]);
     expect(cart.count).toBe(2);
-    expect(cart.total.cents).toBe((12_900_000 + 9_400_000) * 100);
-    expect(cart.total.formatted).toBe("$ 22.300.000 COP");
+    expect(cart.total.cents).toBe((168_000_000 + 132_000_000) * 100);
+    expect(cart.total.formatted).toBe("$ 300.000.000 COP");
   });
 });
 
@@ -100,10 +100,10 @@ describe("Checkout", () => {
   it("recalcula el total en el servidor y marca priceChanged si el cliente mintió", async () => {
     const { uc, orders } = make();
     const res = await uc.execute({ lines: [{ watchId: "w-01", quantity: 1 }], expectedTotalCents: 1 }, "http://x.test/gracias");
-    expect(res.total.cents).toBe(12_900_000 * 100);
+    expect(res.total.cents).toBe(168_000_000 * 100);
     expect(res.priceChanged).toBe(true);
     expect(res.redirectUrl).toBe("http://x.test/gracias?orden=order-1");
-    expect(orders.all()[0]?.total.cents).toBe(12_900_000 * 100);
+    expect(orders.all()[0]?.total.cents).toBe(168_000_000 * 100);
   });
 
   it("rechaza piezas vendidas", async () => {

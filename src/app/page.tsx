@@ -9,14 +9,14 @@ import { TrustColumns } from "@/presentation/components/blocks/TrustColumns";
 import { MotionSection } from "@/presentation/components/blocks/MotionSection";
 import { InstagramGrid } from "@/presentation/components/blocks/InstagramGrid";
 import { JsonLd } from "@/presentation/components/seo/JsonLd";
-import { INSTAGRAM_URL, ROUTES, SITE_DESCRIPTION, SITE_NAME, absoluteUrl } from "@/presentation/lib/site";
+import { ROUTES, absoluteUrl } from "@/presentation/lib/site";
 
 export const revalidate = 3600;
 
 export default async function HomePage() {
-  const { watches, whatsapp } = getContainer();
-  const [all, featured] = await Promise.all([new ListWatches(watches).execute(), new GetFeaturedWatch(watches).execute()]);
-  const items = all.slice(0, 6).map((w) => ({
+  const { watches, whatsapp, content } = getContainer();
+  const [all, featured, site] = await Promise.all([new ListWatches(watches).execute(), new GetFeaturedWatch(watches).execute(), content.get()]);
+  const items = all.slice(0, site.home.catalog.featuredCount).map((w) => ({
     watch: w,
     whatsappUrl: whatsapp.forWatch({ name: w.name, reference: w.slug, canonicalUrl: absoluteUrl(ROUTES.watch(w.slug)) }),
   }));
@@ -27,20 +27,20 @@ export default async function HomePage() {
         data={{
           "@context": "https://schema.org",
           "@graph": [
-            { "@type": "Organization", name: SITE_NAME, url: absoluteUrl("/"), logo: absoluteUrl("/assets/isotipo-color.png"), sameAs: [INSTAGRAM_URL] },
-            { "@type": "WebSite", name: SITE_NAME, url: absoluteUrl("/"), description: SITE_DESCRIPTION, inLanguage: "es-CO" },
+            { "@type": "Organization", name: site.brand.name, url: absoluteUrl("/"), logo: absoluteUrl(site.brand.logo.color), sameAs: [site.social.instagram.url] },
+            { "@type": "WebSite", name: site.brand.name, url: absoluteUrl("/"), description: site.brand.description, inLanguage: site.brand.locale },
           ],
         }}
       />
-      <Hero featured={featured} />
-      <CatalogHeader total={all.length} />
+      <Hero featured={featured} content={site.home.hero} tagline={site.brand.tagline} />
+      <CatalogHeader total={all.length} content={site.home.catalog} />
       <section className="px-page pb-section pt-16">
         <ProductGrid items={items} columns={3} actions />
       </section>
-      <ParallaxBand image={featured?.band ?? null} title="Cada pieza pasa por verificación antes de salir" label="Detalle de calibre" />
-      <TrustColumns />
-      <MotionSection video={featured?.video ?? null} whatsappUrl={whatsapp.generic("Hola, quiero pedir el video de una pieza.")} />
-      <InstagramGrid instagramUrl={INSTAGRAM_URL} />
+      <ParallaxBand image={featured?.band ?? null} title={site.home.band.title} label="Detalle de calibre" />
+      <TrustColumns content={site.home.trust} />
+      <MotionSection video={featured?.video ?? null} whatsappUrl={whatsapp.generic(site.home.motion.whatsappMessage)} content={site.home.motion} />
+      <InstagramGrid content={site.social.instagram} />
     </main>
   );
 }

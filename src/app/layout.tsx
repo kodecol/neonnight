@@ -8,7 +8,7 @@ import { Footer } from "@/presentation/components/chrome/Footer";
 import { CartDrawer } from "@/presentation/components/chrome/CartDrawer";
 import { LoadingScreen } from "@/presentation/components/chrome/LoadingScreen";
 import { SiteEffects } from "@/presentation/components/chrome/SiteEffects";
-import { INSTAGRAM_URL, SITE_DESCRIPTION, SITE_NAME, siteUrl } from "@/presentation/lib/site";
+import { siteUrl } from "@/presentation/lib/site";
 
 const archivo = Archivo({
   subsets: ["latin"],
@@ -17,32 +17,36 @@ const archivo = Archivo({
   variable: "--font-archivo",
 });
 
-export const metadata: Metadata = {
-  metadataBase: siteUrl(),
-  title: { default: `${SITE_NAME} — Relojes de lujo verificados`, template: `%s — ${SITE_NAME}` },
-  description: SITE_DESCRIPTION,
-  applicationName: SITE_NAME,
-  openGraph: { type: "website", siteName: SITE_NAME, locale: "es_CO" },
-  twitter: { card: "summary_large_image" },
-  robots: { index: true, follow: true },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const { brand } = await getContainer().content.get();
+  return {
+    metadataBase: siteUrl(),
+    title: { default: `${brand.name} — Relojes de lujo verificados`, template: `%s — ${brand.name}` },
+    description: brand.description,
+    applicationName: brand.name,
+    openGraph: { type: "website", siteName: brand.name, locale: brand.locale.replace("-", "_") },
+    twitter: { card: "summary_large_image" },
+    robots: { index: true, follow: true },
+  };
+}
 
 export const viewport: Viewport = { themeColor: "#000000", colorScheme: "dark" };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
-  const { whatsapp } = getContainer();
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const { whatsapp, content } = getContainer();
+  const site = await content.get();
   const whatsappUrl = whatsapp.generic();
   const whatsappBase = whatsapp.isConfigured() ? (whatsappUrl ?? "").split("?")[0] ?? null : null;
 
   return (
-    <html lang="es-CO" className={archivo.variable}>
+    <html lang={site.brand.locale} className={archivo.variable}>
       <body className="bg-bg text-ink antialiased">
         <CartProvider>
-          <LoadingScreen />
-          <Header whatsappUrl={whatsappUrl} instagramUrl={INSTAGRAM_URL} />
+          <LoadingScreen wordmark={site.brand.wordmark} />
+          <Header whatsappUrl={whatsappUrl} instagramUrl={site.social.instagram.url} navigation={site.navigation} brand={site.brand} />
           {children}
-          <Footer whatsappUrl={whatsappUrl} instagramUrl={INSTAGRAM_URL} />
-          <CartDrawer whatsappNumberConfigured={whatsapp.isConfigured()} whatsappBase={whatsappBase} />
+          <Footer content={site.footer} tagline={site.brand.tagline} whatsappUrl={whatsappUrl} />
+          <CartDrawer whatsappNumberConfigured={whatsapp.isConfigured()} whatsappBase={whatsappBase} content={site.cart} />
           <SiteEffects />
         </CartProvider>
       </body>

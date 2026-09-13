@@ -1,10 +1,12 @@
 import type { WatchDetailDto } from "@/application/dto/watch.dto";
+import type { SiteContent } from "@/application/dto/site-content.dto";
+import { fill } from "@/application/lib/template";
 import { Button } from "@/presentation/components/primitives/Button";
 import { MediaSlot } from "@/presentation/components/primitives/MediaSlot";
-import { ROUTES, SITE_TAGLINE } from "@/presentation/lib/site";
+import { ROUTES } from "@/presentation/lib/site";
 import { HeroVideo } from "./HeroVideo";
 
-export function Hero({ featured }: { featured: WatchDetailDto | null }) {
+export function Hero({ featured, content, tagline }: { featured: WatchDetailDto | null; content: SiteContent["home"]["hero"]; tagline: string }) {
   const hero = featured?.hero ?? null;
   return (
     <section className="relative h-screen overflow-hidden bg-surface" aria-labelledby="hero-title">
@@ -17,22 +19,22 @@ export function Hero({ featured }: { featured: WatchDetailDto | null }) {
       )}
       <span className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_top,rgba(0,0,0,.85)_0%,rgba(0,0,0,.15)_55%,rgba(0,0,0,.5)_100%)]" aria-hidden="true" />
       <div className="pointer-events-none absolute inset-0 flex flex-col justify-end px-page pb-12 md:pb-16 lg:pb-[88px]">
-        <span className="text-kicker uppercase text-ink">{featured ? `${featured.brand} · Nueva referencia` : "Neon Night"}</span>
+        <span className="text-kicker uppercase text-ink">{featured ? fill(content.kickerTemplate, { brand: featured.brand }) : content.fallbackKicker}</span>
         <h1 id="hero-title" className="my-0 mb-3 mt-3.5 text-display-fluid uppercase">
-          {featured?.model ?? "Relojes verificados"}
+          {featured?.model ?? content.fallbackTitle}
         </h1>
-        <p className="m-0 max-w-[620px] text-lead text-ink [text-wrap:pretty]">{SITE_TAGLINE}</p>
+        <p className="m-0 max-w-[620px] text-lead text-ink [text-wrap:pretty]">{tagline}</p>
         <div className="pointer-events-auto mt-[34px] flex flex-wrap gap-4">
-          {featured && <Button href={ROUTES.watch(featured.slug)}>Ver la pieza</Button>}
+          {featured && <Button href={ROUTES.watch(featured.slug)}>{content.primaryCta}</Button>}
           <Button href={ROUTES.collection} variant="secondary">
-            Toda la colección
+            {content.secondaryCta}
           </Button>
         </div>
       </div>
       <a
         href="#catalogo"
         aria-label="Bajar al catálogo"
-        className="absolute bottom-[34px] left-1/2 hidden h-11 w-11 md:flex -translate-x-1/2 items-center justify-center border border-border-strong [border-radius:50%] hover:border-ink"
+        className="absolute bottom-[34px] left-1/2 hidden h-11 w-11 -translate-x-1/2 items-center justify-center border border-border-strong [border-radius:50%] hover:border-ink md:flex"
       >
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
           <polyline points="2,5 7,10 12,5" stroke="currentColor" strokeWidth="1.4" />

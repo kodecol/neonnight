@@ -39,7 +39,7 @@ npm run build && npm start      # producción
 
 | Ruta | Render | Notas |
 | --- | --- | --- |
-| `/` | estática, ISR 1h | Hero con video, grilla 3 col (6 piezas), banda parallax, garantía, "En movimiento", Instagram |
+| `/` | estática, ISR 1h | Hero con video, grilla 3 col (6 piezas), banda parallax, garantía, "En movimiento", grilla de Instagram con posts |
 | `/coleccion` | server, filtros por `searchParams` (`?categoria=`, `?max=`) | Grilla 4 col. Con filtros → `noindex, follow` |
 | `/reloj/[slug]` | SSG (`generateStaticParams`) + ISR 1h | Hero, sub-nav sticky, descripción, galería, banda, specs, cierre. JSON-LD `Product`, OG image dinámica |
 | `/gracias` | dinámica | Retorno del checkout stub |
@@ -70,6 +70,15 @@ docs/handoff        Prototipo y README originales      docs/adr   Decisiones
 2. **Pagos:** implementar `PaymentGateway` (Wompi, Mercado Pago…) en `src/infrastructure/payments/`. El caso de uso `Checkout` ya recalcula el total y valida disponibilidad antes de llamarlo. Añadir un `OrderRepository` persistente antes de cobrar.
 3. **Analítica:** implementar `Analytics` con el proveedor elegido. Los eventos ya emitidos: `view_item`, `begin_checkout`. `add_to_cart` y `whatsapp_click` se emiten desde cliente cuando exista el proveedor.
 
+## Contenido centralizado
+
+Todo el contenido editorial (copys, menú, footer, secciones de la home, filtros, textos de la bolsa, plantillas de WhatsApp y posts de Instagram) vive en **un solo archivo**: `src/infrastructure/content/site-content.ts`, tipado por `SiteContent` (`src/application/dto/site-content.dto.ts`). Los componentes no contienen textos fijos: reciben el contenido por props desde las rutas, que lo piden al contenedor a través del puerto `SiteContentRepository`.
+
+- Cambiar un copy, añadir un post de Instagram o un enlace del footer = editar ese archivo.
+- Las plantillas usan `{clave}` (`{brand}`, `{count}`, `{year}`, `{items}`, `{total}`) y se resuelven con `fill()` de `src/application/lib/template.ts`.
+- Cuando exista CMS, se implementa `SiteContentRepository` sobre él y se registra en `container.ts`; nada más cambia.
+- El catálogo de producto vive aparte, en `src/infrastructure/cms/seed.ts`, con la misma lógica de sustitución.
+
 ## Diseño y tokens
 
 Todos los tokens están en `src/presentation/styles/globals.css` (`@theme`). Radio 0 y sin sombras en todo el sistema; `rounded-*` está prohibido por lint. Escritorio es fiel al píxel al handoff (padding 56 px, display 88 px, grillas 3/4 col). Tablet (≥768) y móvil son criterio propio: 32/20 px de padding, display 64/44 px, grillas 2/1 col. Parallax y video del hero se desactivan en móvil y bajo `prefers-reduced-motion`; la pantalla de carga se desmonta del DOM, no se renderiza con reduced motion y aparece una vez por sesión.
@@ -95,14 +104,14 @@ La imagen usa `output: "standalone"` y corre como usuario no-root. La caché de 
 
 ## Pendientes de contenido (handoff §7)
 
-- Referencias 02–08: nombres, specs, precios y fotos reales. Solo la 01 tiene imágenes definitivas.
-- Precios actuales inventados.
-- Texto descriptivo del detalle de producto.
+- Las 8 referencias son modelos reales (Rolex Sky-Dweller 326938, Rolex Daytona 126500LN, Tudor BB58, Rolex GMT-Master II 126710BLNR, Rolex Datejust 36, Omega Speedmaster sapphire, Cartier Santos Large, Omega Seamaster 300M) con specs de catálogo, pero las **fotos son de un retailer externo recortadas a PNG solo para el mockup**. Sustituir por fotografía propia del inventario.
+- Precios orientativos en COP, no confirmados.
+- Textos descriptivos redactados como placeholder informado; revisar con el equipo comercial.
 - Número de WhatsApp.
-- Posts de Instagram y enlace real del perfil.
+- Posts de Instagram: los actuales (`public/assets/ig/`) son recortes de fotos de catálogo de terceros para el mockup; cambiar por posts reales y el enlace del perfil.
 - Dirección del showroom y condiciones legales (garantía, envíos, devoluciones).
 - Video vertical nativo para "En movimiento" (el actual es un recorte horizontal).
 
 ## Nota legal (handoff §8)
 
-El prototipo nombra "Rolex" y usa material de esa marca como referencia. En producción hay que usar fotografía y video propios de las piezas en inventario y evitar cualquier tratamiento que sugiera afiliación oficial.
+El prototipo nombra "Rolex" y usa material de esa marca como referencia. Las fotos de producto de las 8 referencias (`public/assets/ref0X-*.png`) provienen de un catálogo de terceros y se recortaron únicamente para este mockup: **no tienen licencia para producción**. Antes de publicar hay que usar fotografía y video propios de las piezas en inventario y evitar cualquier tratamiento que sugiera afiliación oficial.
