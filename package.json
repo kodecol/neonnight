@@ -42,7 +42,7 @@
     "eslint-plugin-boundaries": "^7.2.0",
     "jsdom": "^30.0.1",
     "tailwindcss": "^4",
-    "typescript": "^5",
+    "typescript": "^7",
     "vitest": "^5.0.0"
   },
   "engines": {
