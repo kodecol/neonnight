@@ -15,8 +15,16 @@ export async function middleware(req: NextRequest) {
   return NextResponse.next();
 }
 
+// Las server actions (cabecera `next-action`) no pasan por aquí: en producción el middleware
+// clona el cuerpo y descarta las partes de archivo del multipart (las fotos llegaban vacías).
+// Siguen protegidas: cada action llama a requireAdmin() y el layout del panel también.
+// (Next exige que `config` sea un literal estático: sin constantes.)
+
 export const config = {
-  matcher: ["/admin", "/admin/:path*"],
+  matcher: [
+    { source: "/admin", missing: [{ type: "header", key: "next-action" }] },
+    { source: "/admin/:path*", missing: [{ type: "header", key: "next-action" }] },
+  ],
   // Node: lee ADMIN_SECRET en runtime (no en build) al autoalojar.
   runtime: "nodejs",
 };
