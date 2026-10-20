@@ -9,3 +9,4 @@ test-results
 !README.md
 .env*
 !.env.example
+.data
