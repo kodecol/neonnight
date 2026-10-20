@@ -314,6 +314,7 @@ Las llaves de identidad y secreta, primero de pruebas y luego de producción, se
    | Secret | `DEPLOY_HOST` | `<IP_VPS>` |
    | Secret | `DEPLOY_USER` | `<USUARIO_DEPLOY>` |
    | Variable | `SITE_URL` | `https://neonightonline.com` |
+   | Variable | `DEPLOY_ENABLED` | `true`. Activa los jobs `build` y `deploy`; solo se pone después de cargar los secretos |
 
 3. **La llave del CI se restringe a una sola orden.** Va en el `~/.ssh/authorized_keys` de `<USUARIO_DEPLOY>` en el VPS, sin tocar las otras líneas:
    ```

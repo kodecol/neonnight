@@ -4,7 +4,7 @@
 # El VPS nunca compila: solo descarga la imagen.
 #
 # Secretos del repo:  DEPLOY_SSH_KEY, DEPLOY_HOST_KEY, DEPLOY_HOST, DEPLOY_USER
-# Variable del repo:  SITE_URL (p. ej. https://neonnight.co)
+# Variables del repo: SITE_URL (https://neonightonline.com) y DEPLOY_ENABLED (true para activar build y deploy)
 name: ci-cd
 
 on:
@@ -44,8 +44,9 @@ jobs:
       - run: npm ci
       - run: npm run check
 
+  # build y deploy solo corren cuando la infraestructura está lista (variable DEPLOY_ENABLED=true).
   build:
-    if: github.event_name != 'pull_request'
+    if: github.event_name != 'pull_request' && vars.DEPLOY_ENABLED == 'true'
     needs: check
     runs-on: ubuntu-latest
     permissions: { contents: read, packages: write }
