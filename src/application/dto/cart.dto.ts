@@ -1,9 +1,15 @@
 import { z } from "zod";
+import { MAX_QUANTITY_PER_LINE } from "@/domain/services/availability";
 
-export const CartLineInputSchema = z.object({
-  watchId: z.string().min(1),
-  quantity: z.number().int().min(1).max(1),
-});
+/** Las bolsas guardadas antes de las variantes traen `watchId` y ninguna variante: se aceptan igual. */
+export const CartLineInputSchema = z.preprocess(
+  (raw) => (raw && typeof raw === "object" && !("productId" in raw) && "watchId" in raw ? { ...raw, productId: (raw as { watchId: unknown }).watchId } : raw),
+  z.object({
+    productId: z.string().min(1),
+    variantId: z.string().min(1).optional(),
+    quantity: z.number().int().min(1).max(MAX_QUANTITY_PER_LINE),
+  }),
+);
 export type CartLineInput = z.infer<typeof CartLineInputSchema>;
 
 export const CheckoutInputSchema = z.object({
@@ -14,7 +20,9 @@ export const CheckoutInputSchema = z.object({
 export type CheckoutInput = z.infer<typeof CheckoutInputSchema>;
 
 export interface CartLineDto {
-  watchId: string;
+  productId: string;
+  variantId: string;
+  variantLabel: string;
   slug: string;
   name: string;
   subtitle: string;

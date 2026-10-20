@@ -15,7 +15,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const { brand } = await getContainer().content.get();
   return {
     metadataBase: siteUrl(),
-    title: { default: `${brand.name} — Relojes de lujo verificados`, template: `%s — ${brand.name}` },
+    title: { default: `${brand.name} — Relojes, joyas y perfumes verificados`, template: `%s — ${brand.name}` },
     description: brand.description,
     applicationName: brand.name,
     openGraph: { type: "website", siteName: brand.name, locale: brand.locale.replace("-", "_") },

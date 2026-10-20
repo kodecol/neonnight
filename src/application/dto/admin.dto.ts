@@ -1,6 +1,14 @@
 import { z } from "zod";
-import { WATCH_AVAILABILITIES, WATCH_CONDITIONS, type WatchAvailability, type WatchCondition } from "@/domain/entities/watch";
+import {
+  PERFUME_GENDERS,
+  PRODUCT_AVAILABILITIES,
+  PRODUCT_CONDITIONS,
+  type ProductAvailability,
+  type ProductCondition,
+} from "@/domain/entities/product";
+import { LINE_TEMPLATES, type LineTemplate } from "@/domain/entities/product-line";
 import type { PaymentMode } from "../ports/payment-settings";
+import type { StatusDto } from "./product.dto";
 
 /** Solo se aceptan fotos propias: assets del repo, subidas locales o Cloudinary. */
 const IMAGE_SRC_RE = /^(\/assets\/|\/api\/media\/|https:\/\/res\.cloudinary\.com\/)/;
@@ -14,77 +22,103 @@ export const AdminImageInputSchema = z.object({
 export type AdminImageInput = z.infer<typeof AdminImageInputSchema>;
 
 const text = (max: number, msg = "Obligatorio.") => z.string().trim().min(1, msg).max(max);
+const optionalText = (max: number) => z.string().trim().max(max).nullable().transform((v) => (v ? v : null));
 const optionalInt = z.number().int().nonnegative().nullable();
+const optionalDecimal = z.number().nonnegative().nullable();
+const noteList = z.array(z.string().trim().min(1).max(40)).max(12);
 
-export const AdminWatchInputSchema = z.object({
+export const WatchSpecsInputSchema = z.object({
+  kind: z.literal("reloj"),
+  movement: text(120),
+  powerReserveHours: optionalInt,
+  caseMm: z.number({ error: "Medida inválida." }).positive("Debe ser mayor que 0.").max(80),
+  caseMaterial: text(80),
+  crystal: text(60),
+  waterResistanceM: optionalInt,
+});
+
+export const JewelrySpecsInputSchema = z.object({
+  kind: z.literal("joya"),
+  metal: text(80),
+  stones: optionalText(120),
+  caratTotal: optionalDecimal,
+  weightGrams: optionalDecimal,
+  dimensions: optionalText(80),
+  certificate: optionalText(80),
+});
+
+export const PerfumeSpecsInputSchema = z.object({
+  kind: z.literal("perfume"),
+  concentration: text(40),
+  gender: z.enum(PERFUME_GENDERS),
+  perfumer: optionalText(80),
+  year: z.number().int().min(1800).max(2100).nullable(),
+  notes: z.object({ top: noteList, heart: noteList, base: noteList }),
+});
+
+export const GeneralSpecsInputSchema = z.object({
+  kind: z.literal("general"),
+  rows: z.array(z.object({ label: text(40), value: text(120) })).max(16),
+});
+
+export const ProductSpecsInputSchema = z.discriminatedUnion("kind", [WatchSpecsInputSchema, JewelrySpecsInputSchema, PerfumeSpecsInputSchema, GeneralSpecsInputSchema]);
+export type ProductSpecsInput = z.infer<typeof ProductSpecsInputSchema>;
+
+export const AdminVariantInputSchema = z.object({
+  /** null = variante nueva. */
   id: z.string().min(1).nullable(),
+  label: z.string().trim().max(40),
+  priceUnits: z.number({ error: "Precio inválido." }).int("Sin decimales.").positive("Debe ser mayor que 0.").max(100_000_000_000),
+  stock: z.number({ error: "Stock inválido." }).int("Sin decimales.").min(0, "No puede ser negativo.").max(9999),
+});
+export type AdminVariantInput = z.infer<typeof AdminVariantInputSchema>;
+
+export const AdminProductInputSchema = z.object({
+  id: z.string().min(1).nullable(),
+  line: text(60, "Elige una línea."),
+  category: text(60, "Elige una categoría."),
   brand: text(60),
   model: text(80),
-  reference: text(40),
+  reference: z.string().trim().max(40),
   slug: z
     .string()
     .trim()
     .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Solo minúsculas, números y guiones."),
-  priceUnits: z.number({ error: "Precio inválido." }).int("Sin decimales.").positive("Debe ser mayor que 0.").max(100_000_000_000),
-  category: text(60, "Elige una categoría."),
-  condition: z.enum(WATCH_CONDITIONS),
-  availability: z.enum(WATCH_AVAILABILITIES),
+  condition: z.enum(PRODUCT_CONDITIONS),
+  availability: z.enum(PRODUCT_AVAILABILITIES),
   featured: z.boolean(),
   subtitle: text(120),
   description: z.array(z.string().trim().min(1)).max(12),
   includes: z.array(z.string().trim().min(1)).max(12),
-  specs: z.object({
-    movement: text(120),
-    powerReserveHours: optionalInt,
-    caseMm: z.number({ error: "Medida inválida." }).positive("Debe ser mayor que 0.").max(80),
-    caseMaterial: text(80),
-    crystal: text(60),
-    waterResistanceM: optionalInt,
-  }),
+  specs: ProductSpecsInputSchema,
+  variants: z.array(AdminVariantInputSchema).min(1, "Añade al menos una presentación.").max(12),
   media: z.object({
     front: AdminImageInputSchema.nullable(),
     back: AdminImageInputSchema.nullable(),
     gallery: z.array(AdminImageInputSchema).max(12),
   }),
 });
-export type AdminWatchInput = z.infer<typeof AdminWatchInputSchema>;
+export type AdminProductInput = z.infer<typeof AdminProductInputSchema>;
 
 /** Forma del formulario de producto (lo que el panel edita). */
-export interface AdminWatchFormDto {
-  id: string | null;
-  brand: string;
-  model: string;
-  reference: string;
-  slug: string;
-  priceUnits: number;
-  category: string;
-  condition: WatchCondition;
-  availability: WatchAvailability;
-  featured: boolean;
-  subtitle: string;
-  description: string[];
-  includes: string[];
-  specs: {
-    movement: string;
-    powerReserveHours: number | null;
-    caseMm: number;
-    caseMaterial: string;
-    crystal: string;
-    waterResistanceM: number | null;
-  };
-  media: { front: AdminImageInput | null; back: AdminImageInput | null; gallery: AdminImageInput[] };
-}
+export type AdminProductFormDto = AdminProductInput;
 
 /** Fila de la lista del catálogo en el panel. */
-export interface AdminWatchRowDto {
+export interface AdminProductRowDto {
   id: string;
   slug: string;
+  kind: LineTemplate;
   name: string;
   reference: string;
-  priceFormatted: string;
+  line: string;
+  lineLabel: string;
   category: string;
   categoryLabel: string;
-  availability: WatchAvailability;
+  priceFormatted: string;
+  priceFrom: boolean;
+  stock: number;
+  variantCount: number;
+  status: StatusDto;
   featured: boolean;
   thumb: string | null;
   updatedAt: string;
@@ -96,6 +130,7 @@ export const CategoryInputSchema = z.object({
   slug: z.string().trim(),
   label: text(40),
   order: z.number({ error: "Orden inválido." }).int().min(0).max(999),
+  line: text(60, "Elige una línea."),
 });
 export type CategoryInput = z.infer<typeof CategoryInputSchema>;
 
@@ -103,8 +138,34 @@ export interface CategoryDto {
   slug: string;
   label: string;
   order: number;
-  watchCount: number;
+  line: string;
+  productCount: number;
 }
+
+export const LineInputSchema = z.object({
+  /** null = alta nueva (el slug se genera del nombre si viene vacío). */
+  originalSlug: z.string().nullable(),
+  slug: z.string().trim(),
+  label: text(40),
+  description: z.string().trim().max(160),
+  order: z.number({ error: "Orden inválido." }).int().min(0).max(999),
+  template: z.enum(LINE_TEMPLATES),
+  cover: AdminImageInputSchema.nullable(),
+});
+export type LineInput = z.infer<typeof LineInputSchema>;
+
+export interface AdminLineDto {
+  slug: string;
+  label: string;
+  description: string;
+  order: number;
+  template: LineTemplate;
+  cover: AdminImageInput | null;
+  productCount: number;
+  categoryCount: number;
+}
+
+export const TEMPLATE_LABEL: Record<LineTemplate, string> = { reloj: "Reloj", joya: "Joya", perfume: "Perfume", general: "General" };
 
 export const PaymentSettingsInputSchema = z.object({
   enabled: z.boolean(),
@@ -135,3 +196,5 @@ export interface OrderStatusDto {
 export type ActionResult<T = undefined> =
   | { ok: true; data: T; message?: string }
   | { ok: false; error: string; fieldErrors?: Record<string, string> };
+
+export type { ProductAvailability, ProductCondition };

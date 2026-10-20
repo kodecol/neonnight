@@ -1,4 +1,4 @@
-import type { WatchDetailDto } from "@/application/dto/watch.dto";
+import type { ProductDetailDto } from "@/application/dto/product.dto";
 import type { SiteContent } from "@/application/dto/site-content.dto";
 import { fill } from "@/application/lib/template";
 import { Button } from "@/presentation/components/primitives/Button";
@@ -6,7 +6,7 @@ import { MediaSlot } from "@/presentation/components/primitives/MediaSlot";
 import { ROUTES } from "@/presentation/lib/site";
 import { HeroVideo } from "./HeroVideo";
 
-export function Hero({ featured, content, tagline }: { featured: WatchDetailDto | null; content: SiteContent["home"]["hero"]; tagline: string }) {
+export function Hero({ featured, content, tagline }: { featured: ProductDetailDto | null; content: SiteContent["home"]["hero"]; tagline: string }) {
   const hero = featured?.hero ?? null;
   return (
     <section className="relative h-screen overflow-hidden bg-surface" aria-labelledby="hero-title">
@@ -25,7 +25,7 @@ export function Hero({ featured, content, tagline }: { featured: WatchDetailDto 
         </h1>
         <p className="m-0 max-w-[620px] text-lead text-ink [text-wrap:pretty]">{tagline}</p>
         <div className="pointer-events-auto mt-[34px] flex flex-wrap gap-4">
-          {featured && <Button href={ROUTES.watch(featured.slug)}>{content.primaryCta}</Button>}
+          {featured && <Button href={ROUTES.product(featured.kind, featured.slug)}>{content.primaryCta}</Button>}
           <Button href={ROUTES.collection} variant="secondary">
             {content.secondaryCta}
           </Button>

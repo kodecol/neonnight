@@ -1,3 +1,5 @@
+import type { ProductKind } from "@/domain/entities/product";
+
 export function siteUrl(): URL {
   // SITE_URL se lee en runtime (la misma imagen sirve para cualquier dominio);
   // NEXT_PUBLIC_SITE_URL queda como respaldo para desarrollo local.
@@ -9,9 +11,13 @@ export function absoluteUrl(path: string): string {
   return new URL(path, siteUrl()).toString();
 }
 
+/** Segmento de URL del detalle según la plantilla: /reloj, /joya, /perfume o /producto. */
+export const PRODUCT_SEGMENT: Record<ProductKind, string> = { reloj: "reloj", joya: "joya", perfume: "perfume", general: "producto" };
+
 export const ROUTES = {
   home: "/",
   collection: "/coleccion",
-  watch: (slug: string) => `/reloj/${slug}`,
+  line: (slug: string) => `/coleccion/${slug}`,
+  product: (kind: ProductKind, slug: string) => `/${PRODUCT_SEGMENT[kind]}/${slug}`,
   thanks: "/gracias",
 } as const;

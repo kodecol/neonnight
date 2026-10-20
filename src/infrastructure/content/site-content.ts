@@ -2,7 +2,8 @@ import type { SiteContent } from "@/application/dto/site-content.dto";
 
 /**
  * ÚNICO punto de edición del contenido editorial del sitio.
- * Los copys provienen del handoff (docs/handoff/README.md). Cuando exista CMS,
+ * Los copys parten del handoff (docs/handoff/README.md) y se ampliaron a las
+ * líneas de relojería, joyería y perfumería. Cuando exista CMS,
  * `StaticSiteContentRepository` se sustituye por un adaptador que devuelva
  * esta misma forma.
  */
@@ -16,61 +17,67 @@ export const SITE_CONTENT: SiteContent = {
   brand: {
     name: "Neon Night",
     wordmark: "NEON NIGHT",
-    tagline: "El reloj que buscas, al precio que debió tener siempre.",
-    description: "Relojes de lujo verificados en Colombia. Garantía de 12 meses y envíos asegurados en menos de 3 días.",
+    tagline: "Relojes, joyas y perfumes de las grandes casas, verificados uno por uno y a un precio justo.",
+    description: "Relojes, joyas y perfumes de lujo auténticos en Colombia. Cada pieza verificada en mano, con garantía y envío asegurado en menos de 3 días.",
     currencyLabel: "COP",
     locale: "es-CO",
     logo: { mono: "/assets/isotipo-mono.png", color: "/assets/isotipo-color.png" },
   },
 
   social: {
-    kicker: "Encuéntranos en redes",
+    kicker: "En redes",
     title: "Síguenos de cerca",
-    body: "Piezas nuevas, videos en la muñeca y la verificación de cada referencia, primero en nuestras redes.",
+    body: "Lo que acaba de llegar, piezas en uso y el detrás de cada verificación. Lo publicamos primero en redes.",
     networks: [
-      { id: "instagram", label: "Instagram", handle: "@neonnight", href: INSTAGRAM_URL, description: "Lanzamientos y detalles de cada pieza", cta: "Seguir" },
-      { id: "facebook", label: "Facebook", handle: "Neon Night", href: FACEBOOK_URL, description: "Comunidad, novedades y showroom", cta: "Seguir" },
-      { id: "tiktok", label: "TikTok", handle: "@neonnight", href: TIKTOK_URL, description: "Videos cortos en la muñeca", cta: "Seguir" },
-      { id: "youtube", label: "YouTube", handle: "@neonnight", href: YOUTUBE_URL, description: "Reseñas y verificación en detalle", cta: "Suscribirse" },
+      { id: "instagram", label: "Instagram", handle: "@neonnight", href: INSTAGRAM_URL, description: "Llegadas nuevas y detalles de cada pieza", cta: "Seguir" },
+      { id: "facebook", label: "Facebook", handle: "Neon Night", href: FACEBOOK_URL, description: "Novedades y vida en el showroom", cta: "Seguir" },
+      { id: "tiktok", label: "TikTok", handle: "@neonnight", href: TIKTOK_URL, description: "Videos cortos de las piezas en uso", cta: "Seguir" },
+      { id: "youtube", label: "YouTube", handle: "@neonnight", href: YOUTUBE_URL, description: "Reseñas y verificaciones paso a paso", cta: "Suscribirse" },
     ],
   },
 
   navigation: {
     header: { menuLabel: "Menú", collectionLabel: "Colección", cartLabel: "Bolsa" },
+    // Las líneas del catálogo se anteponen solas (vienen del panel).
     menu: [
-      { label: "Colección", href: "/coleccion" },
-      { label: "Novedades", href: "/coleccion?orden=novedades" },
+      { label: "Toda la colección", href: "/coleccion" },
       { label: "Autenticidad", href: "/#autenticidad" },
       { label: "Showroom", href: "/#showroom" },
     ],
     menuFooter: {
       whatsappLabel: "Asesoría por WhatsApp",
       instagramLabel: "Instagram",
-      note: "Envíos asegurados en Colombia · Pago contra verificación",
+      note: "Envíos asegurados a toda Colombia · Pago contra verificación",
     },
   },
 
   home: {
     hero: {
-      kickerTemplate: "{brand} · Nueva referencia",
+      kickerTemplate: "{brand} · Recién llegado",
       fallbackKicker: "Neon Night",
-      fallbackTitle: "Relojes verificados",
+      fallbackTitle: "Piezas verificadas",
       primaryCta: "Ver la pieza",
-      secondaryCta: "Toda la colección",
+      secondaryCta: "Explorar la colección",
     },
     catalog: {
-      kicker: "Catálogo",
-      title: "Vendemos relojes de marcas que conoces, a precios que no conocías",
-      ctaTemplate: "Ver las {count} referencias",
+      kicker: "Selección",
+      title: "Piezas de las casas que conoces, a precios que no esperabas",
+      ctaTemplate: "Ver las {count} piezas",
       featuredCount: 6,
     },
+    lines: {
+      kicker: "Nuestras líneas",
+      title: "Un mismo criterio para todo lo que vendemos",
+      ctaTemplate: "Explorar {label}",
+      countTemplate: "{count} piezas",
+    },
     band: {
-      title: "Cada pieza pasa por verificación antes de salir",
+      title: "Nada sale de aquí sin pasar por nuestras manos",
       // Foto: Puscas Adryan en Unsplash (Unsplash License, uso comercial libre).
       image: { src: "/assets/band-perfume.jpg", alt: "Frasco de perfume oscuro sobre un pedestal, con luz cálida de estudio", width: 2400, height: 2400, position: "50% 22%" },
     },
     brands: {
-      label: "Marcas en colección",
+      label: "Las casas que trabajamos",
       disclaimer: "Neon Night es un revendedor independiente y no está afiliado a las marcas mencionadas. Las marcas y logotipos pertenecen a sus titulares.",
       // Clave = marca del catálogo en minúsculas. Una marca sin logo se muestra como texto.
       logos: {
@@ -86,14 +93,18 @@ export const SITE_CONTENT: SiteContent = {
       items: [
         {
           number: "01",
-          title: "Respaldo por defectos de fábrica",
-          body: "Respondemos por los daños de fábrica de cada pieza. No se aceptan devoluciones por mal uso del producto.",
+          title: "Verificado en mano",
+          body: "Revisamos cada pieza antes de publicarla: referencia, número de serie o lote, y estado real. Respondemos por cualquier defecto de fábrica; el mal uso no lo cubre.",
         },
-        { number: "02", title: "Garantía de 12 meses", body: "Cobertura de movimiento y hermeticidad durante 12 meses, con servicio en Colombia." },
+        {
+          number: "02",
+          title: "Garantía de 12 meses",
+          body: "En relojes cubrimos movimiento y hermeticidad durante un año, con servicio técnico en Colombia. Joyas y perfumes, contra defectos de fábrica.",
+        },
         {
           number: "03",
-          title: "Envíos en menos de 3 días",
-          body: "Despachamos asegurado a toda Colombia en menos de 3 días. No se aceptan devoluciones después de 10 días de la compra.",
+          title: "Envío en menos de 3 días",
+          body: "Enviamos asegurado a toda Colombia en menos de tres días. Aceptamos devoluciones hasta 10 días después de la compra.",
           accent: true,
         },
       ],
@@ -102,35 +113,35 @@ export const SITE_CONTENT: SiteContent = {
     // escrita de cada cliente (Ley 1480: la publicidad no puede inducir a error). Ver README.
     testimonials: {
       kicker: "Clientes",
-      title: "Lo que dicen quienes ya compraron",
+      title: "Lo que cuentan quienes ya compraron",
       note: "Testimonios de clientes en Colombia",
       items: [
         {
-          quote: "Me enviaron el video de la pieza antes de pagar y el informe de verificación llegó con el reloj. Compré con la misma tranquilidad que en una boutique, a un precio que no encontré en ningún otro lado.",
+          quote: "Antes de pagar me mandaron un video del reloj, y el informe de verificación llegó con él. Compré con la tranquilidad de una boutique, a un precio que no encontré en ningún otro lado.",
           name: "Andrés M.",
           city: "Medellín",
           piece: "Rolex Datejust 36",
           rating: 5,
         },
         {
-          quote: "Llegó asegurado en dos días, impecable y con todos los papeles. Lo llevé a revisar a un relojero de confianza y confirmó cada detalle del informe.",
+          quote: "Llevaba años queriendo el LOVE y me daba miedo comprarlo fuera de una tienda oficial. Llegó en dos días, con su estuche y su certificado, y me explicaron cómo revisar el número de serie.",
           name: "Carolina R.",
           city: "Bogotá",
-          piece: "Cartier Santos",
+          piece: "Cartier LOVE",
           rating: 5,
         },
         {
-          quote: "La asesoría por WhatsApp fue clara de principio a fin: me explicaron referencia, estado y garantía sin presionar la compra. Ya estoy mirando la segunda pieza.",
-          name: "Felipe G.",
+          quote: "Pedí el Baccarat Rouge sellado y con el lote a la vista. Me resolvieron todas las dudas por WhatsApp, sin afanes ni presión. Ya voy por el segundo.",
+          name: "Mariana S.",
           city: "Cali",
-          piece: "Omega Speedmaster",
+          piece: "Baccarat Rouge 540",
           rating: 5,
         },
         {
-          quote: "Buscaba un Tudor en excelente estado y lo encontré aquí. El empaque, la entrega y el seguimiento estuvieron a la altura de la pieza.",
-          name: "Juliana P.",
+          quote: "La asesoría fue clara de principio a fin: referencia, estado y garantía, sin rodeos. El empaque y la entrega estuvieron a la altura del reloj.",
+          name: "Felipe G.",
           city: "Barranquilla",
-          piece: "Tudor Black Bay 58",
+          piece: "Omega Speedmaster",
           rating: 5,
         },
       ],
@@ -138,7 +149,7 @@ export const SITE_CONTENT: SiteContent = {
     payments: {
       kicker: "Métodos de pago",
       title: "Paga como prefieras",
-      body: "Pagos procesados por Bold, con la seguridad de la banca colombiana. Elige el medio al finalizar la compra.",
+      body: "Los pagos los procesa Bold, con la seguridad de la banca colombiana. Eliges el medio al finalizar la compra.",
       // PENDIENTE: confirmar en el panel de Bold los medios habilitados (en especial Daviplata).
       logos: [
         { name: "Visa", caption: "Crédito y débito", logo: { src: "/assets/logos/payments/visa.svg", ratio: 2.97 } },
@@ -152,14 +163,14 @@ export const SITE_CONTENT: SiteContent = {
         { name: "Daviplata", caption: "Billetera digital" },
       ],
       processedBy: "Procesado por",
-      assurances: ["Conexión cifrada", "Confirmación al aprobarse el pago", "Garantía de 12 meses en cada pieza"],
-      whatsappCta: "¿Otro medio de pago? Escríbenos",
+      assurances: ["Conexión cifrada", "Confirmación en cuanto se aprueba el pago", "Garantía en cada pieza"],
+      whatsappCta: "¿Prefieres otro medio de pago? Escríbenos",
       whatsappMessage: "Hola, quiero consultar otros medios de pago para una pieza.",
     },
     motion: {
       kicker: "En movimiento",
-      title: "Video vertical de cada referencia",
-      body: "Un clip corto por pieza, grabado en el showroom: dial, corona, cierre y muñeca. El mismo material que enviamos por WhatsApp antes de la compra.",
+      title: "Antes de comprar, mírala de cerca",
+      body: "Grabamos cada pieza en el showroom: el dial y la corona de un reloj, el brillo de una joya, el frasco y su lote. Te mandamos el video por WhatsApp antes de que decidas.",
       cta: "Pedir el video de una pieza",
       whatsappMessage: "Hola, quiero pedir el video de una pieza.",
     },
@@ -168,32 +179,67 @@ export const SITE_CONTENT: SiteContent = {
   collection: {
     title: "Colección",
     breadcrumbHome: "Inicio",
-    emptyMessage: "No hay referencias que coincidan con este filtro.",
-    // Los chips de categoría se generan de las categorías del panel (/admin) entre "Todas" y los de precio.
-    filters: [
-      { label: "Todas" },
-      { label: "Hasta $35.000.000", maxPriceUnits: 35_000_000 },
-    ],
+    emptyMessage: "No encontramos piezas con estos filtros. Prueba quitando alguno.",
+    allLabel: "Todo",
+    filterLabel: "Filtrar",
+    sortLabel: "Ordenar",
+    clearLabel: "Quitar filtros",
+    resultsOne: "1 pieza",
+    resultsTemplate: "{count} piezas",
   },
 
   product: {
-    descriptionTitle: "Una referencia conocida, sin el sobreprecio de la vitrina",
-    subnav: [
-      { id: "pieza", label: "La pieza" },
-      { id: "detalles", label: "Detalles" },
-      { id: "especificaciones", label: "Especificaciones" },
-      { id: "compra", label: "Compra" },
-    ],
-    galleryCaptions: ["Dial y agujas", "Caja y corona"],
-    specsKicker: "Especificaciones",
+    specsKicker: "Ficha técnica",
+    tabs: { details: "Detalles", notes: "Notas", specs: "Ficha", purchase: "Compra" },
+    byKind: {
+      reloj: {
+        pieceTab: "El reloj",
+        descriptionTitle: "Una referencia conocida, sin el sobreprecio de la vitrina",
+        galleryCaptions: ["Dial y agujas", "Caja y corona"],
+        variantLabel: "Versión",
+      },
+      joya: {
+        pieceTab: "La joya",
+        descriptionTitle: "Un diseño que no pasa de moda",
+        galleryCaptions: ["La pieza", "Otro ángulo"],
+        variantLabel: "Elige tu opción",
+      },
+      perfume: {
+        pieceTab: "La fragancia",
+        descriptionTitle: "Una firma que se reconoce antes de verla",
+        galleryCaptions: ["El frasco", "Otro ángulo"],
+        variantLabel: "Presentación",
+      },
+      general: {
+        pieceTab: "La pieza",
+        descriptionTitle: "Elegida y verificada por nosotros",
+        galleryCaptions: ["Vista principal", "Detalle"],
+        variantLabel: "Elige tu opción",
+      },
+    },
+    notes: {
+      kicker: "Pirámide olfativa",
+      title: "Cómo evoluciona en la piel",
+      top: ["Salida", "Los primeros minutos"],
+      heart: ["Corazón", "Las primeras horas"],
+      base: ["Fondo", "Lo que queda al final del día"],
+    },
+    related: { kicker: "Sigue explorando", title: "También te puede gustar" },
+    purchase: {
+      add: "Añadir a la bolsa",
+      chooseOption: "Elige una opción",
+      quantity: "Cantidad",
+      whatsapp: "Hablar por WhatsApp",
+      lowStockTemplate: "Quedan {count}",
+    },
   },
 
   cart: {
     title: "Tu bolsa",
-    empty: "Aún no has añadido ninguna pieza.",
+    empty: "Tu bolsa está vacía.",
     total: "Total",
     checkout: "Finalizar compra",
-    whatsapp: "O cerrar por WhatsApp",
+    whatsapp: "O cierra la compra por WhatsApp",
     whatsappPending: "WhatsApp: número pendiente",
     remove: "Quitar",
     close: "Cerrar",
@@ -205,8 +251,10 @@ export const SITE_CONTENT: SiteContent = {
       {
         title: "Comprar",
         links: [
-          { label: "Colección", href: "/coleccion" },
-          { label: "Novedades", href: "/coleccion?orden=novedades" },
+          { label: "Relojería", href: "/coleccion/relojeria" },
+          { label: "Joyería", href: "/coleccion/joyeria" },
+          { label: "Perfumería", href: "/coleccion/perfumeria" },
+          { label: "Toda la colección", href: "/coleccion" },
         ],
       },
       {
@@ -231,7 +279,7 @@ export const SITE_CONTENT: SiteContent = {
   },
 
   whatsapp: {
-    productMessageTemplate: "Hola, me interesa el {name} (ref. {reference}). {url}",
+    productMessageTemplate: "Hola, me interesa {name} (ref. {reference}). {url}",
     genericMessage: "Hola, quiero asesoría sobre una pieza de Neon Night.",
   },
 };

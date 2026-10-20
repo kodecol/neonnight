@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 
-const PAGES = ["/", "/coleccion", "/reloj/rolex-sky-dweller-326938"];
+const PAGES = ["/", "/coleccion", "/coleccion/perfumeria?genero=unisex", "/reloj/rolex-sky-dweller-326938", "/perfume/creed-aventus", "/joya/cartier-trinity-anillo-clasico"];
 
 for (const path of PAGES) {
   test(`axe sin violaciones serias o críticas en ${path}`, async ({ page }) => {

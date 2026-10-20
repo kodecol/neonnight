@@ -1,12 +1,13 @@
 import { orderId, type Order, type OrderId, type OrderStatus } from "@/domain/entities/order";
-import { watchId } from "@/domain/entities/watch";
+import { productId } from "@/domain/entities/product";
 import type { OrderRepository } from "@/domain/repositories/order-repository";
 import { Money } from "@/domain/value-objects/money";
 import type { DbProvider } from "./client";
 
 interface OrderDoc {
   _id: string;
-  lines: Array<{ watchId: string; slug: string; name: string; unitPriceCents: number; quantity: number }>;
+  /** Las órdenes de la v1 traen `watchId` y ninguna variante. */
+  lines: Array<{ productId?: string; watchId?: string; variantId?: string; variantLabel?: string; slug: string; name: string; unitPriceCents: number; quantity: number }>;
   totalCents: number;
   currency: "COP";
   status: OrderStatus;
@@ -17,7 +18,15 @@ interface OrderDoc {
 
 const toDoc = (o: Order): OrderDoc => ({
   _id: o.id,
-  lines: o.lines.map((l) => ({ watchId: l.watchId, slug: l.slug, name: l.name, unitPriceCents: l.unitPrice.cents, quantity: l.quantity })),
+  lines: o.lines.map((l) => ({
+    productId: l.productId,
+    variantId: l.variantId,
+    variantLabel: l.variantLabel,
+    slug: l.slug,
+    name: l.name,
+    unitPriceCents: l.unitPrice.cents,
+    quantity: l.quantity,
+  })),
   totalCents: o.total.cents,
   currency: o.total.currency,
   status: o.status,
@@ -28,7 +37,15 @@ const toDoc = (o: Order): OrderDoc => ({
 
 const fromDoc = (d: OrderDoc): Order => ({
   id: orderId(d._id),
-  lines: d.lines.map((l) => ({ watchId: watchId(l.watchId), slug: l.slug, name: l.name, unitPrice: Money.fromCents(l.unitPriceCents, d.currency), quantity: l.quantity })),
+  lines: d.lines.map((l) => ({
+    productId: productId(l.productId ?? l.watchId ?? ""),
+    variantId: l.variantId ?? "unica",
+    variantLabel: l.variantLabel ?? "",
+    slug: l.slug,
+    name: l.name,
+    unitPrice: Money.fromCents(l.unitPriceCents, d.currency),
+    quantity: l.quantity,
+  })),
   total: Money.fromCents(d.totalCents, d.currency),
   status: d.status,
   createdAt: d.createdAt,

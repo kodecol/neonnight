@@ -1,34 +1,35 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getContainer } from "@/infrastructure/container";
-import { GetAdminWatch } from "@/application/use-cases/admin/get-admin-watch";
-import { WatchForm } from "@/presentation/components/admin/WatchForm";
-import { ROUTES } from "@/presentation/lib/site";
-import { deleteWatchAction, saveWatchAction, uploadImageAction } from "../actions";
+import { GetAdminProduct } from "@/application/use-cases/admin/get-admin-product";
+import { ProductForm } from "@/presentation/components/admin/ProductForm";
+import { deleteProductAction, saveProductAction, uploadImageAction } from "../actions";
 
 type Params = Promise<{ id: string }>;
 
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
   const { id } = await params;
-  const w = await new GetAdminWatch(getContainer().watches).execute(id);
-  return { title: w ? `${w.brand} ${w.model}` : "Reloj" };
+  const p = await new GetAdminProduct(getContainer().products).execute(id);
+  return { title: p ? `${p.brand} ${p.model}` : "Producto" };
 }
 
-export default async function EditWatchPage({ params, searchParams }: { params: Params; searchParams: Promise<{ creado?: string }> }) {
+export default async function EditProductPage({ params, searchParams }: { params: Params; searchParams: Promise<{ creado?: string }> }) {
   const { id } = await params;
   const { creado } = await searchParams;
-  const { watches, categories } = getContainer();
-  const [watch, cats, entity] = await Promise.all([new GetAdminWatch(watches).execute(id), categories.list(), watches.findById(id)]);
-  if (!watch) notFound();
+  const { products, categories, lines } = getContainer();
+  const [product, cats, allLines, entity] = await Promise.all([new GetAdminProduct(products).execute(id), categories.list(), lines.list(), products.findById(id)]);
+  if (!product) notFound();
+  const line = allLines.find((l) => l.slug === product.line);
+  if (!line) notFound();
   return (
-    <WatchForm
-      key={watch.id}
-      initial={watch}
-      categories={cats}
-      save={saveWatchAction}
-      remove={deleteWatchAction}
+    <ProductForm
+      key={product.id}
+      initial={product}
+      line={{ slug: line.slug, label: line.label, template: line.template }}
+      categories={cats.filter((c) => c.line === line.slug)}
+      save={saveProductAction}
+      remove={deleteProductAction}
       upload={uploadImageAction}
-      storeHref={ROUTES.watch(watch.slug)}
       updatedAt={entity?.updatedAt.toISOString()}
       justCreated={creado === "1"}
     />

@@ -13,7 +13,7 @@ export class WaMeLinkBuilder implements WhatsAppLinkBuilder {
   constructor(
     number: string | undefined | null,
     private readonly templates: { product: string; generic: string; cart: string } = {
-      product: "Hola, me interesa el {name} (ref. {reference}). {url}",
+      product: "Hola, me interesa {name} (ref. {reference}). {url}",
       generic: "Hola, quiero asesoría sobre una pieza de Neon Night.",
       cart: "Hola, quiero cerrar por WhatsApp mi bolsa: {items}. Total {total}.",
     },
@@ -26,8 +26,10 @@ export class WaMeLinkBuilder implements WhatsAppLinkBuilder {
     return this.number !== null;
   }
 
-  forWatch(ctx: WhatsAppContext): string | null {
-    return this.build(fill(this.templates.product, { name: ctx.name, reference: ctx.reference, url: ctx.canonicalUrl }));
+  forProduct(ctx: WhatsAppContext): string | null {
+    // Sin referencia (p. ej. un perfume) se quita la cláusula "(ref. …)" de la plantilla.
+    const template = ctx.reference.trim() ? this.templates.product : this.templates.product.replace(/\s*\(?ref\.\s*\{reference\}\)?/, "");
+    return this.build(fill(template, { name: ctx.name, reference: ctx.reference, url: ctx.canonicalUrl }));
   }
 
   forCart(summary: { readonly names: readonly string[]; readonly totalFormatted: string }): string | null {

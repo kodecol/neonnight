@@ -1,6 +1,6 @@
 import { z } from "zod";
 import type { OrderRepository } from "@/domain/repositories/order-repository";
-import type { WatchRepository } from "@/domain/repositories/watch-repository";
+import type { ProductRepository } from "@/domain/repositories/product-repository";
 import { orderId, type Order } from "@/domain/entities/order";
 import type { Clock } from "../ports/clock";
 
@@ -23,10 +23,11 @@ export type ConfirmPaymentResult =
 /**
  * Aplica una notificación de la pasarela a la orden. Idempotente: Bold
  * reintenta hasta 5 veces y puede repetir eventos.
- * Aprobada → orden `pagada` y piezas `vendido`. Rechazada → `fallida`.
+ * Aprobada → orden `pagada` y stock descontado por variante (una pieza única
+ * queda en 0 y se lee "Vendido"). Rechazada → `fallida`.
  */
 export class ConfirmPayment {
-  constructor(private readonly deps: { orders: OrderRepository; watches: WatchRepository; clock: Clock }) {}
+  constructor(private readonly deps: { orders: OrderRepository; products: ProductRepository; clock: Clock }) {}
 
   async execute(raw: unknown): Promise<ConfirmPaymentResult> {
     const parsed = BoldEventSchema.safeParse(raw);
@@ -50,9 +51,10 @@ export class ConfirmPayment {
     if (paid !== undefined && paid !== order.total.units) return { handled: false, reason: `monto ${paid} ≠ ${order.total.units}` };
 
     await this.deps.orders.save({ ...order, status: "pagada" });
-    const now = this.deps.clock.now();
-    const watches = await this.deps.watches.findByIds(order.lines.map((l) => l.watchId));
-    await Promise.all(watches.map((w) => this.deps.watches.save({ ...w, availability: "vendido", updatedAt: now })));
+    const results = await Promise.all(order.lines.map((l) => this.deps.products.decrementStock(l.productId, l.variantId, l.quantity)));
+    results.forEach((ok, i) => {
+      if (!ok) console.warn(`[confirm-payment] stock insuficiente en ${order.lines[i]!.slug} (${order.id}): revisar a mano`);
+    });
     return { handled: true, orderId: order.id, status: "pagada" };
   }
 }

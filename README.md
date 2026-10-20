@@ -1,6 +1,6 @@
 # Neon Night
 
-Tienda de relojes de lujo verificados (Colombia). Reconstrucción en **Next.js 15** del prototipo hi-fi entregado en `docs/handoff/`, siguiendo la arquitectura y los tokens definidos en ese handoff.
+Tienda de relojería, joyería y perfumería de lujo verificadas (Colombia). Reconstrucción en **Next.js 15** del prototipo hi-fi entregado en `docs/handoff/`, siguiendo la arquitectura y los tokens definidos en ese handoff.
 
 - **Stack:** Next.js 15 (App Router, RSC), React 19, TypeScript strict, Tailwind CSS 4 (`@theme`), Zod, Vitest, Playwright + axe-core.
 - **Arquitectura:** clean architecture en cuatro capas con fronteras verificadas por lint (ver `docs/adr/`).
@@ -48,9 +48,10 @@ Todas se leen **en runtime**: la misma imagen sirve para cualquier dominio y ent
 
 | Ruta | Render | Notas |
 | --- | --- | --- |
-| `/` | dinámica | Hero con video, grilla 3 col (6 piezas), banda parallax, garantía, marquee de marcas (sale del catálogo), garantía, testimonios, "En movimiento", métodos de pago, "Encuéntranos en redes" |
-| `/coleccion` | dinámica, filtros por `searchParams` (`?categoria=`, `?max=`) | Grilla 4 col. Chips de categoría desde la base. Con filtros → `noindex, follow` |
-| `/reloj/[slug]` | dinámica | Hero, sub-nav sticky, descripción, galería, banda, specs, cierre. JSON-LD `Product`, OG image dinámica |
+| `/` | dinámica | Hero con video, marquee de marcas (sale del catálogo), portadas de las líneas, selección mixta (6 piezas, una línea por turno), banda parallax, garantía, testimonios, "En movimiento", métodos de pago, redes |
+| `/coleccion` | dinámica | Toda la colección: pestañas de línea, filtros comunes (marca, precio, disponibilidad) y orden |
+| `/coleccion/[linea]` | dinámica, filtros por `searchParams` (`?categoria=`, `?marca=a,b`, `?orden=precio-asc`…) | Página indexable de cada línea: chips de categoría y facetas propias de su plantilla. Con filtros → `noindex, follow`. `/coleccion?categoria=x` redirige a la línea |
+| `/reloj`, `/joya`, `/perfume`, `/producto` + `/[slug]` | dinámica | Detalle según la plantilla: hero, sub-nav sticky, descripción, notas olfativas (perfume), galería, banda, ficha, selector de presentación y cantidad, relacionados. JSON-LD `Product` (`AggregateOffer` con variantes), OG image dinámica |
 | `/gracias` | dinámica | Retorno del checkout; muestra el estado del pago si Bold está activo |
 | `/api/checkout` | POST | Recalcula precio y disponibilidad en el servidor y abre la sesión de pago |
 | `/api/webhooks/bold` | POST | Notificaciones de Bold con firma verificada |
@@ -64,9 +65,9 @@ Las páginas del catálogo se renderizan por petición porque la base (editable 
 
 ```
 src/
-  domain/           Capa 0 — entidades (Watch, Order), value objects (Money, Slug, Reference),
+  domain/           Capa 0 — entidades (Product, ProductLine, Order), value objects (Money, Slug, Reference),
                     interfaces de repositorio, reglas puras. Sin dependencias externas.
-  application/      Capa 1 — casos de uso (ListWatches, GetWatchBySlug, ResolveCart, Checkout),
+  application/      Capa 1 — casos de uso (BrowseCatalog, GetProductBySlug, ResolveCart, Checkout),
                     DTOs y puertos (PaymentGateway, Analytics, WhatsAppLinkBuilder, Clock).
   infrastructure/   Capa 2 — repositorios Mongo y en memoria + seed, Bold y Noop (pagos),
                     Cloudinary y disco (fotos), sesión del admin, ConsoleAnalytics,
@@ -91,9 +92,10 @@ docs/handoff        Prototipo y README originales      docs/adr   Decisiones
 Un solo administrador entra con `ADMIN_PASSWORD`. La sesión es una cookie firmada que dura 7 días. El panel tiene dos secciones:
 
 - **Catálogo:**
-  - Alta, edición y baja de relojes: identidad, precio, categoría, disponibilidad, condición, destacado, textos y especificaciones.
-  - Fotos de frente, reverso y galería ordenable.
-  - Categorías editables en línea.
+  - **Líneas** (Relojería, Joyería, Perfumería…): se crean con nombre y plantilla (`reloj`, `joya`, `perfume` o `general`), con portada y frase para la home. La plantilla decide la ficha técnica y los filtros, y no cambia después (ADR 0005).
+  - **Productos:** alta por línea, edición y baja. Incluyen identidad, ficha según la plantilla, presentaciones con precio y stock, categoría, disponibilidad, condición, destacado y textos.
+  - Fotos principal, segunda vista y galería ordenable.
+  - Categorías agrupadas por línea, editables en línea.
   - Los cambios se publican en la tienda al guardar.
 - **Pagos:**
   - Configuración de Bold: activar el cobro, elegir ambiente (pruebas o producción) e ingresar la llave de identidad y la llave secreta (se guarda cifrada).
@@ -145,7 +147,8 @@ La guía completa está en **[`docs/DEPLOY.md`](docs/DEPLOY.md)**: infraestructu
 ## Pendientes de contenido (handoff §7)
 
 - Las 8 referencias son modelos reales (Rolex Sky-Dweller 326938, Rolex Daytona 126500LN, Tudor BB58, Rolex GMT-Master II 126710BLNR, Rolex Datejust 36, Omega Speedmaster sapphire, Cartier Santos Large, Omega Seamaster 300M) con specs de catálogo, pero las **fotos son de un retailer externo recortadas a PNG solo para el mockup**. Sustituir por fotografía propia del inventario.
-- Precios orientativos en COP, no confirmados.
+- Lo mismo aplica a las piezas añadidas con el catálogo multilínea: 4 relojes, 8 joyas y 10 perfumes. Sus fotos (`public/assets/products/`) son packshots de catálogo de las casas o de retailers autorizados, recortados a fondo transparente **solo para el mockup**. Las portadas de línea (`public/assets/lines/`) siguen la misma regla.
+- Precios orientativos en COP (convertidos del precio público en EE. UU. o del mercado de segunda mano), no confirmados. Stock de ejemplo.
 - Textos descriptivos redactados como placeholder informado; revisar con el equipo comercial.
 - Número de WhatsApp.
 - Perfiles reales de Instagram, Facebook, TikTok y YouTube (hoy son `@neonnight` de ejemplo).
@@ -163,6 +166,6 @@ La guía completa está en **[`docs/DEPLOY.md`](docs/DEPLOY.md)**: infraestructu
 
 ## Nota legal (handoff §8)
 
-El prototipo nombra "Rolex" y usa material de esa marca como referencia. Las fotos de producto de las 8 referencias (`public/assets/ref0X-*.png`) provienen de un catálogo de terceros y se recortaron únicamente para este mockup: **no tienen licencia para producción**. Antes de publicar hay que usar fotografía y video propios de las piezas en inventario y evitar cualquier tratamiento que sugiera afiliación oficial.
+El prototipo nombra "Rolex" y usa material de esa marca como referencia. Las fotos de producto de las 8 referencias (`public/assets/ref0X-*.png`) y las de `public/assets/products/` y `public/assets/lines/` provienen de catálogos de terceros y se recortaron únicamente para este mockup: **no tienen licencia para producción**. Antes de publicar hay que usar fotografía y video propios de las piezas en inventario y evitar cualquier tratamiento que sugiera afiliación oficial.
 
-El marquee "Marcas en colección" usa los **logotipos oficiales** de las relojeras. Para un revendedor independiente, nombrar la marca para describir lo que vende suele ser aceptable; usar el logotipo es más delicado. Rolex, en particular, persigue el uso de su marca por vendedores no autorizados. El sitio muestra el aviso "no está afiliado a las marcas mencionadas", pero la decisión de publicar los logos debe validarla un abogado de propiedad intelectual. Si se retira un logo de `home.brands.logos`, esa marca vuelve a mostrarse como texto automáticamente.
+El marquee "Las casas que trabajamos" usa los **logotipos oficiales** de las relojeras. Para un revendedor independiente, nombrar la marca para describir lo que vende suele ser aceptable; usar el logotipo es más delicado. Rolex, en particular, persigue el uso de su marca por vendedores no autorizados. El sitio muestra el aviso "no está afiliado a las marcas mencionadas", pero la decisión de publicar los logos debe validarla un abogado de propiedad intelectual. Si se retira un logo de `home.brands.logos`, esa marca vuelve a mostrarse como texto automáticamente.

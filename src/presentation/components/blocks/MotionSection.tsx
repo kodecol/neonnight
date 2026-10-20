@@ -1,4 +1,4 @@
-import type { VideoDto } from "@/application/dto/watch.dto";
+import type { VideoDto } from "@/application/dto/product.dto";
 import type { SiteContent } from "@/application/dto/site-content.dto";
 import { Button } from "@/presentation/components/primitives/Button";
 import { Kicker } from "@/presentation/components/primitives/Kicker";

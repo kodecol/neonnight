@@ -1,4 +1,5 @@
-import type { WatchRepository } from "@/domain/repositories/watch-repository";
+import type { ProductRepository } from "@/domain/repositories/product-repository";
+import type { LineRepository } from "@/domain/repositories/line-repository";
 import type { OrderRepository } from "@/domain/repositories/order-repository";
 import type { CategoryRepository } from "@/domain/repositories/category-repository";
 import type { PaymentGateway } from "@/application/ports/payment-gateway";
@@ -8,12 +9,14 @@ import type { Analytics } from "@/application/ports/analytics";
 import type { WhatsAppLinkBuilder } from "@/application/ports/whatsapp-link-builder";
 import type { Clock, IdGenerator } from "@/application/ports/clock";
 import type { SiteContentRepository } from "@/application/ports/site-content-repository";
-import { InMemoryWatchRepository } from "./repositories/in-memory-watch-repository";
+import { InMemoryProductRepository } from "./repositories/in-memory-product-repository";
+import { InMemoryLineRepository } from "./repositories/in-memory-line-repository";
 import { InMemoryOrderRepository } from "./repositories/in-memory-order-repository";
 import { InMemoryCategoryRepository } from "./repositories/in-memory-category-repository";
 import { InMemoryPaymentSettingsRepository } from "./repositories/in-memory-payment-settings-repository";
 import { mongoDb } from "./mongo/client";
-import { MongoWatchRepository } from "./mongo/mongo-watch-repository";
+import { MongoProductRepository } from "./mongo/mongo-product-repository";
+import { MongoLineRepository } from "./mongo/mongo-line-repository";
 import { MongoOrderRepository } from "./mongo/mongo-order-repository";
 import { MongoCategoryRepository } from "./mongo/mongo-category-repository";
 import { MongoPaymentSettingsRepository } from "./mongo/mongo-payment-settings-repository";
@@ -25,21 +28,22 @@ import { adminSecret } from "./auth/session";
 import { ConsoleAnalytics } from "./analytics/console-analytics";
 import { WaMeLinkBuilder } from "./whatsapp/wa-me-link-builder";
 import { RandomIdGenerator, SystemClock } from "./system";
-import { SEED_CATEGORIES, SEED_WATCHES } from "./cms/seed";
+import { SEED_CATEGORIES, SEED_LINES, SEED_PRODUCTS } from "./cms/seed";
 import { SITE_CONTENT } from "./content/site-content";
 import { StaticSiteContentRepository } from "./content/static-site-content-repository";
 
 /**
  * Contenedor tipado y explícito. Sin framework de DI.
  * Funciona igual en server components, route handlers y tests:
- *   createContainer({ watches: new InMemoryWatchRepository([...]) })
+ *   createContainer({ products: new InMemoryProductRepository([...]) })
  *
  * Con MONGODB_URI los repositorios son de Mongo; sin ella, en memoria
  * (tests, e2e y desarrollo sin base). Con CLOUDINARY_URL las fotos van a
  * Cloudinary; sin ella, a disco local.
  */
 export interface Container {
-  watches: WatchRepository;
+  products: ProductRepository;
+  lines: LineRepository;
   categories: CategoryRepository;
   orders: OrderRepository;
   paymentSettings: PaymentSettingsRepository;
@@ -61,11 +65,12 @@ export interface Container {
 const g: { __nnContainer?: Container | null } =
   process.env.NODE_ENV === "production" ? (globalThis as unknown as { __nnContainer?: Container | null }) : {};
 
-function persistence(): Pick<Container, "watches" | "categories" | "orders" | "paymentSettings"> {
+function persistence(): Pick<Container, "products" | "lines" | "categories" | "orders" | "paymentSettings"> {
   const uri = process.env.MONGODB_URI;
   if (!uri) {
     return {
-      watches: new InMemoryWatchRepository(SEED_WATCHES),
+      products: new InMemoryProductRepository(SEED_PRODUCTS),
+      lines: new InMemoryLineRepository(SEED_LINES),
       categories: new InMemoryCategoryRepository(SEED_CATEGORIES),
       orders: new InMemoryOrderRepository(),
       paymentSettings: new InMemoryPaymentSettingsRepository(),
@@ -73,7 +78,8 @@ function persistence(): Pick<Container, "watches" | "categories" | "orders" | "p
   }
   const db = mongoDb(uri, process.env.MONGODB_DB || "neonnight");
   return {
-    watches: new MongoWatchRepository(db),
+    products: new MongoProductRepository(db),
+    lines: new MongoLineRepository(db),
     categories: new MongoCategoryRepository(db),
     orders: new MongoOrderRepository(db),
     paymentSettings: new MongoPaymentSettingsRepository(db, adminSecret),
@@ -83,7 +89,8 @@ function persistence(): Pick<Container, "watches" | "categories" | "orders" | "p
 export function createContainer(overrides: Partial<Container> = {}): Container {
   const base = { ...persistence(), ...overrides };
   return {
-    watches: base.watches,
+    products: base.products,
+    lines: base.lines,
     categories: base.categories,
     orders: base.orders,
     paymentSettings: base.paymentSettings,

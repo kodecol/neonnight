@@ -1,7 +1,9 @@
 import { getContainer } from "@/infrastructure/container";
-import { ListWatches } from "@/application/use-cases/list-watches";
-import { GetFeaturedWatch } from "@/application/use-cases/get-featured-watch";
+import { ListProducts } from "@/application/use-cases/list-products";
+import { GetFeaturedProduct } from "@/application/use-cases/get-featured-product";
+import { ListLines } from "@/application/use-cases/list-lines";
 import { Hero } from "@/presentation/components/blocks/Hero";
+import { LineShowcase } from "@/presentation/components/blocks/LineShowcase";
 import { CatalogHeader } from "@/presentation/components/blocks/CatalogHeader";
 import { ProductGrid } from "@/presentation/components/blocks/ProductGrid";
 import { ParallaxBand } from "@/presentation/components/blocks/ParallaxBand";
@@ -19,16 +21,20 @@ import { ROUTES, absoluteUrl } from "@/presentation/lib/site";
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
-  const { watches, whatsapp, content } = getContainer();
-  const [all, featured, brands, site] = await Promise.all([
-    new ListWatches(watches).execute(),
-    new GetFeaturedWatch(watches).execute(),
-    new ListBrands(watches).execute(),
-    content.get(),
+  const container = getContainer();
+  const { products, whatsapp, content } = container;
+  const site = await content.get();
+  const [selection, total, featured, brands, lines] = await Promise.all([
+    // Selección corta y variada: una pieza de cada línea por turno.
+    new ListProducts(products).execute({ mixLines: true, limit: site.home.catalog.featuredCount }),
+    products.findAll().then((all) => all.length),
+    new GetFeaturedProduct(products).execute(),
+    new ListBrands(products).execute(),
+    new ListLines(container).execute(),
   ]);
-  const items = all.slice(0, site.home.catalog.featuredCount).map((w) => ({
-    watch: w,
-    whatsappUrl: whatsapp.forWatch({ name: w.name, reference: w.slug, canonicalUrl: absoluteUrl(ROUTES.watch(w.slug)) }),
+  const items = selection.map((p) => ({
+    product: p,
+    whatsappUrl: whatsapp.forProduct({ name: p.name, reference: p.reference, canonicalUrl: absoluteUrl(ROUTES.product(p.kind, p.slug)) }),
   }));
 
   return (
@@ -44,7 +50,8 @@ export default async function HomePage() {
       />
       <Hero featured={featured} content={site.home.hero} tagline={site.brand.tagline} />
       <BrandMarquee brands={brands} content={site.home.brands} />
-      <CatalogHeader total={all.length} content={site.home.catalog} />
+      <LineShowcase lines={lines} content={site.home.lines} />
+      <CatalogHeader total={total} content={site.home.catalog} />
       <section className="px-page pb-section pt-16">
         <ProductGrid items={items} columns={3} actions />
       </section>

@@ -1,5 +1,6 @@
 export * from "./errors";
-export * from "./entities/watch";
+export * from "./entities/product";
+export * from "./entities/product-line";
 export * from "./entities/brand";
 export * from "./entities/cart-line";
 export * from "./entities/order";
@@ -7,7 +8,8 @@ export * from "./entities/category";
 export * from "./value-objects/money";
 export * from "./value-objects/slug";
 export * from "./value-objects/reference";
-export * from "./repositories/watch-repository";
+export * from "./repositories/product-repository";
+export * from "./repositories/line-repository";
 export * from "./repositories/order-repository";
 export * from "./repositories/category-repository";
 export * from "./services/pricing";

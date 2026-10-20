@@ -1,20 +1,21 @@
 import { describe, expect, it, vi } from "vitest";
 import { createHmac } from "node:crypto";
-import { InMemoryWatchRepository } from "@/infrastructure/repositories/in-memory-watch-repository";
+import { InMemoryProductRepository } from "@/infrastructure/repositories/in-memory-product-repository";
 import { InMemoryOrderRepository } from "@/infrastructure/repositories/in-memory-order-repository";
 import { InMemoryPaymentSettingsRepository } from "@/infrastructure/repositories/in-memory-payment-settings-repository";
 import { NoopPaymentGateway } from "@/infrastructure/payments/noop-payment-gateway";
 import { BoldGatewayError, BoldPaymentGateway } from "@/infrastructure/payments/bold-payment-gateway";
 import { boldWebhookSignature, verifyBoldWebhook } from "@/infrastructure/payments/bold-signature";
-import { SEED_WATCHES } from "@/infrastructure/cms/seed";
+import { SEED_PRODUCTS } from "@/infrastructure/cms/seed";
 import { ConfirmPayment } from "@/application/use-cases/confirm-payment";
 import { orderId, type Order } from "@/domain/entities/order";
-import { watchId } from "@/domain/entities/watch";
+import { productId } from "@/domain/entities/product";
+import { productStatus } from "@/domain/services/availability";
 import { Money } from "@/domain/value-objects/money";
 
 const order = (over: Partial<Order> = {}): Order => ({
   id: orderId("nn-abc12345"),
-  lines: [{ watchId: watchId("w-03"), slug: "tudor", name: "Tudor Black Bay 58", unitPrice: Money.fromUnits(16_900_000), quantity: 1 }],
+  lines: [{ productId: productId("w-03"), variantId: "unica", variantLabel: "", slug: "tudor", name: "Tudor Black Bay 58", unitPrice: Money.fromUnits(16_900_000), quantity: 1 }],
   total: Money.fromUnits(16_900_000),
   status: "pendiente",
   createdAt: new Date("2026-10-03T00:00:00Z"),
@@ -43,25 +44,40 @@ describe("Firma de webhooks de Bold", () => {
 describe("ConfirmPayment", () => {
   const setup = (o = order()) => {
     const orders = new InMemoryOrderRepository();
-    const watches = new InMemoryWatchRepository(SEED_WATCHES);
+    const products = new InMemoryProductRepository(SEED_PRODUCTS);
     void orders.save(o);
-    return { orders, watches, uc: new ConfirmPayment({ orders, watches, clock: { now: () => new Date() } }) };
+    return { orders, products, uc: new ConfirmPayment({ orders, products, clock: { now: () => new Date() } }) };
   };
   const event = (type: string, reference = "nn-abc12345", total = 16_900_000) => ({ type, data: { payment_id: "p1", amount: { total }, metadata: { reference } } });
 
   it("aprobada: orden pagada y pieza vendida; idempotente", async () => {
-    const { uc, orders, watches } = setup();
+    const { uc, orders, products } = setup();
     expect(await uc.execute(event("SALE_APPROVED"))).toEqual({ handled: true, orderId: "nn-abc12345", status: "pagada" });
     expect((await orders.findById(orderId("nn-abc12345")))?.status).toBe("pagada");
-    expect((await watches.findById("w-03"))?.availability).toBe("vendido");
+    const sold = (await products.findById("w-03"))!;
+    expect(sold.variants[0]?.stock).toBe(0);
+    expect(productStatus(sold, "pieza")).toBe("vendido");
     expect(await uc.execute(event("SALE_APPROVED"))).toMatchObject({ handled: true, status: "pagada" });
+    expect((await products.findById("w-03"))?.variants[0]?.stock).toBe(0);
+  });
+
+  it("aprobada: descuenta unidades de la presentación vendida", async () => {
+    const line = { productId: productId("pf-01"), variantId: "100-ml", variantLabel: "100 ml", slug: "creed-aventus", name: "Creed Aventus", unitPrice: Money.fromUnits(2_390_000), quantity: 2 };
+    const { uc, products } = setup(order({ lines: [line], total: Money.fromUnits(4_780_000) }));
+    await uc.execute(event("SALE_APPROVED", "nn-abc12345", 4_780_000));
+    const p = (await products.findById("pf-01"))!;
+    expect(p.variants.map((v) => [v.id, v.stock])).toEqual([
+      ["50-ml", 4],
+      ["100-ml", 1],
+    ]);
+    expect(productStatus(p, "unidades")).toBe("disponible");
   });
 
   it("rechazada: orden fallida, la pieza sigue disponible", async () => {
-    const { uc, orders, watches } = setup();
+    const { uc, orders, products } = setup();
     await uc.execute(event("SALE_REJECTED"));
     expect((await orders.findById(orderId("nn-abc12345")))?.status).toBe("fallida");
-    expect((await watches.findById("w-03"))?.availability).toBe("disponible");
+    expect((await products.findById("w-03"))?.variants[0]?.stock).toBe(1);
   });
 
   it("encuentra la orden por referencia de pago y descarta montos distintos o eventos ajenos", async () => {

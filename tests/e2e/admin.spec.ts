@@ -10,7 +10,7 @@ test.describe("Panel de administración", () => {
     await expect(page.locator('meta[name="robots"]')).toHaveAttribute("content", /noindex/);
   });
 
-  test("login, editar un reloj y verlo publicado en la tienda", async ({ page }) => {
+  test("login, editar un producto y verlo publicado en la tienda", async ({ page }) => {
     await page.goto("/admin/login");
     await page.fill("#password", "incorrecta");
     await page.click("button[type=submit]");
@@ -19,14 +19,14 @@ test.describe("Panel de administración", () => {
     await page.fill("#password", E2E_ADMIN_PASSWORD);
     await page.click("button[type=submit]");
     await expect(page).toHaveURL(/\/admin\/catalogo$/);
-    await expect(page.locator("[data-testid=catalog-rows] li")).toHaveCount(8);
+    await expect(page.locator("[data-testid=catalog-rows] li")).toHaveCount(30);
 
     await page.getByRole("link", { name: /Cartier Santos/i }).click();
     await expect(page).toHaveURL(/\/admin\/catalogo\/w-07$/);
     const subtitle = page.getByLabel("Subtítulo");
     const original = await subtitle.inputValue();
     await subtitle.fill("Edición e2e · 39,8 mm");
-    await page.getByTestId("save-watch").click();
+    await page.getByTestId("save-product").click();
     await expect(page.getByText("Guardado · publicado en la tienda")).toBeVisible();
 
     await page.goto("/reloj/cartier-santos-de-cartier-large-wssa0018");
@@ -35,7 +35,7 @@ test.describe("Panel de administración", () => {
     // Restaura para no afectar a otros tests
     await page.goto("/admin/catalogo/w-07");
     await page.getByLabel("Subtítulo").fill(original);
-    await page.getByTestId("save-watch").click();
+    await page.getByTestId("save-product").click();
     await expect(page.getByText("Guardado · publicado en la tienda")).toBeVisible();
   });
 
@@ -44,10 +44,26 @@ test.describe("Panel de administración", () => {
     await page.fill("#password", E2E_ADMIN_PASSWORD);
     await page.click("button[type=submit]");
     await expect(page).toHaveURL(/\/admin\/catalogo$/);
-    await page.goto("/admin/catalogo/nuevo");
+    await page.goto("/admin/catalogo/nuevo?linea=relojeria");
     await page.locator("input[type=file]").first().setInputFiles("public/assets/ref03-front.png");
     await expect(page.getByText("Reemplazar").first()).toBeVisible({ timeout: 20_000 });
     await expect(page.getByText("No llegó ningún archivo.")).toHaveCount(0);
+  });
+
+  test("nuevo producto: primero la línea, luego la ficha de su plantilla", async ({ page }) => {
+    await page.goto("/admin/login");
+    await page.fill("#password", E2E_ADMIN_PASSWORD);
+    await page.click("button[type=submit]");
+    await expect(page).toHaveURL(/\/admin\/catalogo$/);
+    await page.goto("/admin/catalogo/nuevo");
+    await page.getByTestId("line-chooser").getByRole("link", { name: /Perfumería/ }).click();
+    await expect(page).toHaveURL(/linea=perfumeria/);
+    await expect(page.getByLabel("Notas de salida")).toBeVisible();
+    await expect(page.getByLabel("Movimiento")).toHaveCount(0);
+    await expect(page.locator("[data-testid=variants] li")).toHaveCount(2);
+
+    await page.goto("/admin/catalogo?tab=lineas");
+    await expect(page.getByRole("heading", { name: "Nueva línea" })).toBeVisible();
   });
 
   test("health expone estado y versión sin caché", async ({ request }) => {
@@ -56,7 +72,7 @@ test.describe("Panel de administración", () => {
     expect(res.headers()["cache-control"]).toContain("no-store");
     expect(await res.json()).toMatchObject({ status: "ok", db: "memoria" });
     const deep = await request.get("/api/health?deep=1");
-    expect(await deep.json()).toMatchObject({ status: "ok", categories: 4 });
+    expect(await deep.json()).toMatchObject({ status: "ok", categories: 13 });
   });
 
   test("el webhook de Bold rechaza firmas inválidas", async ({ request }) => {

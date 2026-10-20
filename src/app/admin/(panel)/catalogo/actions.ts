@@ -1,11 +1,12 @@
 "use server";
 import { revalidatePath } from "next/cache";
 import { getContainer } from "@/infrastructure/container";
-import { SaveWatch } from "@/application/use-cases/admin/save-watch";
-import { DeleteWatch } from "@/application/use-cases/admin/delete-watch";
+import { SaveProduct } from "@/application/use-cases/admin/save-product";
+import { DeleteProduct } from "@/application/use-cases/admin/delete-product";
 import { DeleteCategory, SaveCategory } from "@/application/use-cases/admin/categories";
+import { DeleteLine, SaveLine } from "@/application/use-cases/admin/lines";
 import { UploadImage } from "@/application/use-cases/admin/upload-image";
-import type { ActionResult, AdminWatchInput, CategoryInput } from "@/application/dto/admin.dto";
+import type { ActionResult, AdminProductInput, CategoryInput, LineInput } from "@/application/dto/admin.dto";
 import type { StoredMedia } from "@/application/ports/media-uploader";
 import { requireAdmin } from "../../_lib/auth";
 import { toActionError } from "../../_lib/result";
@@ -13,25 +14,25 @@ import { toActionError } from "../../_lib/result";
 /** La tienda se renderiza por petición; esto limpia además cualquier caché de cliente/servidor. */
 const publish = () => revalidatePath("/", "layout");
 
-export async function saveWatchAction(input: AdminWatchInput): Promise<ActionResult<{ id: string; slug: string }>> {
+export async function saveProductAction(input: AdminProductInput): Promise<ActionResult<{ id: string; slug: string }>> {
   await requireAdmin();
   try {
-    const data = await new SaveWatch(getContainer()).execute(input);
+    const data = await new SaveProduct(getContainer()).execute(input);
     publish();
     return { ok: true, data };
   } catch (e) {
-    return toActionError(e, "save-watch");
+    return toActionError(e, "save-product");
   }
 }
 
-export async function deleteWatchAction(id: string): Promise<ActionResult> {
+export async function deleteProductAction(id: string): Promise<ActionResult> {
   await requireAdmin();
   try {
-    await new DeleteWatch(getContainer().watches).execute(id);
+    await new DeleteProduct(getContainer().products).execute(id);
     publish();
     return { ok: true, data: undefined };
   } catch (e) {
-    return toActionError(e, "delete-watch");
+    return toActionError(e, "delete-product");
   }
 }
 
@@ -73,5 +74,27 @@ export async function deleteCategoryAction(slug: string): Promise<ActionResult> 
     return { ok: true, data: undefined };
   } catch (e) {
     return toActionError(e, "delete-category");
+  }
+}
+
+export async function saveLineAction(input: LineInput): Promise<ActionResult<{ slug: string }>> {
+  await requireAdmin();
+  try {
+    const data = await new SaveLine(getContainer()).execute(input);
+    publish();
+    return { ok: true, data };
+  } catch (e) {
+    return toActionError(e, "save-line");
+  }
+}
+
+export async function deleteLineAction(slug: string): Promise<ActionResult> {
+  await requireAdmin();
+  try {
+    await new DeleteLine(getContainer()).execute(slug);
+    publish();
+    return { ok: true, data: undefined };
+  } catch (e) {
+    return toActionError(e, "delete-line");
   }
 }

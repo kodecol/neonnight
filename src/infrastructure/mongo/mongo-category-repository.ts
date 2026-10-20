@@ -2,10 +2,11 @@ import type { Category } from "@/domain/entities/category";
 import type { CategoryRepository } from "@/domain/repositories/category-repository";
 import type { DbProvider } from "./client";
 
-interface CategoryDoc {
+export interface CategoryDoc {
   _id: string;
   label: string;
   order: number;
+  line: string;
 }
 
 export class MongoCategoryRepository implements CategoryRepository {
@@ -17,11 +18,11 @@ export class MongoCategoryRepository implements CategoryRepository {
 
   async list(): Promise<readonly Category[]> {
     const docs = await (await this.col()).find().sort({ order: 1, label: 1 }).toArray();
-    return docs.map((d) => ({ slug: d._id, label: d.label, order: d.order }));
+    return docs.map((d) => ({ slug: d._id, label: d.label, order: d.order, line: d.line }));
   }
 
   async save(c: Category): Promise<void> {
-    await (await this.col()).replaceOne({ _id: c.slug }, { label: c.label, order: c.order }, { upsert: true });
+    await (await this.col()).replaceOne({ _id: c.slug }, { label: c.label, order: c.order, line: c.line }, { upsert: true });
   }
 
   async delete(slug: string): Promise<void> {

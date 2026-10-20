@@ -7,7 +7,7 @@ export function ProductGrid({ items, columns, actions, className }: { items: Pro
   return (
     <div className={cn("grid", grid, className)} data-testid="product-grid">
       {items.map((item) => (
-        <ProductCard key={item.watch.id} item={item} ratio={columns === 3 ? "1/1" : "4/5"} sizes={sizes} actions={actions} />
+        <ProductCard key={item.product.id} item={item} ratio={columns === 3 ? "1/1" : "4/5"} sizes={sizes} actions={actions} />
       ))}
     </div>
   );

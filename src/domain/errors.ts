@@ -5,15 +5,21 @@ export class DomainError extends Error {
   }
 }
 
-export class WatchNotFoundError extends DomainError {
+export class ProductNotFoundError extends DomainError {
   constructor(public readonly slug: string) {
-    super(`No existe ningún reloj con slug "${slug}".`);
+    super(`No existe ningún producto con slug "${slug}".`);
   }
 }
 
-export class WatchUnavailableError extends DomainError {
+export class ProductUnavailableError extends DomainError {
+  constructor(public readonly slug: string, detail = "ya no está disponible") {
+    super(`"${slug}" ${detail}.`);
+  }
+}
+
+export class LineNotFoundError extends DomainError {
   constructor(public readonly slug: string) {
-    super(`El reloj "${slug}" ya no está disponible.`);
+    super(`No existe la línea "${slug}".`);
   }
 }
 
@@ -27,7 +33,13 @@ export class EmptyCartError extends DomainError {
 
 export class CategoryInUseError extends DomainError {
   constructor(public readonly slug: string, public readonly count: number) {
-    super(`La categoría "${slug}" tiene ${count} reloj(es) asignados. Reasígnalos antes de borrarla.`);
+    super(`La categoría "${slug}" tiene ${count} producto(s) asignados. Reasígnalos antes de borrarla.`);
+  }
+}
+
+export class LineInUseError extends DomainError {
+  constructor(public readonly slug: string, what: string) {
+    super(`La línea "${slug}" todavía tiene ${what}. Muévelos o elimínalos antes de borrarla.`);
   }
 }
 

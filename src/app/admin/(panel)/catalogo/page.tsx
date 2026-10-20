@@ -1,37 +1,40 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getContainer } from "@/infrastructure/container";
-import { ListAdminWatches } from "@/application/use-cases/admin/list-admin-watches";
+import { ListAdminProducts } from "@/application/use-cases/admin/list-admin-products";
 import { ListCategories } from "@/application/use-cases/admin/categories";
+import { ListAdminLines } from "@/application/use-cases/admin/lines";
 import { AdminPageHeader } from "@/presentation/components/admin/AdminShell";
 import { CatalogList } from "@/presentation/components/admin/CatalogList";
 import { CategoryManager } from "@/presentation/components/admin/CategoryManager";
+import { LineManager } from "@/presentation/components/admin/LineManager";
 import { Button } from "@/presentation/components/primitives/Button";
 import { cn } from "@/presentation/lib/cn";
-import { deleteCategoryAction, saveCategoryAction } from "./actions";
+import { deleteCategoryAction, deleteLineAction, saveCategoryAction, saveLineAction, uploadImageAction } from "./actions";
 
 export const metadata: Metadata = { title: "Catálogo" };
 
 export default async function CatalogPage({ searchParams }: { searchParams: Promise<{ tab?: string }> }) {
   const { tab } = await searchParams;
-  const showCategories = tab === "categorias";
+  const view = tab === "lineas" || tab === "categorias" ? tab : "productos";
   const container = getContainer();
-  const [rows, categories] = await Promise.all([new ListAdminWatches(container).execute(), new ListCategories(container).execute()]);
-  const available = rows.filter((r) => r.availability === "disponible").length;
+  const [rows, categories, lines] = await Promise.all([new ListAdminProducts(container).execute(), new ListCategories(container).execute(), new ListAdminLines(container).execute()]);
+  const available = rows.filter((r) => r.status.code === "disponible" || r.status.code === "ultimas").length;
 
   const tabs = [
-    { href: "/admin/catalogo", label: "Relojes", count: rows.length, active: !showCategories },
-    { href: "/admin/catalogo?tab=categorias", label: "Categorías", count: categories.length, active: showCategories },
+    { href: "/admin/catalogo", label: "Productos", count: rows.length, active: view === "productos" },
+    { href: "/admin/catalogo?tab=lineas", label: "Líneas", count: lines.length, active: view === "lineas" },
+    { href: "/admin/catalogo?tab=categorias", label: "Categorías", count: categories.length, active: view === "categorias" },
   ];
 
   return (
     <>
       <AdminPageHeader
-        kicker={`${rows.length} piezas · ${available} disponibles`}
+        kicker={`${rows.length} productos · ${available} a la venta`}
         title="Catálogo"
         actions={
           <Button href="/admin/catalogo/nuevo" size="sm">
-            + Nuevo reloj
+            + Nuevo producto
           </Button>
         }
       />
@@ -47,10 +50,12 @@ export default async function CatalogPage({ searchParams }: { searchParams: Prom
           </Link>
         ))}
       </nav>
-      {showCategories ? (
-        <CategoryManager categories={categories} save={saveCategoryAction} remove={deleteCategoryAction} />
+      {view === "lineas" ? (
+        <LineManager lines={lines} save={saveLineAction} remove={deleteLineAction} upload={uploadImageAction} />
+      ) : view === "categorias" ? (
+        <CategoryManager categories={categories} lines={lines} save={saveCategoryAction} remove={deleteCategoryAction} />
       ) : (
-        <CatalogList rows={rows} categories={categories} />
+        <CatalogList rows={rows} lines={lines} />
       )}
     </>
   );

@@ -1,10 +1,11 @@
 import Image from "next/image";
-import type { ImageDto } from "@/application/dto/watch.dto";
+import type { ImageDto } from "@/application/dto/product.dto";
 import { cn } from "@/presentation/lib/cn";
 
 /**
  * Contenedor de media con alto reservado (CLS 0). Si no hay imagen, deja la
  * superficie #0E0E0E como en el prototipo (placeholder de las refs 02–08).
+ * `bare` quita esa superficie para recortes que flotan sobre otro fondo.
  */
 export function MediaSlot({
   image,
@@ -14,6 +15,7 @@ export function MediaSlot({
   className,
   label,
   position,
+  bare = false,
 }: {
   image: ImageDto | null;
   fit?: "cover" | "contain";
@@ -23,9 +25,10 @@ export function MediaSlot({
   label?: string;
   /** `object-position` del recorte. */
   position?: string;
+  bare?: boolean;
 }) {
   return (
-    <div className={cn("relative overflow-hidden bg-surface", className)} aria-label={image ? undefined : label} role={image ? undefined : "img"}>
+    <div className={cn("relative overflow-hidden", !bare && "bg-surface", className)} aria-label={image ? undefined : label} role={image ? undefined : "img"}>
       {image ? (
         <Image
           src={image.src}

@@ -1,6 +1,7 @@
-import type { WatchId } from "./watch";
+import type { ProductId } from "./product";
 
 export interface CartLine {
-  readonly watchId: WatchId;
+  readonly productId: ProductId;
+  readonly variantId: string;
   readonly quantity: number;
 }

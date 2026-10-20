@@ -1,3 +1,5 @@
+import type { ProductKind } from "@/domain/entities/product";
+
 /**
  * Contenido editorial del sitio. Todo lo que no es catálogo de producto
  * (copys, enlaces, redes, secciones de la home, footer) vive aquí para que
@@ -111,6 +113,8 @@ export interface SiteContent {
       secondaryCta: string;
     };
     catalog: { kicker: string; title: string; /** `{count}` se sustituye por el total. */ ctaTemplate: string; featuredCount: number };
+    /** Portadas de las líneas. `{label}` y `{count}` se sustituyen por los de cada línea. */
+    lines: { kicker: string; title: string; ctaTemplate: string; countTemplate: string };
     band: { title: string; image: ImageAsset };
     /** Las marcas del marquee salen del catálogo; aquí textos y logos por marca (clave en minúsculas). */
     brands: { label: string; disclaimer: string; logos: Record<string, BrandLogo> };
@@ -123,13 +127,23 @@ export interface SiteContent {
     title: string;
     breadcrumbHome: string;
     emptyMessage: string;
-    filters: Array<{ label: string; category?: string; maxPriceUnits?: number }>;
+    /** Pestaña de toda la colección junto a las líneas. */
+    allLabel: string;
+    filterLabel: string;
+    sortLabel: string;
+    clearLabel: string;
+    /** `{count}` se sustituye por el número de resultados. */
+    resultsOne: string;
+    resultsTemplate: string;
   };
   product: {
-    descriptionTitle: string;
-    subnav: Array<{ id: string; label: string }>;
-    galleryCaptions: [string, string];
     specsKicker: string;
+    tabs: { details: string; notes: string; specs: string; purchase: string };
+    /** Textos que cambian según la plantilla de la línea. */
+    byKind: Record<ProductKind, { pieceTab: string; descriptionTitle: string; galleryCaptions: [string, string]; variantLabel: string }>;
+    notes: { kicker: string; title: string; top: [string, string]; heart: [string, string]; base: [string, string] };
+    related: { kicker: string; title: string };
+    purchase: { add: string; chooseOption: string; quantity: string; whatsapp: string; /** `{count}` */ lowStockTemplate: string };
   };
   cart: {
     title: string;

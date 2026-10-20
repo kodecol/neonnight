@@ -1,4 +1,4 @@
-import type { ImageDto } from "@/application/dto/watch.dto";
+import type { ImageDto } from "@/application/dto/product.dto";
 import { MediaSlot } from "@/presentation/components/primitives/MediaSlot";
 import { cn } from "@/presentation/lib/cn";
 

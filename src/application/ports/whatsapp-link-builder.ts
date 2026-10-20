@@ -6,7 +6,7 @@ export interface WhatsAppContext {
 
 export interface WhatsAppLinkBuilder {
   /** Devuelve null si el número aún no está configurado. */
-  forWatch(ctx: WhatsAppContext): string | null;
+  forProduct(ctx: WhatsAppContext): string | null;
   forCart(summary: { readonly names: readonly string[]; readonly totalFormatted: string }): string | null;
   generic(message?: string): string | null;
   isConfigured(): boolean;
