@@ -4,12 +4,12 @@
 # llegan en runtime por variables de entorno (ver deploy/.env.example).
 # Se construye en CI (GitHub Actions) o en la máquina de desarrollo, nunca en el VPS.
 
-FROM node:22-alpine AS deps
+FROM node:26-alpine AS deps
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci --ignore-scripts
 
-FROM node:22-alpine AS build
+FROM node:26-alpine AS build
 WORKDIR /app
 ENV NEXT_TELEMETRY_DISABLED=1
 COPY --from=deps /app/node_modules ./node_modules
@@ -20,7 +20,7 @@ RUN npm run build \
  && cd .next/standalone/node_modules \
  && rm -rf @img/sharp-libvips-linux-x64 @img/sharp-linux-x64 @img/sharp-wasm32 typescript
 
-FROM node:22-alpine AS runner
+FROM node:26-alpine AS runner
 WORKDIR /app
 ARG BUILD_SHA=dev
 ENV NODE_ENV=production \
