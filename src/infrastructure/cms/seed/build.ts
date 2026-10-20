@@ -2,6 +2,7 @@ import { productId, type Product, type ProductCondition, type ProductImage, type
 import { Money } from "@/domain/value-objects/money";
 import { Slug } from "@/domain/value-objects/slug";
 import { Reference } from "@/domain/value-objects/reference";
+import { withLibrary } from "@/domain/services/media-library";
 
 /**
  * Versión del seed. Cada elemento declara desde qué versión existe (`since`):
@@ -21,8 +22,9 @@ export const SEED_UPDATED_AT = new Date("2026-10-20T00:00:00.000Z");
 export const cutout = (src: string, alt: string, width = 1600, height = 1600): ProductImage => ({ src, alt, width, height });
 
 /**
- * Foto de ambiente del producto. Las oscuras protagonizan el hero; las claras
- * (campañas sobre fondo blanco) van como banda editorial para no lavar el hero.
+ * Foto de ambiente del producto. Las oscuras protagonizan el hero y se repiten
+ * como imagen final (una foto, varios usos); las claras (campañas sobre fondo
+ * blanco) van solo como imagen final para no lavar el hero.
  */
 export interface SeedEditorial {
   w: number;
@@ -30,10 +32,10 @@ export interface SeedEditorial {
   as: "hero" | "band";
 }
 
-export function editorialMedia(slug: string, name: string, e: SeedEditorial | undefined): Pick<ProductMedia, "hero" | "band"> {
+export function editorialMedia(slug: string, name: string, e: SeedEditorial | undefined): { hero: ProductImage | null; band: ProductImage | null } {
   if (!e) return { hero: null, band: null };
   const img: ProductImage = { src: `/assets/products/${slug}-editorial.webp`, alt: `${name} en ambiente`, width: e.w, height: e.h };
-  return e.as === "hero" ? { hero: img, band: null } : { hero: null, band: img };
+  return e.as === "hero" ? { hero: img, band: img } : { hero: null, band: img };
 }
 
 export interface SeedProductInput {
@@ -74,13 +76,13 @@ export function buildProduct(i: SeedProductInput): Product {
       price: Money.fromUnits(v.priceUnits),
       stock: v.stock,
     })),
-    media: {
+    media: withLibrary({
       hero: null,
       gallery: [i.media.front, i.media.back].filter((x): x is ProductImage => x !== null),
       band: null,
       video: null,
       ...i.media,
-    },
+    }),
     includes: i.includes,
     availability: "disponible",
     featured: i.featured ?? false,

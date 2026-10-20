@@ -1,6 +1,7 @@
 import type { ProductRepository } from "@/domain/repositories/product-repository";
 import type { Product, ProductImage, ProductSpecs } from "@/domain/entities/product";
 import type { LineTemplate, ProductLine } from "@/domain/entities/product-line";
+import { HERO_VIDEO, isVideo, libraryOf } from "@/domain/services/media-library";
 import type { AdminImageInput, AdminProductFormDto, ProductSpecsInput } from "../../dto/admin.dto";
 
 const toImage = (img: ProductImage): AdminImageInput => ({ src: img.src, width: img.width, height: img.height, alt: img.alt });
@@ -30,10 +31,16 @@ export function toAdminProductForm(p: Product): AdminProductFormDto {
     specs: cloneSpecs(p.specs),
     variants: p.variants.map((v) => ({ id: v.id, label: v.label, priceUnits: v.price.units, stock: v.stock })),
     media: {
-      front: p.media.front ? toImage(p.media.front) : null,
-      back: p.media.back ? toImage(p.media.back) : null,
-      gallery: p.media.gallery.map(toImage),
+      library: libraryOf(p.media).map(toImage),
+      roles: {
+        front: p.media.front?.src ?? null,
+        back: p.media.back?.src ?? null,
+        hero: isVideo(p.media.hero) ? HERO_VIDEO : (p.media.hero?.src ?? null),
+        band: p.media.band?.src ?? null,
+      },
+      gallery: p.media.gallery.map((g) => g.src),
     },
+    heroVideoPoster: isVideo(p.media.hero) ? p.media.hero.poster : null,
   };
 }
 
@@ -74,7 +81,8 @@ export function emptyAdminProductForm(line: ProductLine, defaultCategory: string
           { id: null, label: "100 ml", priceUnits: 0, stock: 0 },
         ]
       : [{ id: null, label: "", priceUnits: 0, stock: 1 }],
-    media: { front: null, back: null, gallery: [] },
+    media: { library: [], roles: { front: null, back: null, hero: null, band: null }, gallery: [] },
+    heroVideoPoster: null,
   };
 }
 

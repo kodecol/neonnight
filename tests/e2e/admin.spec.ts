@@ -45,9 +45,26 @@ test.describe("Panel de administración", () => {
     await page.click("button[type=submit]");
     await expect(page).toHaveURL(/\/admin\/catalogo$/);
     await page.goto("/admin/catalogo/nuevo?linea=relojeria");
-    await page.locator("input[type=file]").first().setInputFiles("public/assets/ref03-front.png");
-    await expect(page.getByText("Reemplazar").first()).toBeVisible({ timeout: 20_000 });
+    // Varias fotos a la vez en la biblioteca única: la primera queda como portada.
+    await page.getByTestId("media-library").locator("input[type=file]").setInputFiles(["public/assets/ref03-front.png", "public/assets/ref03-back.png"]);
+    const grid = page.getByTestId("media-grid");
+    await expect(grid.locator("li button[aria-pressed]")).toHaveCount(2, { timeout: 20_000 });
     await expect(page.getByText("No llegó ningún archivo.")).toHaveCount(0);
+    await expect(grid.getByText("Portada")).toHaveCount(1);
+    await expect(grid.getByText("2.ª vista")).toHaveCount(1);
+
+    // La misma foto puede ir en varios lugares: la segunda como hero y como imagen final.
+    await grid.locator("li button[aria-pressed]").nth(1).click();
+    await page.getByTestId("assign-hero").click();
+    await page.getByTestId("assign-band").click();
+    await expect(grid.locator("li").nth(1)).toContainText("Hero");
+    await expect(grid.locator("li").nth(1)).toContainText("Final");
+
+    // Desde la casilla del uso también se elige la foto.
+    await page.getByTestId("media-role-band").click();
+    await grid.locator("li button[aria-pressed]").first().click();
+    await expect(grid.locator("li").first()).toContainText("Final");
+    await expect(grid.locator("li").nth(1)).not.toContainText("Final");
   });
 
   test("nuevo producto: primero la línea, luego la ficha de su plantilla", async ({ page }) => {

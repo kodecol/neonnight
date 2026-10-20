@@ -82,11 +82,23 @@ export interface ProductVideo {
   readonly poster: string;
 }
 
+/**
+ * Medios de una pieza. `library` es la biblioteca única de fotos (en el orden
+ * que eligió el panel); los usos apuntan a fotos de esa biblioteca y una misma
+ * foto puede tener varios (portada y banda final, por ejemplo). Ver
+ * `services/media-library.ts`.
+ */
 export interface ProductMedia {
+  readonly library: readonly ProductImage[];
+  /** Portada: tarjeta del catálogo y cabecera de la ficha si no hay hero. */
   readonly front: ProductImage | null;
+  /** Segunda vista: aparece al pasar el cursor por la tarjeta. */
   readonly back: ProductImage | null;
+  /** Fondo de la cabecera de la ficha (foto de ambiente o video). */
   readonly hero: ProductImage | ProductVideo | null;
+  /** Fotos de la galería, en el orden de la biblioteca. */
   readonly gallery: readonly ProductImage[];
+  /** Imagen final: banda a pantalla completa al cierre de la ficha. */
   readonly band: ProductImage | null;
   readonly video: ProductVideo | null;
 }

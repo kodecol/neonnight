@@ -21,6 +21,36 @@ export const AdminImageInputSchema = z.object({
 });
 export type AdminImageInput = z.infer<typeof AdminImageInputSchema>;
 
+/** Usos de una foto en la ficha. "video" en `hero` conserva el video que ya tiene la pieza. */
+export const MEDIA_ROLE_KEYS = ["front", "back", "hero", "band"] as const;
+export type MediaRoleKey = (typeof MEDIA_ROLE_KEYS)[number];
+
+/**
+ * Biblioteca única de fotos de la pieza y los usos asignados (por `src`).
+ * Una misma foto puede tener varios usos; cada uso, una sola foto.
+ */
+export const AdminMediaInputSchema = z
+  .object({
+    library: z.array(AdminImageInputSchema).max(24, "Máximo 24 fotos por pieza."),
+    roles: z.object({ front: z.string().nullable(), back: z.string().nullable(), hero: z.string().nullable(), band: z.string().nullable() }),
+    gallery: z.array(z.string()).max(24),
+  })
+  .superRefine((m, ctx) => {
+    const srcs = new Set<string>();
+    m.library.forEach((img, i) => {
+      if (srcs.has(img.src)) ctx.addIssue({ code: "custom", path: ["library", i], message: "Foto repetida." });
+      srcs.add(img.src);
+    });
+    for (const role of MEDIA_ROLE_KEYS) {
+      const v = m.roles[role];
+      if (v !== null && !(role === "hero" && v === "video") && !srcs.has(v)) ctx.addIssue({ code: "custom", path: ["roles", role], message: "La foto asignada ya no está en la biblioteca." });
+    }
+    m.gallery.forEach((src, i) => {
+      if (!srcs.has(src)) ctx.addIssue({ code: "custom", path: ["gallery", i], message: "La foto de la galería ya no está en la biblioteca." });
+    });
+  });
+export type AdminMediaInput = z.infer<typeof AdminMediaInputSchema>;
+
 const text = (max: number, msg = "Obligatorio.") => z.string().trim().min(1, msg).max(max);
 const optionalText = (max: number) => z.string().trim().max(max).nullable().transform((v) => (v ? v : null));
 const optionalInt = z.number().int().nonnegative().nullable();
@@ -92,16 +122,15 @@ export const AdminProductInputSchema = z.object({
   includes: z.array(z.string().trim().min(1)).max(12),
   specs: ProductSpecsInputSchema,
   variants: z.array(AdminVariantInputSchema).min(1, "Añade al menos una presentación.").max(12),
-  media: z.object({
-    front: AdminImageInputSchema.nullable(),
-    back: AdminImageInputSchema.nullable(),
-    gallery: z.array(AdminImageInputSchema).max(12),
-  }),
+  media: AdminMediaInputSchema,
 });
 export type AdminProductInput = z.infer<typeof AdminProductInputSchema>;
 
-/** Forma del formulario de producto (lo que el panel edita). */
-export type AdminProductFormDto = AdminProductInput;
+/** Forma del formulario de producto (lo que el panel edita) y lo que solo muestra. */
+export type AdminProductFormDto = AdminProductInput & {
+  /** Poster del video del hero, si la pieza lo tiene (el video no se sube desde el panel). */
+  heroVideoPoster: string | null;
+};
 
 /** Fila de la lista del catálogo en el panel. */
 export interface AdminProductRowDto {

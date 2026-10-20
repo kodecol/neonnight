@@ -2,6 +2,7 @@ import { productId, type Product, type ProductMedia, type ProductSpecs } from "@
 import { Money } from "@/domain/value-objects/money";
 import { Slug } from "@/domain/value-objects/slug";
 import { Reference } from "@/domain/value-objects/reference";
+import { withLibrary } from "@/domain/services/media-library";
 
 export interface VariantDoc {
   id: string;
@@ -26,7 +27,8 @@ export interface ProductDoc {
   variants: VariantDoc[];
   /** Precio de entrada desnormalizado: permite ordenar o filtrar en la base si el catálogo crece. */
   minPriceCents: number;
-  media: ProductMedia;
+  /** Los documentos anteriores a la biblioteca de medios no traen `media.library`. */
+  media: Omit<ProductMedia, "library"> & { library?: ProductMedia["library"] };
   includes: string[];
   availability: Product["availability"];
   featured: boolean;
@@ -73,7 +75,7 @@ export function fromProductDoc(d: ProductDoc): Product {
     description: d.description,
     specs: d.specs,
     variants: d.variants.map((v) => ({ id: v.id, label: v.label, price: Money.fromCents(v.priceCents, d.currency), stock: v.stock })),
-    media: d.media,
+    media: withLibrary(d.media),
     includes: d.includes,
     availability: d.availability,
     featured: d.featured,

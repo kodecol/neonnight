@@ -108,6 +108,7 @@ const rows: PerfumeRow[] = [
   },
   {
     slug: "parfums-de-marly-layton",
+    editorial: { w: 2160, h: 1620, as: "band" },
     brand: "Parfums de Marly",
     model: "Layton",
     category: "ambar-y-especias",
@@ -149,6 +150,7 @@ const rows: PerfumeRow[] = [
   },
   {
     slug: "dior-sauvage-elixir",
+    editorial: { w: 1920, h: 1080, as: "band" },
     brand: "Dior",
     model: "Sauvage Elixir",
     category: "frescos-y-aromaticos",
@@ -169,6 +171,7 @@ const rows: PerfumeRow[] = [
   },
   {
     slug: "byredo-gypsy-water",
+    editorial: { w: 2000, h: 1500, as: "band" },
     brand: "Byredo",
     model: "Gypsy Water",
     category: "amaderados",
@@ -189,6 +192,7 @@ const rows: PerfumeRow[] = [
   },
   {
     slug: "chanel-coco-mademoiselle",
+    editorial: { w: 2000, h: 1500, as: "band" },
     brand: "Chanel",
     model: "Coco Mademoiselle",
     category: "florales",
@@ -209,6 +213,7 @@ const rows: PerfumeRow[] = [
   },
   {
     slug: "chanel-no5-eau-de-parfum",
+    editorial: { w: 1948, h: 1461, as: "band" },
     brand: "Chanel",
     model: "N°5",
     category: "florales",

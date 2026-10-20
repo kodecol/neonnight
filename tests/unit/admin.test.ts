@@ -49,7 +49,7 @@ const watchInput = (over: Partial<AdminProductInput> = {}): AdminProductInput =>
   includes: ["Caja y papeles"],
   specs: { kind: "reloj", movement: "Automático · Cal. 69355", powerReserveHours: 46, caseMm: 41, caseMaterial: "acero", crystal: "Zafiro", waterResistanceM: 30 },
   variants: [{ id: null, label: "", priceUnits: 28_500_000, stock: 1 }],
-  media: { front: { src: "/api/media/x.png", width: 1000, height: 1000 }, back: null, gallery: [] },
+  media: { library: [{ src: "/api/media/x.png", width: 1000, height: 1000 }], roles: { front: "/api/media/x.png", back: null, hero: null, band: null }, gallery: ["/api/media/x.png"] },
   ...over,
 });
 
@@ -110,7 +110,12 @@ describe("SaveProduct", () => {
     await expect(
       uc.execute(perfumeInput({ variants: [{ id: null, label: "50 ml", priceUnits: 1, stock: 1 }, { id: null, label: "50 ML", priceUnits: 1, stock: 1 }] })),
     ).rejects.toMatchObject({ field: "variants.1.label" });
-    await expect(uc.execute(watchInput({ media: { front: { src: "https://evil.example/x.png", width: 1, height: 1 }, back: null, gallery: [] } }))).rejects.toBeInstanceOf(ZodError);
+    await expect(
+      uc.execute(watchInput({ media: { library: [{ src: "https://evil.example/x.png", width: 1, height: 1 }], roles: { front: "https://evil.example/x.png", back: null, hero: null, band: null }, gallery: [] } })),
+    ).rejects.toBeInstanceOf(ZodError);
+    // Un uso o una foto de galería que no está en la biblioteca no pasa.
+    await expect(uc.execute(watchInput({ media: { library: [], roles: { front: "/api/media/x.png", back: null, hero: null, band: null }, gallery: [] } }))).rejects.toBeInstanceOf(ZodError);
+    await expect(uc.execute(watchInput({ media: { library: [], roles: { front: null, back: null, hero: null, band: null }, gallery: ["/api/media/x.png"] } }))).rejects.toBeInstanceOf(ZodError);
   });
 
   it("rechaza un slug ya usado por otro producto", async () => {

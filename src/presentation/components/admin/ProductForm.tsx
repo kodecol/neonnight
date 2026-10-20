@@ -1,7 +1,7 @@
 "use client";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
-import type { ActionResult, AdminImageInput, AdminProductFormDto, AdminProductInput } from "@/application/dto/admin.dto";
+import type { ActionResult, AdminProductFormDto, AdminProductInput, MediaRoleKey } from "@/application/dto/admin.dto";
 import { TEMPLATE_LABEL } from "@/application/dto/admin.dto";
 import type { LineTemplate } from "@/domain/entities/product-line";
 import { Button } from "@/presentation/components/primitives/Button";
@@ -9,7 +9,9 @@ import { formatCop } from "@/presentation/lib/format-money";
 import { ROUTES } from "@/presentation/lib/site";
 import { cn } from "@/presentation/lib/cn";
 import { FormSection, Select, TextArea, TextInput, Toggle } from "./fields";
-import { GalleryField, ImageSlot, type UploadAction } from "./ImageField";
+import type { UploadAction } from "./ImageField";
+import { MediaLibrary, type RoleCopy } from "./MediaLibrary";
+import type { MediaDraft } from "@/presentation/lib/media-draft";
 import { AdminPageHeader } from "./AdminShell";
 import { SpecsFields, specsToDraft, specsToInput, type SpecsDraft } from "./SpecsFields";
 import { VariantsField, type VariantDraft } from "./VariantsField";
@@ -25,11 +27,12 @@ const CONDITION = [
   { value: "excelente", label: "Excelente" },
 ] as const;
 
-const PHOTO_LABELS: Record<LineTemplate, [string, string]> = {
-  reloj: ["Frente", "Reverso"],
-  joya: ["Principal", "Otro ángulo"],
-  perfume: ["Frasco", "Otro ángulo o caja"],
-  general: ["Principal", "Segunda vista"],
+/** Usos de las fotos en la ficha, con dónde aparecen en la tienda. */
+const MEDIA_ROLES: Record<MediaRoleKey, RoleCopy> = {
+  front: { label: "Portada", hint: "Tarjeta del catálogo y cabecera si no hay hero", badge: "Portada" },
+  back: { label: "Segunda vista", hint: "Aparece al pasar el cursor por la tarjeta", badge: "2.ª vista" },
+  hero: { label: "Fondo del hero", hint: "Foto de ambiente detrás del nombre de la pieza", badge: "Hero" },
+  band: { label: "Imagen final", hint: "Banda a pantalla completa al cierre de la ficha", badge: "Final" },
 };
 
 function slugify(text: string): string {
@@ -59,9 +62,7 @@ interface Draft {
   includes: string;
   specs: SpecsDraft;
   variants: VariantDraft[];
-  front: AdminImageInput | null;
-  back: AdminImageInput | null;
-  gallery: AdminImageInput[];
+  media: MediaDraft;
 }
 
 function toDraft(p: AdminProductFormDto): Draft {
@@ -79,9 +80,7 @@ function toDraft(p: AdminProductFormDto): Draft {
     includes: p.includes.join("\n"),
     specs: specsToDraft(p.specs),
     variants: p.variants.map((v, i) => ({ key: v.id ?? `nueva-${i}`, id: v.id, label: v.label, price: v.priceUnits ? String(v.priceUnits) : "", stock: String(v.stock) })),
-    front: p.media.front,
-    back: p.media.back,
-    gallery: p.media.gallery,
+    media: p.media,
   };
 }
 
@@ -102,7 +101,7 @@ function toInput(id: string | null, line: string, d: Draft): AdminProductInput {
     includes: lines(d.includes),
     specs: specsToInput(d.specs),
     variants: d.variants.map((v) => ({ id: v.id, label: v.label, priceUnits: Number(v.price || "0"), stock: Number(v.stock || "0") })),
-    media: { front: d.front, back: d.back, gallery: d.gallery },
+    media: d.media,
   };
 }
 
@@ -202,7 +201,7 @@ export function ProductForm({
     () => [...(categories.some((c) => c.slug === draft.category) ? [] : [{ value: "", label: "Elige una categoría" }]), ...categories.map((c) => ({ value: c.slug, label: c.label }))],
     [categories, draft.category],
   );
-  const [frontLabel, backLabel] = PHOTO_LABELS[template];
+  const mediaError = Object.entries(errors).find(([k]) => k.startsWith("media"))?.[1];
 
   return (
     <form onSubmit={onSubmit} noValidate>
@@ -253,15 +252,8 @@ export function ProductForm({
             </div>
           </FormSection>
 
-          <FormSection n="02" title="Fotos" aside={<span className="text-legal text-ink-3">Fondo transparente o negro, cuadradas</span>}>
-            <div className="grid gap-6 md:grid-cols-2">
-              <ImageSlot label={frontLabel} value={draft.front} onChange={(v) => set("front", v)} upload={upload} error={err("media.front")} />
-              <ImageSlot label={backLabel} value={draft.back} onChange={(v) => set("back", v)} upload={upload} error={err("media.back")} />
-            </div>
-            <div className="mt-10">
-              <span className="mb-4 block text-label uppercase text-ink-2">Galería · {draft.gallery.length}</span>
-              <GalleryField value={draft.gallery} onChange={(v) => set("gallery", v)} upload={upload} />
-            </div>
+          <FormSection n="02" title="Fotos" aside={<span className="text-legal text-ink-3">Una sola biblioteca: cada foto puede ir en varios lugares</span>}>
+            <MediaLibrary value={draft.media} onChange={(m) => set("media", m)} upload={upload} roles={MEDIA_ROLES} heroVideoPoster={initial.heroVideoPoster} error={mediaError} />
           </FormSection>
 
           <FormSection n="03" title="Descripción">
@@ -316,7 +308,7 @@ export function ProductForm({
               <div className="border-t border-divider pt-6">
                 <Toggle
                   label="Destacado"
-                  description="Protagoniza el hero de la home. Solo uno a la vez."
+                  description="Protagoniza el hero de la home cuando Inicio sigue a la pieza destacada. Solo uno a la vez."
                   checked={draft.featured}
                   onChange={(v) => set("featured", v)}
                 />

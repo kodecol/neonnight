@@ -51,6 +51,7 @@ const rows: WatchRow[] = [
   },
   {
     slug: "audemars-piguet-royal-oak-15510st",
+    editorial: { w: 1146, h: 750, as: "band" },
     brand: "Audemars Piguet",
     model: "Royal Oak 41",
     reference: "15510ST.OO.1320ST.06",

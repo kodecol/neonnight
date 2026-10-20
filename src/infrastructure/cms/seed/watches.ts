@@ -203,9 +203,12 @@ const rows: SeedRow[] = [
  * la v1 no las recibe: el seed nunca pisa lo existente.
  */
 const EDITORIAL: Record<string, SeedEditorial> = {
+  // Sky-Dweller: el hero sigue siendo el video; la foto de ambiente va como imagen final.
+  "01": { w: 1915, h: 1436, as: "band" },
   "02": { w: 2100, h: 1400, as: "hero" },
   "03": { w: 2100, h: 1400, as: "hero" },
   "04": { w: 2400, h: 1556, as: "hero" },
+  "05": { w: 2400, h: 1029, as: "band" },
   "06": { w: 1800, h: 1200, as: "hero" },
   "07": { w: 2048, h: 1152, as: "hero" },
   "08": { w: 2400, h: 1350, as: "band" },
@@ -247,7 +250,7 @@ function build(row: SeedRow): Product {
         { ...front, alt: `${name} dial y agujas` },
         { ...back, alt: `${name} caja y corona` },
       ],
-      band: isRef01 ? { src: "/assets/hero-day-date-poster.jpg", alt: `${name} detalle`, width: 1920, height: 1080 } : (editorial.band ?? { ...front, alt: `${name} detalle` }),
+      band: editorial.band,
       video: isRef01 ? { src: "/assets/vertical-daytona.mp4", poster: "/assets/vertical-daytona-poster.jpg" } : null,
     },
     featured: isRef01,

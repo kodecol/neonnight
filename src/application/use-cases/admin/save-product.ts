@@ -8,6 +8,7 @@ import { Reference } from "@/domain/value-objects/reference";
 import type { Clock, IdGenerator } from "../../ports/clock";
 import { FieldValidationError } from "../../lib/errors";
 import { AdminProductInputSchema, type AdminImageInput } from "../../dto/admin.dto";
+import { assignMedia, isVideo } from "@/domain/services/media-library";
 
 export interface SaveProductDeps {
   products: ProductRepository;
@@ -22,8 +23,9 @@ const image = (img: AdminImageInput, alt: string): ProductImage => ({ src: img.s
 /**
  * Alta o edición de un producto desde el panel. Valida contra la plantilla de
  * su línea, construye la entidad con los value objects del dominio y
- * garantiza un único destacado. Hero, banda y video no se editan en el panel:
- * se conservan.
+ * garantiza un único destacado. Las fotos llegan como una biblioteca con usos
+ * (portada, segunda vista, hero, imagen final, galería); el video de
+ * "En movimiento" y el del hero no se suben desde el panel y se conservan.
  */
 export class SaveProduct {
   constructor(private readonly deps: SaveProductDeps) {}
@@ -64,17 +66,16 @@ export class SaveProduct {
     }));
 
     const name = productDisplayName(input);
-    const front = input.media.front ? image(input.media.front, `${name} vista principal`) : null;
-    const back = input.media.back ? image(input.media.back, `${name} segunda vista`) : null;
-    const media: ProductMedia = {
-      front,
-      back,
-      gallery: input.media.gallery.map((g, i) => image(g, `${name} imagen ${i + 1}`)),
-      hero: prev?.media.hero ?? null,
-      // La banda del seed suele ser la foto frontal: si lo era, sigue a la nueva frontal.
-      band: prev?.media.band && prev.media.band.src !== prev.media.front?.src ? prev.media.band : front ? { ...front, alt: `${name} detalle` } : null,
-      video: prev?.media.video ?? null,
-    };
+    // Sin texto alternativo, se describe según su uso principal.
+    const { roles } = input.media;
+    const defaultAlt = (src: string, i: number) =>
+      roles.front === src ? `${name} vista principal` : roles.back === src ? `${name} segunda vista` : roles.hero === src || roles.band === src ? `${name} en ambiente` : `${name} imagen ${i + 1}`;
+    const library = input.media.library.map((img, i) => image(img, defaultAlt(img.src, i)));
+    const prevHero = prev?.media.hero ?? null;
+    const media: ProductMedia = assignMedia(
+      { library, roles: input.media.roles, gallery: input.media.gallery },
+      { heroVideo: isVideo(prevHero) ? prevHero : null, video: prev?.media.video ?? null },
+    );
 
     const product: Product = {
       id,
