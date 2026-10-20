@@ -1,0 +1,27 @@
+name: ✨ Propuesta de funcionalidad
+description: Una mejora o algo nuevo para la tienda o el panel.
+labels: ["tipo: funcionalidad", "estado: por revisar"]
+body:
+  - type: textarea
+    id: problema
+    attributes:
+      label: Qué problema resuelve
+      description: Para quién es y qué necesita hacer.
+    validations: { required: true }
+  - type: textarea
+    id: propuesta
+    attributes:
+      label: Propuesta
+      description: Cómo debería funcionar. Bocetos o referencias son bienvenidos.
+    validations: { required: true }
+  - type: dropdown
+    id: area
+    attributes:
+      label: Área
+      options: [Tienda, Carrito y checkout, Pagos (Bold), Panel /admin, Contenido, Despliegue o infraestructura, Otra]
+    validations: { required: true }
+  - type: textarea
+    id: criterios
+    attributes:
+      label: Criterios de aceptación
+      placeholder: "- [ ] …"

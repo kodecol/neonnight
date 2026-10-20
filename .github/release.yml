@@ -1,0 +1,21 @@
+# Categorías de las notas de versión autogeneradas (por etiqueta del PR).
+changelog:
+  exclude:
+    labels: ["omitir-changelog"]
+  categories:
+    - title: 💥 Cambios incompatibles
+      labels: ["cambio incompatible"]
+    - title: ✨ Funcionalidades
+      labels: ["tipo: funcionalidad"]
+    - title: 🐛 Correcciones
+      labels: ["tipo: bug"]
+    - title: 🔒️ Seguridad
+      labels: ["tipo: seguridad"]
+    - title: ⚡️ Rendimiento y ♻️ refactor
+      labels: ["tipo: rendimiento", "tipo: refactor"]
+    - title: 📝 Documentación
+      labels: ["tipo: docs"]
+    - title: ⬆️ Dependencias
+      labels: ["tipo: dependencias"]
+    - title: 🔧 Otros
+      labels: ["*"]
