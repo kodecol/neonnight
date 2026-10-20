@@ -21,8 +21,9 @@ export async function GET(req: Request) {
       <div style={{ fontSize: 26, fontWeight: 600, letterSpacing: "0.32em" }}>{site.brand.wordmark}</div>
     </div>
   );
-  const claims = (
-    <div style={{ display: "flex", gap: 18, fontSize: 19, fontWeight: 500, letterSpacing: "0.16em", textTransform: "uppercase", color: C.ink2 }}>
+  // En la tarjeta de línea la columna de texto es más angosta: la franja va más pequeña.
+  const claims = (size: number) => (
+    <div style={{ display: "flex", gap: size, fontSize: size, fontWeight: 500, letterSpacing: "0.14em", textTransform: "uppercase", color: C.ink2 }}>
       <span>Verificadas</span>
       <span style={{ color: C.accent }}>·</span>
       <span>Garantía {site.policies.warrantyMonths} meses</span>
@@ -43,7 +44,7 @@ export async function GET(req: Request) {
             <div style={{ fontSize: 96, fontWeight: 500, lineHeight: 1, letterSpacing: -3, textTransform: "uppercase", marginTop: 18 }}>{line.label}</div>
             <div style={{ fontSize: 28, fontWeight: 200, lineHeight: 1.35, color: C.ink2, marginTop: 26, maxWidth: 540 }}>{line.description}</div>
           </div>
-          {claims}
+          {claims(15)}
         </div>
         {cover && (
           // eslint-disable-next-line @next/next/no-img-element
@@ -61,20 +62,20 @@ export async function GET(req: Request) {
       <div style={{ display: "flex", flexDirection: "column", justifyContent: "space-between", width: "100%", height: "100%", padding: "64px 72px" }}>
         {brandRow}
         <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between" }}>
-          <div style={{ display: "flex", fontSize: 70, fontWeight: 500, lineHeight: 1.02, letterSpacing: -2, textTransform: "uppercase", maxWidth: picks.length ? 560 : 900 }}>
+          <div style={{ display: "flex", fontSize: 58, fontWeight: 500, lineHeight: 1.04, letterSpacing: -1.5, textTransform: "uppercase", maxWidth: picks.length ? 600 : 900 }}>
             Relojes, joyas y perfumes de las grandes casas
           </div>
           {picks.length > 0 && (
             <div style={{ display: "flex", alignItems: "flex-end", gap: 8 }}>
               {picks.map((src, i) => (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img key={src} src={src} width={i === 1 ? 210 : 180} height={i === 1 ? 210 : 180} alt="" style={{ objectFit: "contain" }} />
+                <img key={src} src={src} width={i === 1 ? 160 : 130} height={i === 1 ? 160 : 130} alt="" style={{ objectFit: "contain" }} />
               ))}
             </div>
           )}
         </div>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: `1px solid ${C.divider}`, paddingTop: 26 }}>
-          {claims}
+          {claims(18)}
           <div style={{ display: "flex", fontSize: 19, fontWeight: 200, color: C.ink2 }}>Bogotá · Envíos a toda Colombia</div>
         </div>
       </div>
