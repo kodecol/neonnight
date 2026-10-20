@@ -38,12 +38,13 @@ export async function deleteWatchAction(id: string): Promise<ActionResult> {
 export async function uploadImageAction(fd: FormData): Promise<ActionResult<StoredMedia>> {
   await requireAdmin();
   const file = fd.get("file");
-  if (!(file instanceof File)) return { ok: false, error: "No llegó ningún archivo." };
+  // Se valida por Blob (File hereda de Blob): no depende de cómo el runtime reconstruya el archivo.
+  if (!(file instanceof Blob) || file.size === 0) return { ok: false, error: "No llegó ningún archivo." };
   try {
     const data = await new UploadImage(getContainer().media).execute({
       bytes: new Uint8Array(await file.arrayBuffer()),
       contentType: file.type,
-      filename: file.name,
+      filename: "name" in file && typeof file.name === "string" ? file.name : "foto",
       width: Number(fd.get("width")),
       height: Number(fd.get("height")),
     });

@@ -39,6 +39,17 @@ test.describe("Panel de administración", () => {
     await expect(page.getByText("Guardado · publicado en la tienda")).toBeVisible();
   });
 
+  test("sube una foto desde el formulario de producto (build de producción)", async ({ page }) => {
+    await page.goto("/admin/login");
+    await page.fill("#password", E2E_ADMIN_PASSWORD);
+    await page.click("button[type=submit]");
+    await expect(page).toHaveURL(/\/admin\/catalogo$/);
+    await page.goto("/admin/catalogo/nuevo");
+    await page.locator("input[type=file]").first().setInputFiles("public/assets/ref03-front.png");
+    await expect(page.getByText("Reemplazar").first()).toBeVisible({ timeout: 20_000 });
+    await expect(page.getByText("No llegó ningún archivo.")).toHaveCount(0);
+  });
+
   test("health expone estado y versión sin caché", async ({ request }) => {
     const res = await request.get("/api/health");
     expect(res.status()).toBe(200);
