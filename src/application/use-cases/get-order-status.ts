@@ -7,6 +7,13 @@ export class GetOrderStatus {
 
   async execute(id: string): Promise<OrderStatusDto | null> {
     const order = await this.orders.findById(orderId(id));
-    return order ? { id: order.id, status: order.status, totalFormatted: order.total.format() } : null;
+    if (!order) return null;
+    return {
+      id: order.id,
+      status: order.status,
+      totalFormatted: order.total.format(),
+      totalCents: order.total.cents,
+      lines: order.lines.map((l) => ({ productId: l.productId, name: l.name, variantLabel: l.variantLabel, unitPriceCents: l.unitPrice.cents, quantity: l.quantity })),
+    };
   }
 }

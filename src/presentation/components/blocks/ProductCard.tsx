@@ -9,7 +9,6 @@ import { AddToCartButton } from "./AddToCartButton";
 
 export interface ProductCardItem {
   product: ProductSummaryDto;
-  whatsappUrl: string | null;
 }
 
 /** La tarjeta solo marca lo que cambia la decisión: pocas unidades, reservado o vendido. */
@@ -29,7 +28,7 @@ export function StatusBadge({ status, className }: { status: ProductSummaryDto["
 }
 
 export function ProductCard({ item, ratio, sizes, actions }: { item: ProductCardItem; ratio: "1/1" | "4/5"; sizes: string; actions: boolean }) {
-  const { product: p, whatsappUrl } = item;
+  const { product: p } = item;
   const href = ROUTES.product(p.kind, p.slug);
   const quick = p.purchasable && p.quickVariant && p.quickVariant.maxQuantity > 0 ? p.quickVariant : null;
   return (
@@ -67,13 +66,9 @@ export function ProductCard({ item, ratio, sizes, actions }: { item: ProductCard
           ) : (
             <AddToCartButton className="flex-1" testId={`add-${p.slug}`} item={null} label={p.status.label} />
           )}
-          {whatsappUrl ? (
-            <Button href={whatsappUrl} variant="ghost" size="sm" target="_blank" rel="noopener noreferrer" aria-label={`Consultar ${p.name} por WhatsApp`}>
-              WhatsApp
-            </Button>
-          ) : (
-            <Button variant="ghost" size="sm" disabled title="Número de WhatsApp pendiente">
-              WhatsApp
+          {!(p.purchasable && !quick) && (
+            <Button href={href} variant="ghost" size="sm" aria-label={`Ver ${p.name}`} data-testid={`view-${p.slug}`}>
+              Ver pieza
             </Button>
           )}
         </div>

@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 import { getContainer } from "@/infrastructure/container";
 import { ListLines } from "@/application/use-cases/list-lines";
+import { INFO_PAGE_SLUGS } from "@/application/dto/info-page.dto";
 import { ROUTES, absoluteUrl } from "@/presentation/lib/site";
 
 export const dynamic = "force-dynamic";
@@ -14,6 +15,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: absoluteUrl(ROUTES.home), lastModified: latest, changeFrequency: "weekly", priority: 1 },
     { url: absoluteUrl(ROUTES.collection), lastModified: latest, changeFrequency: "weekly", priority: 0.9 },
     ...lines.map((l) => ({ url: absoluteUrl(ROUTES.line(l.slug)), lastModified: lastOf(l.slug), changeFrequency: "weekly" as const, priority: 0.9 })),
+    // Institucionales y legales: cambian poco y su fecha es la de vigencia.
+    ...(await Promise.all(INFO_PAGE_SLUGS.map((slug) => container.content.page(slug))))
+      .filter((p) => p !== null)
+      .map((p) => ({ url: absoluteUrl(`/${p.slug}`), lastModified: new Date(`${p.updatedAt}T00:00:00Z`), changeFrequency: "yearly" as const, priority: p.slug === "nosotros" ? 0.6 : 0.4 })),
     ...products.map((p) => ({ url: absoluteUrl(ROUTES.product(p.specs.kind, p.slug.value)), lastModified: p.updatedAt, changeFrequency: "monthly" as const, priority: 0.8 })),
   ];
 }

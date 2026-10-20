@@ -1,0 +1,2 @@
+Archivo (Omnibus-Type), subconjunto latino de Fontsource. Licencia SIL Open Font License 1.1: https://openfontlicense.org
+Solo la usan las imágenes de vista previa (/og y opengraph-image); la web carga la fuente con next/font.

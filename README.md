@@ -35,7 +35,11 @@ npm run build && npm start      # producción
 | --- | --- |
 | `SITE_URL` | URL absoluta del sitio: canonicals, sitemap, OG, JSON-LD, URL de retorno del checkout. En local vale también `NEXT_PUBLIC_SITE_URL` |
 | `WHATSAPP_NUMBER` | Número internacional sin `+`. Vacío = enlaces de WhatsApp deshabilitados (**pendiente de definir**) |
-| `INSTAGRAM_URL`, `FACEBOOK_URL`, `TIKTOK_URL`, `YOUTUBE_URL` | Perfiles de la sección "Encuéntranos en redes" (**pendientes de confirmar**) |
+| `INSTAGRAM_URL`, `FACEBOOK_URL`, `YOUTUBE_URL` | Perfiles de redes. Por defecto ya son los reales (@neonnight01, neonnightonline, NeonNightsChannel) |
+| `TIKTOK_URL` | Vacía = TikTok no aparece |
+| `GA_MEASUREMENT_ID` | Google Analytics 4 (`G-XXXXXXX`). Vacía = sin GA. Solo se carga si la persona acepta la analítica |
+| `META_PIXEL_ID` | Píxel de Meta (solo dígitos). Vacía = sin píxel. Solo se carga si la persona acepta la publicidad |
+| `GOOGLE_SITE_VERIFICATION`, `META_DOMAIN_VERIFICATION` | Códigos de verificación de Search Console y de Meta Business (etiquetas `<meta>`) |
 | `MONGODB_URI` | MongoDB (Atlas en producción, `mongodb://localhost:27018` en local). Vacía = repositorios en memoria, sin persistencia |
 | `MONGODB_DB` | Nombre de la base (por defecto `neonnight`) |
 | `CLOUDINARY_URL` | `cloudinary://key:secret@cloud`. Vacía = fotos en disco local (`.data/uploads`, solo desarrollo) |
@@ -52,7 +56,9 @@ Todas se leen **en runtime**: la misma imagen sirve para cualquier dominio y ent
 | `/coleccion` | dinámica | Toda la colección: pestañas de línea, filtros comunes (marca, precio, disponibilidad) y orden |
 | `/coleccion/[linea]` | dinámica, filtros por `searchParams` (`?categoria=`, `?marca=a,b`, `?orden=precio-asc`…) | Página indexable de cada línea: chips de categoría y facetas propias de su plantilla. Con filtros → `noindex, follow`. `/coleccion?categoria=x` redirige a la línea |
 | `/reloj`, `/joya`, `/perfume`, `/producto` + `/[slug]` | dinámica | Detalle según la plantilla: hero, sub-nav sticky, descripción, notas olfativas (perfume), galería, banda, ficha, selector de presentación y cantidad, relacionados. JSON-LD `Product` (`AggregateOffer` con variantes), OG image dinámica |
-| `/gracias` | dinámica | Retorno del checkout; muestra el estado del pago si Bold está activo |
+| `/gracias` | dinámica | Retorno del checkout; muestra el estado del pago si Bold está activo y registra la compra en la analítica (una vez por pedido) |
+| `/nosotros`, `/envios`, `/pagos`, `/garantia`, `/devoluciones`, `/terminos`, `/privacidad` | dinámica | Páginas institucionales y legales (Ley 1480, Ley 1581). Texto en `src/infrastructure/content/pages/`, plazos desde `SITE_CONTENT.policies`. Ver ADR 0006 |
+| `/og`, `/og?linea=<slug>` | imagen | Vista previa al compartir (1200 × 630) de la home, la colección, las líneas y las páginas institucionales |
 | `/api/checkout` | POST | Recalcula precio y disponibilidad en el servidor y abre la sesión de pago |
 | `/api/webhooks/bold` | POST | Notificaciones de Bold con firma verificada |
 | `/api/media/[archivo]` | GET | Fotos subidas en desarrollo (sin Cloudinary) |
@@ -151,10 +157,12 @@ La guía completa está en **[`docs/DEPLOY.md`](docs/DEPLOY.md)**: infraestructu
 - Precios orientativos en COP (convertidos del precio público en EE. UU. o del mercado de segunda mano), no confirmados. Stock de ejemplo.
 - Textos descriptivos redactados como placeholder informado; revisar con el equipo comercial.
 - Número de WhatsApp.
-- Perfiles reales de Instagram, Facebook, TikTok y YouTube (hoy son `@neonnight` de ejemplo).
+- Propietario del establecimiento y su NIT (`company.owner` en `site-content.ts`): la política de datos lo nombra como responsable cuando existe.
+- Crear el buzón `contacto@neonightonline.com` (es el canal legal de reclamos y de datos personales) o cambiar `company.email`.
+- IDs de Google Analytics 4 y del píxel de Meta (`GA_MEASUREMENT_ID`, `META_PIXEL_ID`).
+- Revisión de las páginas legales por un abogado antes del lanzamiento.
 - **Testimonios:** los 4 actuales (`home.testimonials` en `site-content.ts`) son textos de **ejemplo**. Antes de publicar hay que reemplazarlos por testimonios reales, con autorización escrita de cada cliente. Publicar comentarios inventados como reales es publicidad engañosa (Ley 1480, Estatuto del Consumidor). Por eso no se emiten datos estructurados de reseñas.
 - **Métodos de pago:** confirmar en el panel de Bold qué medios tiene habilitados el comercio y ajustar `home.payments.logos`. En especial **Daviplata**: no hay logo oficial descargable (el sitio está protegido), así que hoy se muestra como texto. Pedir el arte a Bold o Davivienda y guardarlo en `public/assets/logos/payments/`.
-- Dirección del showroom y condiciones legales (garantía, envíos, devoluciones).
 - Video vertical nativo para "En movimiento" (el actual es un recorte horizontal).
 
 ## Créditos de imágenes y logos

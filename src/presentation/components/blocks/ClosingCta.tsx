@@ -8,26 +8,32 @@ import { Kicker } from "@/presentation/components/primitives/Kicker";
 import { Price } from "@/presentation/components/primitives/Price";
 import { QuantityStepper } from "@/presentation/components/primitives/QuantityStepper";
 import { cn } from "@/presentation/lib/cn";
+import { RichText } from "@/presentation/components/primitives/RichText";
+import { useCheckout } from "@/presentation/hooks/use-checkout";
+import type { CartItem } from "@/presentation/hooks/use-cart";
 import { AddToCartButton } from "./AddToCartButton";
 
 type Content = SiteContent["product"]["purchase"];
 
 /**
  * Cierre de compra: presentación (si hay varias), cantidad (si se vende por
- * unidades) y CTA. Precio y stock siguen a la opción elegida; el servidor los
- * vuelve a validar al pagar.
+ * unidades) y CTA: "Comprar ahora" paga solo esta pieza (la bolsa no se toca)
+ * y "Añadir a la bolsa" la guarda. Precio y stock siguen a la opción elegida;
+ * el servidor los vuelve a validar al pagar.
  */
 export function ClosingCta({
   product,
-  whatsappUrl,
   content,
+  legalNote,
   variantLabel,
 }: {
   product: ProductDetailDto;
-  whatsappUrl: string | null;
   content: Content;
+  /** Aviso de aceptación de términos (el mismo de la bolsa). */
+  legalNote: string;
   variantLabel: string;
 }) {
+  const { start, submitting, error } = useCheckout();
   const initial = product.variants.find((v) => v.purchasable) ?? product.variants[0]!;
   const [variantId, setVariantId] = useState(initial.id);
   const [quantity, setQuantity] = useState(1);
@@ -35,6 +41,21 @@ export function ClosingCta({
   const multi = product.variants.length > 1;
   const canBuy = variant.purchasable && variant.maxQuantity > 0;
   const lowStock = product.saleMode === "unidades" && canBuy && variant.stock <= 3;
+
+  const item: CartItem | null = canBuy
+    ? {
+        productId: product.id,
+        variantId: variant.id,
+        variantLabel: variant.label,
+        kind: product.kind,
+        slug: product.slug,
+        name: product.name,
+        subtitle: product.subtitle,
+        priceCents: variant.price.cents,
+        quantity,
+        maxQuantity: variant.maxQuantity,
+      }
+    : null;
 
   const choose = (id: string) => {
     setVariantId(id);
@@ -71,37 +92,23 @@ export function ClosingCta({
           </fieldset>
         )}
       </div>
-      <div className="flex flex-wrap items-center gap-3.5">
-        {canBuy && variant.maxQuantity > 1 && <QuantityStepper value={quantity} max={variant.maxQuantity} onChange={setQuantity} label={content.quantity} />}
-        <AddToCartButton
-          size="lg"
-          testId={`add-${product.slug}`}
-          label={canBuy ? content.add : multi ? "Agotado" : product.status.label}
-          item={
-            canBuy
-              ? {
-                  productId: product.id,
-                  variantId: variant.id,
-                  variantLabel: variant.label,
-                  kind: product.kind,
-                  slug: product.slug,
-                  name: product.name,
-                  subtitle: product.subtitle,
-                  priceCents: variant.price.cents,
-                  quantity,
-                  maxQuantity: variant.maxQuantity,
-                }
-              : null
-          }
-        />
-        {whatsappUrl ? (
-          <Button href={whatsappUrl} variant="secondary" size="lg" target="_blank" rel="noopener noreferrer" data-testid="whatsapp-cta">
-            {content.whatsapp}
+      <div className="flex flex-col gap-4 lg:max-w-[520px]">
+        <div className="flex flex-wrap items-center gap-3.5">
+          {canBuy && variant.maxQuantity > 1 && <QuantityStepper value={quantity} max={variant.maxQuantity} onChange={setQuantity} label={content.quantity} />}
+          <Button size="lg" disabled={!item || submitting} onClick={() => item && start([item])} data-testid={`buy-${product.slug}`}>
+            {submitting ? "Procesando…" : canBuy ? content.buyNow : multi ? "Agotado" : product.status.label}
           </Button>
-        ) : (
-          <Button variant="secondary" size="lg" disabled title="Número de WhatsApp pendiente">
-            {content.whatsapp}
-          </Button>
+          {canBuy && <AddToCartButton size="lg" variant="secondary" testId={`add-${product.slug}`} label={content.add} item={item} />}
+        </div>
+        {error && (
+          <p role="alert" className="m-0 text-legal text-accent">
+            {error}
+          </p>
+        )}
+        {canBuy && (
+          <p className="m-0 text-legal text-ink-3 [text-wrap:pretty]">
+            <RichText text={legalNote} linkClassName="text-ink-2" />
+          </p>
         )}
       </div>
     </section>

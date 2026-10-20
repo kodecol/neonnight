@@ -53,9 +53,14 @@ export function Header({
           <span className="text-label uppercase">{navigation.header.menuLabel}</span>
         </button>
 
-        <Link href={ROUTES.home} className="absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center gap-3" aria-label={`${brand.name}, inicio`}>
-          <Isotype size={26} />
-          <span className="hidden text-[14px] font-semibold uppercase tracking-[0.3em] leading-none sm:inline">{brand.wordmark}</span>
+        <Link
+          href={ROUTES.home}
+          className="group absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center gap-3.5 md:gap-4"
+          aria-label={`${brand.name}, inicio`}
+          data-testid="header-logo"
+        >
+          <Isotype size={44} priority className="transition-transform duration-500 ease-[var(--ease-reveal)] group-hover:-rotate-6" />
+          <span className="hidden text-[17px] font-semibold uppercase leading-none tracking-[0.32em] lg:inline">{brand.wordmark}</span>
         </Link>
 
         <nav className="flex items-center gap-5 text-label uppercase md:gap-[34px]" aria-label="Principal">

@@ -1,0 +1,37 @@
+import { readFile } from "node:fs/promises";
+import { join } from "node:path";
+
+/**
+ * Piezas comunes de las imágenes de vista previa (Open Graph): la fuente de
+ * la marca, el isotipo y la conversión de fotos a un formato que entienda
+ * el renderizador (no lee WebP ni AVIF).
+ */
+const PUBLIC = join(process.cwd(), "public");
+
+let fonts: Promise<Array<{ name: string; data: Buffer; weight: 200 | 500 | 600; style: "normal" }>> | null = null;
+
+export function ogFonts() {
+  fonts ??= Promise.all(
+    ([200, 500, 600] as const).map(async (weight) => ({ name: "Archivo", data: await readFile(join(PUBLIC, "fonts/og", `archivo-${weight}.woff`)), weight, style: "normal" as const })),
+  ).catch((e: unknown) => {
+    fonts = null;
+    throw e;
+  });
+  return fonts;
+}
+
+let isotype: Promise<string> | null = null;
+
+/** Isotipo blanco y magenta como data URI. */
+export function ogIsotype(): Promise<string> {
+  isotype ??= readFile(join(PUBLIC, "assets/isotipo-dark.png")).then((b) => `data:image/png;base64,${b.toString("base64")}`);
+  return isotype;
+}
+
+/** URL de una foto apta para el renderizador: solo Cloudinary, convertida a PNG/JPG al ancho pedido. */
+export function ogPhoto(src: string | null | undefined, width: number, format: "png" | "jpg"): string | null {
+  if (!src || !src.startsWith("https://res.cloudinary.com/")) return null;
+  return src.replace(/\/image\/upload\//, `/image/upload/f_${format},q_auto,c_limit,w_${width}/`);
+}
+
+export const OG_COLORS = { bg: "#000000", ink: "#FFFFFF", ink2: "#A1A1A1", ink3: "#515151", accent: "#FF006E", divider: "rgba(150,150,150,0.3)" } as const;

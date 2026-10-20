@@ -10,6 +10,8 @@ import { CategoryChips, LineTabs } from "@/presentation/components/blocks/Catalo
 import { ActiveFilters, CatalogToolbar } from "@/presentation/components/blocks/CatalogToolbar";
 import { ProductGrid } from "@/presentation/components/blocks/ProductGrid";
 import { JsonLd } from "@/presentation/components/seo/JsonLd";
+import { TrackEvent } from "@/presentation/components/seo/TrackEvent";
+import { ogImage } from "../_info/og";
 import { catalogHref } from "@/presentation/lib/catalog-href";
 import { ROUTES, absoluteUrl } from "@/presentation/lib/site";
 
@@ -32,6 +34,13 @@ export async function catalogMetadata(line: string | null, params: RawParams): P
     title: result.line?.label ?? site.collection.title,
     description: result.line ? `${result.line.label} en ${site.brand.name}. ${result.line.description}` : site.brand.description,
     alternates: { canonical: absoluteUrl(base) },
+    openGraph: {
+      type: "website",
+      url: absoluteUrl(base),
+      title: `${result.line?.label ?? site.collection.title} — ${site.brand.name}`,
+      siteName: site.brand.name,
+      images: [ogImage(`${result.line?.label ?? site.collection.title} — ${site.brand.name}`, result.line?.slug)],
+    },
     // Las combinaciones de filtros no se indexan: la URL canónica es la de la línea.
     robots: filtered ? { index: false, follow: true } : { index: true, follow: true },
   };
@@ -90,7 +99,10 @@ export async function CatalogPage({ line, params }: { line: string | null; param
       <ActiveFilters result={result} base={base} content={site.collection} />
       <section className="px-page pb-section pt-12" aria-label="Resultados">
         {result.products.length > 0 ? (
-          <ProductGrid items={result.products.map((product) => ({ product, whatsappUrl: null }))} columns={4} actions={false} />
+          <>
+            <TrackEvent event={{ name: "view_item_list", listName: title, items: result.products.slice(0, 24).map((p) => ({ id: p.id, name: p.name, brand: p.brand, priceCents: p.price.cents })) }} />
+            <ProductGrid items={result.products.map((product) => ({ product }))} columns={4} actions={false} />
+          </>
         ) : (
           <div className="flex flex-col items-start gap-6 py-10">
             <p className="m-0 text-lead text-ink-2">{site.collection.emptyMessage}</p>

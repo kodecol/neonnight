@@ -7,18 +7,42 @@ import type { SiteContent } from "@/application/dto/site-content.dto";
  * `StaticSiteContentRepository` se sustituye por un adaptador que devuelva
  * esta misma forma.
  */
-const INSTAGRAM_URL = process.env.INSTAGRAM_URL || process.env.NEXT_PUBLIC_INSTAGRAM_URL || "https://instagram.com/neonnight";
-// PENDIENTE: confirmar los perfiles reales de Facebook, TikTok y YouTube.
-const FACEBOOK_URL = process.env.FACEBOOK_URL || process.env.NEXT_PUBLIC_FACEBOOK_URL || "https://facebook.com/neonnight";
-const TIKTOK_URL = process.env.TIKTOK_URL || process.env.NEXT_PUBLIC_TIKTOK_URL || "https://tiktok.com/@neonnight";
-const YOUTUBE_URL = process.env.YOUTUBE_URL || process.env.NEXT_PUBLIC_YOUTUBE_URL || "https://youtube.com/@neonnight";
+const INSTAGRAM_URL = process.env.INSTAGRAM_URL || process.env.NEXT_PUBLIC_INSTAGRAM_URL || "https://www.instagram.com/neonnight01/";
+const FACEBOOK_URL = process.env.FACEBOOK_URL || process.env.NEXT_PUBLIC_FACEBOOK_URL || "https://www.facebook.com/neonnightonline/";
+const YOUTUBE_URL = process.env.YOUTUBE_URL || process.env.NEXT_PUBLIC_YOUTUBE_URL || "https://www.youtube.com/NeonNightsChannel";
+// TikTok aparece solo cuando exista el perfil (TIKTOK_URL).
+const TIKTOK_URL = process.env.TIKTOK_URL || process.env.NEXT_PUBLIC_TIKTOK_URL || "";
 
 export const SITE_CONTENT: SiteContent = {
+  company: {
+    tradeName: "NEON NIGHT",
+    legalForm: "Establecimiento de comercio",
+    registry: { chamber: "Cámara de Comercio de Bogotá", number: "3812180" },
+    // PENDIENTE: propietario del establecimiento y su NIT (responsable del tratamiento de datos).
+    city: "Bogotá D.C.",
+    region: "Bogotá D.C.",
+    country: "Colombia",
+    countryCode: "CO",
+    foundingYear: 2025,
+    // PENDIENTE: confirmar que el buzón existe antes del lanzamiento.
+    email: "contacto@neonightonline.com",
+    privacyEmail: "contacto@neonightonline.com",
+    hours: "Lunes a sábado, de 9:00 a. m. a 7:00 p. m. (hora de Colombia)",
+  },
+
+  policies: {
+    warrantyMonths: 12,
+    returnDays: 10,
+    retractBusinessDays: 5,
+    refundMaxDays: 30,
+    shipping: { carrier: "Coordinadora", free: true, handlingDays: 1, transitMain: [1, 3], transitOther: [3, 6], maxDays: 30 },
+  },
+
   brand: {
     name: "Neon Night",
     wordmark: "NEON NIGHT",
     tagline: "Relojes, joyas y perfumes de las grandes casas, verificados uno por uno y a un precio justo.",
-    description: "Relojes, joyas y perfumes de lujo auténticos en Colombia. Cada pieza verificada en mano, con garantía y envío asegurado en menos de 3 días.",
+    description: "Relojes, joyas y perfumes de lujo nuevos y auténticos en Colombia. Cada pieza verificada en mano, con garantía de 12 meses y envío asegurado sin costo.",
     currencyLabel: "COP",
     locale: "es-CO",
     logo: { mono: "/assets/isotipo-mono.png", color: "/assets/isotipo-color.png" },
@@ -29,10 +53,10 @@ export const SITE_CONTENT: SiteContent = {
     title: "Síguenos de cerca",
     body: "Lo que acaba de llegar, piezas en uso y el detrás de cada verificación. Lo publicamos primero en redes.",
     networks: [
-      { id: "instagram", label: "Instagram", handle: "@neonnight", href: INSTAGRAM_URL, description: "Llegadas nuevas y detalles de cada pieza", cta: "Seguir" },
-      { id: "facebook", label: "Facebook", handle: "Neon Night", href: FACEBOOK_URL, description: "Novedades y vida en el showroom", cta: "Seguir" },
-      { id: "tiktok", label: "TikTok", handle: "@neonnight", href: TIKTOK_URL, description: "Videos cortos de las piezas en uso", cta: "Seguir" },
-      { id: "youtube", label: "YouTube", handle: "@neonnight", href: YOUTUBE_URL, description: "Reseñas y verificaciones paso a paso", cta: "Suscribirse" },
+      { id: "instagram", label: "Instagram", handle: "@neonnight01", href: INSTAGRAM_URL, description: "Llegadas nuevas y detalles de cada pieza", cta: "Seguir" },
+      { id: "facebook", label: "Facebook", handle: "neonnightonline", href: FACEBOOK_URL, description: "Novedades y lo que pasa detrás de cámaras", cta: "Seguir" },
+      { id: "youtube", label: "YouTube", handle: "NeonNightsChannel", href: YOUTUBE_URL, description: "Reseñas y verificaciones paso a paso", cta: "Suscribirse" },
+      ...(TIKTOK_URL ? [{ id: "tiktok" as const, label: "TikTok", handle: "Neon Night", href: TIKTOK_URL, description: "Videos cortos de las piezas en uso", cta: "Seguir" }] : []),
     ],
   },
 
@@ -42,12 +66,12 @@ export const SITE_CONTENT: SiteContent = {
     menu: [
       { label: "Toda la colección", href: "/coleccion" },
       { label: "Autenticidad", href: "/#autenticidad" },
-      { label: "Showroom", href: "/#showroom" },
+      { label: "Nosotros", href: "/nosotros" },
     ],
     menuFooter: {
       whatsappLabel: "Asesoría por WhatsApp",
       instagramLabel: "Instagram",
-      note: "Envíos asegurados a toda Colombia · Pago contra verificación",
+      note: "Envío asegurado sin costo a toda Colombia · Garantía de 12 meses",
     },
   },
 
@@ -99,12 +123,12 @@ export const SITE_CONTENT: SiteContent = {
         {
           number: "02",
           title: "Garantía de 12 meses",
-          body: "En relojes cubrimos movimiento y hermeticidad durante un año, con servicio técnico en Colombia. Joyas y perfumes, contra defectos de fábrica.",
+          body: "Doce meses desde la entrega, en todas las piezas. En relojes cubre movimiento y hermeticidad; en joyas y perfumes, cualquier defecto de fábrica.",
         },
         {
           number: "03",
-          title: "Envío en menos de 3 días",
-          body: "Enviamos asegurado a toda Colombia en menos de tres días. Aceptamos devoluciones hasta 10 días después de la compra.",
+          title: "Envío asegurado, sin costo",
+          body: "Despachamos al siguiente día hábil con Coordinadora, asegurado y sin costo, a toda Colombia. Tienes 10 días desde la entrega para devolver la pieza.",
           accent: true,
         },
       ],
@@ -170,7 +194,7 @@ export const SITE_CONTENT: SiteContent = {
     motion: {
       kicker: "En movimiento",
       title: "Antes de comprar, mírala de cerca",
-      body: "Grabamos cada pieza en el showroom: el dial y la corona de un reloj, el brillo de una joya, el frasco y su lote. Te mandamos el video por WhatsApp antes de que decidas.",
+      body: "Grabamos cada pieza en el estudio: el dial y la corona de un reloj, el brillo de una joya, el frasco y su lote. Te mandamos el video por WhatsApp antes de que decidas.",
       cta: "Pedir el video de una pieza",
       whatsappMessage: "Hola, quiero pedir el video de una pieza.",
     },
@@ -227,9 +251,9 @@ export const SITE_CONTENT: SiteContent = {
     related: { kicker: "Sigue explorando", title: "También te puede gustar" },
     purchase: {
       add: "Añadir a la bolsa",
+      buyNow: "Comprar ahora",
       chooseOption: "Elige una opción",
       quantity: "Cantidad",
-      whatsapp: "Hablar por WhatsApp",
       lowStockTemplate: "Quedan {count}",
     },
   },
@@ -244,6 +268,7 @@ export const SITE_CONTENT: SiteContent = {
     remove: "Quitar",
     close: "Cerrar",
     whatsappMessageTemplate: "Hola, quiero cerrar por WhatsApp mi bolsa: {items}. Total {total}.",
+    legalNote: "Al continuar aceptas los [términos y condiciones](/terminos) y la [política de privacidad](/privacidad). Envío asegurado sin costo y [10 días para devolver](/devoluciones).",
   },
 
   footer: {
@@ -258,24 +283,68 @@ export const SITE_CONTENT: SiteContent = {
         ],
       },
       {
-        title: "Confianza",
+        title: "Ayuda",
         links: [
+          { label: "Envíos", href: "/envios" },
+          { label: "Pagos", href: "/pagos" },
+          { label: "Garantía", href: "/garantia" },
+          { label: "Cambios y devoluciones", href: "/devoluciones" },
           { label: "Autenticidad", href: "/#autenticidad" },
-          { label: "Garantía", href: "/#autenticidad" },
-          { label: "Envíos y devoluciones", href: "/#autenticidad" },
         ],
       },
       {
-        title: "Contacto",
+        title: "Neon Night",
         links: [
+          { label: "Nosotros", href: "/nosotros" },
           { label: "WhatsApp", href: "whatsapp" },
           { label: "Instagram", href: INSTAGRAM_URL, external: true },
-          { label: "Showroom Bogotá", href: "/#showroom" },
+          { label: "Facebook", href: FACEBOOK_URL, external: true },
+          { label: "YouTube", href: YOUTUBE_URL, external: true },
         ],
       },
     ],
-    legal: "Términos · Privacidad · Cambios y devoluciones",
+    legalLinks: [
+      { label: "Términos y condiciones", href: "/terminos" },
+      { label: "Privacidad y cookies", href: "/privacidad" },
+    ],
+    authority: { label: "Superintendencia de Industria y Comercio", href: "https://www.sic.gov.co", external: true },
+    registryTemplate: "{tradeName} · Matrícula mercantil {number} de la {chamber}",
+    cookieSettings: "Preferencias de cookies",
     copyrightTemplate: "© {year} Neon Night",
+  },
+
+  info: {
+    tocLabel: "En esta página",
+    effectiveTemplate: "Vigente desde el {date} · Versión {version}",
+    help: {
+      kicker: "¿Te quedó alguna duda?",
+      title: "Escríbenos",
+      body: "Te responde una persona del equipo, por WhatsApp o por correo, en horario de atención.",
+      whatsapp: "Hablar por WhatsApp",
+    },
+    related: {
+      nosotros: { label: "Nosotros", body: "Quiénes somos y cómo verificamos cada pieza." },
+      envios: { label: "Envíos", body: "Asegurados y sin costo a toda Colombia, con Coordinadora." },
+      pagos: { label: "Pagos", body: "Medios de pago, seguridad y confirmación del pedido." },
+      garantia: { label: "Garantía", body: "12 meses en todas las piezas, desde la entrega." },
+      devoluciones: { label: "Cambios y devoluciones", body: "10 días para devolver o cambiar tu pieza." },
+      terminos: { label: "Términos y condiciones", body: "Las reglas de compra en la tienda." },
+      privacidad: { label: "Privacidad y cookies", body: "Cómo tratamos tus datos y tus derechos." },
+    },
+  },
+
+  consent: {
+    title: "Tu privacidad",
+    body: "Usamos almacenamiento propio para que la tienda funcione, como tu bolsa. Con tu permiso, también usamos Google Analytics para entender cómo se usa el sitio y el píxel de Meta para medir nuestras campañas. Puedes cambiar de opinión cuando quieras desde el pie de página. [Más información](/privacidad#cookies)",
+    accept: "Aceptar todas",
+    reject: "Rechazar",
+    configure: "Configurar",
+    save: "Guardar preferencias",
+    categories: {
+      necessary: { label: "Necesarias", body: "Guardan tu bolsa y esta elección. Siempre activas." },
+      analytics: { label: "Analítica", body: "Google Analytics: páginas vistas y uso del sitio, en cifras agregadas." },
+      marketing: { label: "Publicidad", body: "Píxel de Meta: mide qué campañas funcionan y permite mostrarte anuncios relevantes en Facebook e Instagram." },
+    },
   },
 
   whatsapp: {

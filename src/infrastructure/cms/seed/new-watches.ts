@@ -94,7 +94,7 @@ function build(row: WatchRow, i: number): Product {
     brand: row.brand,
     model: row.model,
     reference: row.reference,
-    condition: "excelente",
+    condition: "nuevo",
     subtitle: row.subtitle,
     description: row.description,
     includes: row.includes,

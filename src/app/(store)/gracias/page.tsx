@@ -5,6 +5,7 @@ import { isPaymentReady } from "@/application/ports/payment-settings";
 import { Button } from "@/presentation/components/primitives/Button";
 import { Kicker } from "@/presentation/components/primitives/Kicker";
 import { ROUTES } from "@/presentation/lib/site";
+import { TrackPurchase } from "@/presentation/components/seo/TrackEvent";
 
 export const metadata: Metadata = { title: "Pedido recibido", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
@@ -25,6 +26,16 @@ export default async function ThanksPage({ searchParams }: { searchParams: Promi
   const copy = order && gatewayOn ? COPY[order.status] : null;
   return (
     <main className="flex min-h-screen flex-col justify-center px-page pt-header">
+      {order && gatewayOn && order.status === "pagada" && (
+        <TrackPurchase
+          event={{
+            name: "purchase",
+            orderId: order.id,
+            valueCents: order.totalCents,
+            items: order.lines.map((l) => ({ id: l.productId, name: l.name, variant: l.variantLabel || undefined, priceCents: l.unitPriceCents, quantity: l.quantity })),
+          }}
+        />
+      )}
       <Kicker>{copy?.kicker ?? "Pedido recibido"}</Kicker>
       <h1 className="mb-4 mt-4 text-display-fluid uppercase">Gracias</h1>
       <p className="m-0 max-w-[52ch] text-lead text-ink-2 [text-wrap:pretty]">

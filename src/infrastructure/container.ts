@@ -9,6 +9,7 @@ import type { Analytics } from "@/application/ports/analytics";
 import type { WhatsAppLinkBuilder } from "@/application/ports/whatsapp-link-builder";
 import type { Clock, IdGenerator } from "@/application/ports/clock";
 import type { SiteContentRepository } from "@/application/ports/site-content-repository";
+import { trackingIds, type TrackingIds } from "@/application/lib/tracking-ids";
 import { InMemoryProductRepository } from "./repositories/in-memory-product-repository";
 import { InMemoryLineRepository } from "./repositories/in-memory-line-repository";
 import { InMemoryOrderRepository } from "./repositories/in-memory-order-repository";
@@ -54,6 +55,8 @@ export interface Container {
   clock: Clock;
   ids: IdGenerator;
   content: SiteContentRepository;
+  /** IDs de Google Analytics y del píxel de Meta (runtime, ya validados). */
+  tracking: TrackingIds;
 }
 
 /**
@@ -88,6 +91,7 @@ function persistence(): Pick<Container, "products" | "lines" | "categories" | "o
 
 export function createContainer(overrides: Partial<Container> = {}): Container {
   const base = { ...persistence(), ...overrides };
+  const whatsappNumber = process.env.WHATSAPP_NUMBER || process.env.NEXT_PUBLIC_WHATSAPP_NUMBER;
   return {
     products: base.products,
     lines: base.lines,
@@ -99,14 +103,15 @@ export function createContainer(overrides: Partial<Container> = {}): Container {
     analytics: overrides.analytics ?? new ConsoleAnalytics(),
     whatsapp:
       overrides.whatsapp ??
-      new WaMeLinkBuilder(process.env.WHATSAPP_NUMBER || process.env.NEXT_PUBLIC_WHATSAPP_NUMBER, {
+      new WaMeLinkBuilder(whatsappNumber, {
         product: SITE_CONTENT.whatsapp.productMessageTemplate,
         generic: SITE_CONTENT.whatsapp.genericMessage,
         cart: SITE_CONTENT.cart.whatsappMessageTemplate,
       }),
     clock: overrides.clock ?? new SystemClock(),
     ids: overrides.ids ?? new RandomIdGenerator(),
-    content: overrides.content ?? new StaticSiteContentRepository(),
+    content: overrides.content ?? new StaticSiteContentRepository(SITE_CONTENT, whatsappNumber),
+    tracking: overrides.tracking ?? trackingIds({ ga: process.env.GA_MEASUREMENT_ID, pixel: process.env.META_PIXEL_ID }),
   };
 }
 

@@ -172,7 +172,7 @@ function build(row: JewelryRow, i: number): Product {
     brand: row.brand,
     model: row.model,
     reference: row.reference,
-    condition: row.condition ?? "excelente",
+    condition: row.condition ?? "nuevo",
     subtitle: row.subtitle,
     description: row.description,
     includes: ["Estuche original", "Certificado de autenticidad"],

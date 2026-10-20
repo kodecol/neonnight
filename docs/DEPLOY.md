@@ -98,7 +98,12 @@ La imagen no depende del dominio: todo se lee al arrancar.
 | `ADMIN_PASSWORD` | sí | Contraseña del panel |
 | `ADMIN_SECRET` | sí | 32 caracteres o más. Si cambia, hay que volver a ingresar la llave de Bold |
 | `WHATSAPP_NUMBER` | no | `573001234567` |
-| `INSTAGRAM_URL`, `FACEBOOK_URL`, `TIKTOK_URL`, `YOUTUBE_URL` | no | Perfiles reales |
+| `INSTAGRAM_URL`, `FACEBOOK_URL`, `YOUTUBE_URL` | no | Por defecto ya son los perfiles reales; solo hace falta si cambian |
+| `TIKTOK_URL` | no | Vacía = TikTok no aparece |
+| `GA_MEASUREMENT_ID` | no | `G-XXXXXXX`. Activa Google Analytics 4 y el banner de cookies |
+| `META_PIXEL_ID` | no | Solo dígitos. Activa el píxel de Meta y el banner de cookies |
+| `GOOGLE_SITE_VERIFICATION` | no | Código de la etiqueta `<meta>` de Search Console |
+| `META_DOMAIN_VERIFICATION` | no | Código de verificación de dominio de Meta Business |
 
 Después de editar el `.env`, se aplica con `cd /opt/apps/neonnight && docker compose up -d --force-recreate web`.
 

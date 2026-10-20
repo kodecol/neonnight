@@ -1,6 +1,7 @@
 "use client";
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import type { ProductKind } from "@/domain/entities/product";
+import { track } from "@/presentation/analytics/track";
 
 export interface CartItem {
   productId: string;
@@ -97,6 +98,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, [state.isOpen]);
 
   const add = useCallback((item: CartItem) => {
+    track({ name: "add_to_cart", item: { id: item.productId, name: item.name, variant: item.variantLabel || undefined, priceCents: item.priceCents, quantity: item.quantity } });
     setState((s) => {
       const key = cartKey(item);
       const prev = s.items.find((i) => cartKey(i) === key);

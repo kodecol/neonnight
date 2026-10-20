@@ -18,6 +18,9 @@ import { ClosingCta } from "@/presentation/components/blocks/ClosingCta";
 import { ProductGrid } from "@/presentation/components/blocks/ProductGrid";
 import { Kicker } from "@/presentation/components/primitives/Kicker";
 import { JsonLd } from "@/presentation/components/seo/JsonLd";
+import { TrackEvent } from "@/presentation/components/seo/TrackEvent";
+import { WhatsAppMessage } from "@/presentation/components/chrome/WhatsAppFab";
+import { merchantReturnPolicy, shippingDetails } from "@/presentation/lib/structured-data";
 import { ROUTES, absoluteUrl } from "@/presentation/lib/site";
 
 /** Metadata, imagen OG y página comparten una consulta por petición. */
@@ -71,6 +74,7 @@ export async function ProductPage({ slug, kind }: { slug: string; kind: ProductK
   const canonical = absoluteUrl(ROUTES.product(product.kind, product.slug));
   const whatsappUrl = whatsapp.forProduct({ name: product.name, reference: product.reference, canonicalUrl: canonical });
   void analytics.track({ name: "view_item", productId: product.id, slug: product.slug, priceCents: product.price.cents });
+  const trackItem = { id: product.id, name: product.name, brand: product.brand, category: line?.label, priceCents: product.price.cents };
 
   const tabs = [
     { id: "pieza", label: copy.pieceTab },
@@ -80,18 +84,22 @@ export async function ProductPage({ slug, kind }: { slug: string; kind: ProductK
     { id: "compra", label: site.product.tabs.purchase },
   ];
   const images = [product.front?.src, product.back?.src, ...product.gallery.map((g) => g.src)].filter((s): s is string => Boolean(s));
-  const offerBase = { priceCurrency: product.price.currency, availability: SCHEMA_AVAILABILITY[product.status.code], itemCondition: SCHEMA_CONDITION[product.condition], seller: { "@type": "Organization", name: site.brand.name } };
-  const offers =
-    product.variants.length > 1
-      ? {
-          "@type": "AggregateOffer",
-          url: canonical,
-          lowPrice: Math.min(...product.variants.map((v) => v.price.units)),
-          highPrice: Math.max(...product.variants.map((v) => v.price.units)),
-          offerCount: product.variants.length,
-          ...offerBase,
-        }
-      : { "@type": "Offer", url: canonical, price: product.price.units, ...offerBase };
+  const offerBase = {
+    priceCurrency: product.price.currency,
+    itemCondition: SCHEMA_CONDITION[product.condition],
+    seller: { "@type": "Organization", name: site.brand.name },
+    shippingDetails: shippingDetails(site),
+    hasMerchantReturnPolicy: merchantReturnPolicy(site),
+  };
+  // Una oferta por presentación: Google la necesita así para mostrar precio y envío.
+  const offers = product.variants.map((v) => ({
+    "@type": "Offer",
+    url: canonical,
+    ...(product.variants.length > 1 ? { name: v.label, sku: `${product.reference || product.slug}-${v.id}` } : {}),
+    price: v.price.units,
+    availability: v.purchasable || product.variants.length === 1 ? SCHEMA_AVAILABILITY[product.status.code] : "https://schema.org/OutOfStock",
+    ...offerBase,
+  }));
 
   return (
     <main>
@@ -109,7 +117,7 @@ export async function ProductPage({ slug, kind }: { slug: string; kind: ProductK
               image: [...new Set(images)].map((s) => absoluteUrl(s)),
               url: canonical,
               additionalProperty: product.specs.map((s) => ({ "@type": "PropertyValue", name: s.label, value: s.value })),
-              offers,
+              offers: offers.length === 1 ? offers[0] : offers,
             },
             {
               "@type": "BreadcrumbList",
@@ -122,6 +130,8 @@ export async function ProductPage({ slug, kind }: { slug: string; kind: ProductK
           ],
         }}
       />
+      <TrackEvent event={{ name: "view_item", item: trackItem }} />
+      <WhatsAppMessage href={whatsappUrl} />
       <ProductHero product={product} />
       <ProductSubNav tabs={tabs} />
       <Description title={copy.descriptionTitle} paragraphs={product.description} />
@@ -129,14 +139,14 @@ export async function ProductPage({ slug, kind }: { slug: string; kind: ProductK
       <Gallery images={product.gallery} name={product.name} captions={copy.galleryCaptions} />
       {product.band && <ParallaxBand image={product.band} height="80vh" overlay={false} label={`${product.name} imagen completa`} />}
       <SpecTable rows={product.specs} kicker={site.product.specsKicker} />
-      <ClosingCta product={product} whatsappUrl={whatsappUrl} content={site.product.purchase} variantLabel={copy.variantLabel} />
+      <ClosingCta product={product} content={site.product.purchase} legalNote={site.cart.legalNote} variantLabel={copy.variantLabel} />
       {related.length > 0 && (
         <section className="border-t border-divider px-page pb-section pt-section" aria-labelledby="related-title" data-reveal="1">
           <Kicker>{site.product.related.kicker}</Kicker>
           <h2 id="related-title" className="mb-12 mt-4 text-h2-fluid uppercase">
             {site.product.related.title}
           </h2>
-          <ProductGrid items={related.map((p) => ({ product: p, whatsappUrl: null }))} columns={4} actions={false} />
+          <ProductGrid items={related.map((p) => ({ product: p }))} columns={4} actions={false} />
         </section>
       )}
     </main>

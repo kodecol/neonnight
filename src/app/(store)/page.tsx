@@ -14,11 +14,25 @@ import { BrandMarquee } from "@/presentation/components/blocks/BrandMarquee";
 import { Testimonials } from "@/presentation/components/blocks/Testimonials";
 import { PaymentMethods } from "@/presentation/components/blocks/PaymentMethods";
 import { ListBrands } from "@/application/use-cases/list-brands";
+import type { Metadata } from "next";
 import { JsonLd } from "@/presentation/components/seo/JsonLd";
+import { TrackEvent } from "@/presentation/components/seo/TrackEvent";
+import { onlineStore, whatsappPhone } from "@/presentation/lib/structured-data";
+import { ogImage } from "./_info/og";
 import { ROUTES, absoluteUrl } from "@/presentation/lib/site";
 
 /** El catálogo vive en la base (editable desde /admin): se renderiza por petición. */
 export const dynamic = "force-dynamic";
+
+export async function generateMetadata(): Promise<Metadata> {
+  const { brand } = await getContainer().content.get();
+  const title = `${brand.name} — Relojes, joyas y perfumes verificados`;
+  return {
+    title: { absolute: title },
+    alternates: { canonical: absoluteUrl(ROUTES.home) },
+    openGraph: { type: "website", url: absoluteUrl(ROUTES.home), title, description: brand.description, siteName: brand.name, images: [ogImage(brand.name)] },
+  };
+}
 
 export default async function HomePage() {
   const container = getContainer();
@@ -32,10 +46,7 @@ export default async function HomePage() {
     new ListBrands(products).execute(),
     new ListLines(container).execute(),
   ]);
-  const items = selection.map((p) => ({
-    product: p,
-    whatsappUrl: whatsapp.forProduct({ name: p.name, reference: p.reference, canonicalUrl: absoluteUrl(ROUTES.product(p.kind, p.slug)) }),
-  }));
+  const items = selection.map((p) => ({ product: p }));
 
   return (
     <main>
@@ -43,11 +54,12 @@ export default async function HomePage() {
         data={{
           "@context": "https://schema.org",
           "@graph": [
-            { "@type": "Organization", name: site.brand.name, url: absoluteUrl("/"), logo: absoluteUrl(site.brand.logo.color), sameAs: site.social.networks.map((n) => n.href) },
-            { "@type": "WebSite", name: site.brand.name, url: absoluteUrl("/"), description: site.brand.description, inLanguage: site.brand.locale },
+            onlineStore(site, { telephone: whatsappPhone(whatsapp.generic()) }),
+            { "@type": "WebSite", name: site.brand.name, url: absoluteUrl("/"), description: site.brand.description, inLanguage: site.brand.locale, publisher: { "@id": absoluteUrl("/#tienda") } },
           ],
         }}
       />
+      <TrackEvent event={{ name: "view_item_list", listName: "Inicio · Selección", items: selection.map((p) => ({ id: p.id, name: p.name, brand: p.brand, priceCents: p.price.cents })) }} />
       <Hero featured={featured} content={site.home.hero} tagline={site.brand.tagline} />
       <BrandMarquee brands={brands} content={site.home.brands} />
       <LineShowcase lines={lines} content={site.home.lines} />

@@ -71,9 +71,11 @@ test.describe("Caminos de conversión", () => {
     await expect(page.locator("[data-testid=product-card]")).toHaveCount(2);
   });
 
-  test("el enlace de WhatsApp lleva modelo, referencia y URL canónica", async ({ page }) => {
+  test("el botón fijo de WhatsApp lleva modelo, referencia y URL canónica en la ficha", async ({ page }) => {
     await page.goto("/reloj/rolex-sky-dweller-326938");
-    const href = await page.locator("[data-testid=whatsapp-cta]").getAttribute("href");
+    // El mensaje de la pieza se fija al hidratar la ficha.
+    await expect(page.locator("[data-testid=whatsapp-fab]")).toHaveAttribute("href", /326938/);
+    const href = await page.locator("[data-testid=whatsapp-fab]").getAttribute("href");
     expect(href).toMatch(/^https:\/\/wa\.me\/573000000000\?text=/);
     const text = decodeURIComponent(href!.split("text=")[1]!);
     expect(text).toContain("Rolex Sky-Dweller");

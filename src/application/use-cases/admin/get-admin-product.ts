@@ -61,7 +61,7 @@ export function emptyAdminProductForm(line: ProductLine, defaultCategory: string
     model: "",
     reference: "",
     slug: "",
-    condition: line.template === "reloj" ? "excelente" : "nuevo",
+    condition: "nuevo",
     availability: "disponible",
     featured: false,
     subtitle: "",

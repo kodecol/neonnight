@@ -26,7 +26,10 @@ export function SocialSection({ content }: { content: SiteContent["social"] }) {
         <p className="m-0 max-w-[44ch] text-lead text-ink-2 [text-wrap:pretty] lg:justify-self-end">{content.body}</p>
       </div>
 
-      <ul className="m-0 mt-14 grid list-none grid-cols-1 gap-px md:grid-cols-2 border border-divider bg-divider p-0 lg:grid-cols-4" data-testid="social-links">
+      <ul
+        className={`m-0 mt-14 grid list-none grid-cols-1 gap-px border border-divider bg-divider p-0 ${content.networks.length === 3 ? "md:grid-cols-3" : "md:grid-cols-2 lg:grid-cols-4"}`}
+        data-testid="social-links"
+      >
         {content.networks.map((n, i) => (
           <li key={n.id} className="flex">
             <a

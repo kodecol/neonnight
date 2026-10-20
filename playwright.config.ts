@@ -1,8 +1,12 @@
 import { defineConfig, devices } from "@playwright/test";
 
-const PORT = 3100;
+// E2E_PORT permite correr dos copias del repo a la vez (worktrees) sin chocar.
+const PORT = Number(process.env.E2E_PORT) || 3100;
 const baseURL = `http://localhost:${PORT}`;
 export const E2E_ADMIN_PASSWORD = "e2e-admin";
+/** IDs de prueba: activan el banner de cookies; las peticiones a Google y Meta se interceptan en los tests. */
+export const E2E_GA_ID = "G-E2ETEST01";
+export const E2E_PIXEL_ID = "100000000000001";
 
 export default defineConfig({
   testDir: "./tests/e2e",
@@ -15,6 +19,11 @@ export default defineConfig({
     baseURL,
     trace: "retain-on-failure",
     viewport: { width: 1440, height: 900 },
+    // Elección de cookies ya hecha (rechazo): el banner no tapa nada. consent.spec.ts parte de cero.
+    storageState: {
+      cookies: [],
+      origins: [{ origin: baseURL, localStorage: [{ name: "neonnight.consent.v1", value: JSON.stringify({ analytics: false, marketing: false, at: new Date().toISOString() }) }] }],
+    },
   },
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"], viewport: { width: 1440, height: 900 } } }],
   webServer: {
@@ -30,6 +39,8 @@ export default defineConfig({
       CLOUDINARY_URL: "",
       ADMIN_PASSWORD: E2E_ADMIN_PASSWORD,
       ADMIN_SECRET: "e2e-secret-e2e-secret-e2e-secret-0000",
+      GA_MEASUREMENT_ID: E2E_GA_ID,
+      META_PIXEL_ID: E2E_PIXEL_ID,
     },
   },
 });

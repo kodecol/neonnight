@@ -6,7 +6,7 @@ test.describe("Navegación entre las tres vistas", () => {
     await expect(page.getByRole("heading", { level: 1 })).toHaveText(/Sky-Dweller/i);
     await expect(page.locator("[data-testid=product-card]")).toHaveCount(6);
     const social = page.locator("[data-testid=social-links] a");
-    await expect(social).toHaveCount(4);
+    await expect(social).toHaveCount(3);
     await expect(social.first()).toHaveAttribute("target", "_blank");
     await expect(page.locator("#autenticidad")).toContainText("Garantía de 12 meses");
     await expect(page.locator("footer")).not.toContainText("Financiación");

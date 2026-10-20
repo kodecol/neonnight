@@ -190,6 +190,9 @@ export interface OrderStatusDto {
   id: string;
   status: "pendiente" | "pagada" | "fallida" | "cancelada";
   totalFormatted: string;
+  totalCents: number;
+  /** Para registrar la compra en analítica (sin datos del comprador). */
+  lines: Array<{ productId: string; name: string; variantLabel: string; unitPriceCents: number; quantity: number }>;
 }
 
 /** Resultado uniforme de las acciones del panel. */

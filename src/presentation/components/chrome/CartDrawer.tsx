@@ -1,8 +1,9 @@
 "use client";
-import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import Link from "next/link";
 import { cartKey, useCart } from "@/presentation/hooks/use-cart";
+import { useCheckout } from "@/presentation/hooks/use-checkout";
+import { RichText } from "@/presentation/components/primitives/RichText";
 import { useBodyLock } from "@/presentation/hooks/use-body-lock";
 import { formatCop } from "@/presentation/lib/format-money";
 import { Button } from "@/presentation/components/primitives/Button";
@@ -25,10 +26,8 @@ export function CartDrawer({
   content: SiteContent["cart"];
 }) {
   const cart = useCart();
-  const router = useRouter();
+  const { start, submitting, error } = useCheckout();
   const panelRef = useRef<HTMLElement>(null);
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   useBodyLock(cart.isOpen);
 
   useEffect(() => {
@@ -47,32 +46,11 @@ export function CartDrawer({
         )}`
       : null;
 
-  async function checkout() {
-    setSubmitting(true);
-    setError(null);
-    try {
-      const res = await fetch("/api/checkout", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          lines: cart.items.map((i) => ({ productId: i.productId, variantId: i.variantId || undefined, quantity: i.quantity })),
-          expectedTotalCents: cart.totalCents,
-        }),
-      });
-      const data = (await res.json()) as { redirectUrl?: string; error?: string };
-      if (!res.ok || !data.redirectUrl) throw new Error(data.error ?? "No se pudo iniciar el checkout.");
+  const checkout = () =>
+    start(cart.items, () => {
       cart.clear();
       cart.close();
-      // La pasarela (checkout.bold.co) es otro origen: navegación completa.
-      const target = new URL(data.redirectUrl, window.location.href);
-      if (target.origin === window.location.origin) router.push(`${target.pathname}${target.search}`);
-      else window.location.assign(target.toString());
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Error inesperado.");
-    } finally {
-      setSubmitting(false);
-    }
-  }
+    });
 
   return (
     <div className="backdrop-glass fixed inset-0 z-[70] flex justify-end bg-scrim" onClick={cart.close} data-testid="cart-overlay">
@@ -131,6 +109,14 @@ export function CartDrawer({
         <Button onClick={checkout} disabled={cart.items.length === 0 || submitting} className="w-full justify-start px-6 py-5 text-label-lg" data-testid="checkout-button">
           {submitting ? "Procesando…" : content.checkout}
         </Button>
+        <p
+          className="mb-0 mt-3.5 text-legal text-ink-3 [text-wrap:pretty]"
+          data-testid="cart-legal"
+          // Al abrir una página legal la bolsa se cierra para que se vea.
+          onClick={(e) => (e.target as Element).closest("a") && cart.close()}
+        >
+          <RichText text={content.legalNote} linkClassName="text-ink-2" />
+        </p>
         {whatsappHref ? (
           <a href={whatsappHref} target="_blank" rel="noopener noreferrer" className="block pt-[18px] text-label-lg uppercase text-ink-2 hover:text-ink">
             {content.whatsapp}
