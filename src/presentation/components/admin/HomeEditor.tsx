@@ -2,12 +2,15 @@
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import type { ActionResult } from "@/application/dto/admin.dto";
-import { BAND_POSITIONS, type BandPosition, type HomeSettingsInput, type SiteMediaDto } from "@/application/dto/home.dto";
+import { BAND_POSITIONS, type BandPosition, type HomeEditorDefaults, type HomeSettingsInput, type SiteMediaDto } from "@/application/dto/home.dto";
 import { Button } from "@/presentation/components/primitives/Button";
 import { SmartImage as Image } from "@/presentation/components/primitives/SmartImage";
 import { cn } from "@/presentation/lib/cn";
 import { FormSection, Segmented, TextArea, TextInput } from "./fields";
 import { SiteMediaLibrary, type SiteMediaActions } from "./SiteMediaLibrary";
+import { SocialEditor, TestimonialsEditor, TrustEditor } from "./HomeBlocksEditor";
+
+type BlockKey = "trust" | "testimonials" | "social";
 
 type Status = { kind: "idle" } | { kind: "saved" } | { kind: "error"; message: string };
 
@@ -79,22 +82,46 @@ export function HomeEditor({
   videosEnabled,
   actions,
 }: {
-  initial: HomeSettingsInput & { updatedAt: string | null };
+  initial: HomeSettingsInput & { updatedAt: string | null; defaults: HomeEditorDefaults };
   media: SiteMediaDto[];
   featured: { name: string; href: string; editHref: string } | null;
-  defaults: { bandTitle: string; bandImage: string; heroCta: string };
+  defaults: {
+    bandTitle: string;
+    bandImage: string;
+    heroCta: string;
+    trustKicker: string;
+    testimonials: { kicker: string; title: string; note: string };
+    social: { kicker: string; title: string; body: string };
+  };
   links: Array<{ href: string; label: string }>;
   videosEnabled: boolean;
   actions: SiteMediaActions & { save: (input: HomeSettingsInput) => Promise<ActionResult> };
 }) {
   const router = useRouter();
   const [media, setMedia] = useState(initialMedia);
-  const [draft, setDraft] = useState<HomeSettingsInput>({ hero: initial.hero, band: initial.band });
-  const [saved, setSaved] = useState(() => JSON.stringify({ hero: initial.hero, band: initial.band }));
+  const [draft, setDraft] = useState<Pick<HomeSettingsInput, "hero" | "band">>({ hero: initial.hero, band: initial.band });
+  // Los bloques se muestran siempre con su contenido actual, pero solo se guardan si se editaron
+  // (un bloque nunca editado sigue los textos del código).
+  const [blocks, setBlocks] = useState<HomeEditorDefaults>(initial.defaults);
+  const [touched, setTouched] = useState<Record<BlockKey, boolean>>({ trust: initial.trust !== null, testimonials: initial.testimonials !== null, social: initial.social !== null });
+  const payload = (): HomeSettingsInput => ({
+    ...draft,
+    trust: touched.trust ? blocks.trust : null,
+    testimonials: touched.testimonials ? blocks.testimonials : null,
+    social: touched.social ? blocks.social : null,
+  });
+  const [saved, setSaved] = useState(() => JSON.stringify({ hero: initial.hero, band: initial.band, trust: initial.trust, testimonials: initial.testimonials, social: initial.social }));
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [status, setStatus] = useState<Status>({ kind: "idle" });
   const [pending, start] = useTransition();
-  const dirty = JSON.stringify(draft) !== saved;
+  const dirty = JSON.stringify(payload()) !== saved;
+  const block =
+    <K extends BlockKey>(k: K) =>
+    (v: HomeEditorDefaults[K]) => {
+      setBlocks((b) => ({ ...b, [k]: v }));
+      setTouched((t) => ({ ...t, [k]: true }));
+      setStatus({ kind: "idle" });
+    };
 
   useEffect(() => {
     if (!dirty) return;
@@ -117,14 +144,15 @@ export function HomeEditor({
   function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     start(async () => {
-      const res = await actions.save(draft);
+      const input = payload();
+      const res = await actions.save(input);
       if (!res.ok) {
         setErrors(res.fieldErrors ?? {});
         setStatus({ kind: "error", message: res.error });
         return;
       }
       setErrors({});
-      setSaved(JSON.stringify(draft));
+      setSaved(JSON.stringify(input));
       setStatus({ kind: "saved" });
       // Los usos de la biblioteca cambian con lo guardado.
       setMedia((items) =>
@@ -232,6 +260,18 @@ export function HomeEditor({
             </div>
           </div>
         </div>
+      </FormSection>
+
+      <FormSection n="04" title="Garantía y autenticidad" aside={<span className="text-legal text-ink-3">Los tres compromisos de la home</span>}>
+        <TrustEditor value={blocks.trust} onChange={block("trust")} err={err} defaultKicker={defaults.trustKicker} />
+      </FormSection>
+
+      <FormSection n="05" title="Testimonios" aside={<span className="text-legal text-ink-3">Solo con autorización del cliente</span>}>
+        <TestimonialsEditor value={blocks.testimonials} onChange={block("testimonials")} err={err} defaults={defaults.testimonials} />
+      </FormSection>
+
+      <FormSection n="06" title="Redes" aside={<span className="text-legal text-ink-3">Home, menú y pie de página</span>}>
+        <SocialEditor value={blocks.social} onChange={block("social")} err={err} defaults={defaults.social} />
       </FormSection>
 
       <div className="backdrop-glass fixed inset-x-0 bottom-0 z-30 border-t border-divider bg-glass-deep lg:left-[248px]">

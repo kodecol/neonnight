@@ -7,7 +7,19 @@ import { CookieSettingsButton } from "./ConsentBanner";
 
 const linkCls = "text-ink-2 transition-colors hover:text-ink";
 
-function FooterLink({ link, whatsappUrl }: { link: LinkItem; whatsappUrl: string | null }) {
+function FooterLink({ link, whatsappUrl, networks }: { link: LinkItem; whatsappUrl: string | null; networks: SiteContent["social"]["networks"] }) {
+  // El enlace especial "redes" se expande con las redes activas.
+  if (link.href === "redes") {
+    return (
+      <>
+        {networks.map((n) => (
+          <a key={n.id} href={n.href} target="_blank" rel="noopener noreferrer" className={linkCls}>
+            {n.label}
+          </a>
+        ))}
+      </>
+    );
+  }
   // El enlace especial "whatsapp" se resuelve con el número configurado.
   if (link.href === "whatsapp") {
     return whatsappUrl ? (
@@ -74,7 +86,7 @@ export function Footer({
           <nav key={col.title} className="flex flex-col gap-3.5 text-meta" aria-label={col.title}>
             <span className="mb-1.5 text-label uppercase text-ink-3">{col.title}</span>
             {col.links.map((l) => (
-              <FooterLink key={l.label} link={l} whatsappUrl={whatsappUrl} />
+              <FooterLink key={l.label} link={l} whatsappUrl={whatsappUrl} networks={networks} />
             ))}
           </nav>
         ))}

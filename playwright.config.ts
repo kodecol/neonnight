@@ -25,7 +25,11 @@ export default defineConfig({
       origins: [{ origin: baseURL, localStorage: [{ name: "neonnight.consent.v1", value: JSON.stringify({ analytics: false, marketing: false, at: new Date().toISOString() }) }] }],
     },
   },
-  projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"], viewport: { width: 1440, height: 900 } } }],
+  projects: [
+    { name: "chromium", testIgnore: /home-admin\.spec/, use: { ...devices["Desktop Chrome"], viewport: { width: 1440, height: 900 } } },
+    // Cambia la home compartida: corre al final, cuando ya terminaron las demás.
+    { name: "inicio", testMatch: /home-admin\.spec/, dependencies: ["chromium"], use: { ...devices["Desktop Chrome"], viewport: { width: 1440, height: 900 } } },
+  ],
   webServer: {
     command: `npm run build && npm run start -- -p ${PORT}`,
     url: baseURL,

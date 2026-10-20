@@ -103,7 +103,7 @@ Un solo administrador entra con `ADMIN_PASSWORD`. La sesión es una cookie firma
   - **Fotos:** una sola biblioteca por pieza (se suben varias a la vez). Cada foto se asigna a uno o varios usos: portada, segunda vista, fondo del hero, imagen final y galería (ADR 0007).
   - Categorías agrupadas por línea, editables en línea.
   - Los cambios se publican en la tienda al guardar.
-- **Inicio** (`/admin/inicio`): biblioteca de medios del sitio (fotos por el servidor; videos directo a Cloudinary con firma, hasta 100 MB) y contenido de la home: hero (pieza destacada o foto o video propio con antetítulo, título, texto y botón) y banda (foto, frase y encuadre). Lo vacío usa los textos por defecto. Guardar publica al instante (ADR 0008).
+- **Inicio** (`/admin/inicio`): biblioteca de medios del sitio (fotos por el servidor; videos directo a Cloudinary con firma, hasta 100 MB) y contenido de la home: hero (pieza destacada o foto o video propio con antetítulo, título, texto y botón) banda (foto, frase y encuadre), los tres compromisos de "Garantía y autenticidad", los testimonios (solo se publican los visibles con autorización escrita del cliente) y las redes (activar, usuario y enlace). Lo vacío o nunca editado usa los textos del código. Guardar publica al instante (ADR 0008).
 - **Pagos:**
   - Configuración de Bold: activar el cobro, elegir ambiente (pruebas o producción) e ingresar la llave de identidad y la llave secreta (se guarda cifrada).
   - Muestra la URL del webhook para registrarla en Bold.
@@ -163,7 +163,7 @@ La guía completa está en **[`docs/DEPLOY.md`](docs/DEPLOY.md)**: infraestructu
 - IDs de Google Analytics 4 y del píxel de Meta (`GA_MEASUREMENT_ID`, `META_PIXEL_ID`).
 - Revisión de las páginas legales por un abogado antes del lanzamiento.
 - Imagen final (foto de ambiente) de Cartier Juste un Clou y Tom Ford Oud Wood: no se encontró una foto de la pieza exacta; se sube desde el panel (Catálogo › pieza › Fotos › Imagen final).
-- **Testimonios:** los 4 actuales (`home.testimonials` en `site-content.ts`) son textos de **ejemplo**. Antes de publicar hay que reemplazarlos por testimonios reales, con autorización escrita de cada cliente. Publicar comentarios inventados como reales es publicidad engañosa (Ley 1480, Estatuto del Consumidor). Por eso no se emiten datos estructurados de reseñas.
+- **Testimonios:** los 4 actuales (`home.testimonials` en `site-content.ts`) son textos de **ejemplo**. Antes de publicar hay que reemplazarlos por testimonios reales, con autorización escrita de cada cliente (se hace en el panel › Inicio › Testimonios). Publicar comentarios inventados como reales es publicidad engañosa (Ley 1480, Estatuto del Consumidor). Por eso no se emiten datos estructurados de reseñas.
 - **Métodos de pago:** confirmar en el panel de Bold qué medios tiene habilitados el comercio y ajustar `home.payments.logos`. En especial **Daviplata**: no hay logo oficial descargable (el sitio está protegido), así que hoy se muestra como texto. Pedir el arte a Bold o Davivienda y guardarlo en `public/assets/logos/payments/`.
 - Video vertical nativo para "En movimiento" (el actual es un recorte horizontal).
 

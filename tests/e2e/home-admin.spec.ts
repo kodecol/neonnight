@@ -51,4 +51,35 @@ test.describe("Panel › Inicio", () => {
     await page.goto("/");
     await expect(page.locator("#hero-title")).not.toHaveText("Prueba de portada");
   });
+
+  test("compromisos, testimonios y redes se editan y se reflejan en la home y el pie de página", async ({ page }) => {
+    await page.goto("/admin/inicio");
+    const trust = page.getByTestId("trust-editor");
+    const firstTitle = trust.getByLabel("Título").first();
+    const original = await firstTitle.inputValue();
+    await firstTitle.fill("Verificado de verdad");
+
+    // Testimonios: solo los autorizados se publican.
+    const items = page.getByTestId("testimonial");
+    await expect(items.first()).toContainText("Falta autorización");
+    await items.first().getByRole("switch", { name: "Autorizado por el cliente" }).click();
+    await expect(items.first()).toContainText("Publicado");
+
+    await page.getByTestId("network-facebook").getByRole("switch").click();
+    await page.getByTestId("save-home").click();
+    await expect(page.getByText("Guardado · publicado en la home")).toBeVisible();
+
+    await page.goto("/");
+    await expect(page.locator("#autenticidad")).toContainText("Verificado de verdad");
+    await expect(page.getByTestId("social-links").locator("a")).toHaveCount(2);
+    await expect(page.getByTestId("site-footer").getByRole("link", { name: "Facebook" })).toHaveCount(0);
+    await expect(page.getByTestId("site-footer").getByRole("link", { name: "Instagram" }).first()).toBeVisible();
+
+    // Deja la home como estaba para el resto de pruebas.
+    await page.goto("/admin/inicio");
+    await page.getByTestId("trust-editor").getByLabel("Título").first().fill(original);
+    await page.getByTestId("network-facebook").getByRole("switch").click();
+    await page.getByTestId("save-home").click();
+    await expect(page.getByText("Guardado · publicado en la home")).toBeVisible();
+  });
 });

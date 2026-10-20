@@ -7,6 +7,9 @@ import type { HomeSettingsInput } from "@/application/dto/home.dto";
 import type { MediaUploader } from "@/application/ports/media-uploader";
 import type { VideoUploadSigner } from "@/application/ports/site-media";
 import { MediaInUseError } from "@/domain/errors";
+import { SITE_CONTENT } from "@/infrastructure/content/site-content";
+import { StaticSiteContentRepository } from "@/infrastructure/content/static-site-content-repository";
+import { ManagedSiteContentRepository } from "@/infrastructure/content/managed-site-content-repository";
 
 const clock = { now: () => new Date("2026-10-20T12:00:00Z") };
 
@@ -36,6 +39,9 @@ const file = { bytes: new Uint8Array([1, 2, 3]), contentType: "image/webp", file
 const settings = (over: Partial<HomeSettingsInput["hero"]> = {}, band: Partial<HomeSettingsInput["band"]> = {}): HomeSettingsInput => ({
   hero: { source: "media", mediaId: null, kicker: null, title: "Relojería de autor", text: null, ctaLabel: null, ctaHref: null, ...over },
   band: { mediaId: null, title: null, position: "centro", ...band },
+  trust: null,
+  testimonials: null,
+  social: null,
 });
 
 describe("Inicio editable desde el panel", () => {
@@ -61,7 +67,7 @@ describe("Inicio editable desde el panel", () => {
     await expect(save.execute(settings({ mediaId: photo.id }, { mediaId: video.id }))).rejects.toMatchObject({ field: "band.mediaId" });
 
     await save.execute(settings({ mediaId: video.id, ctaLabel: "Ver relojería", ctaHref: "/coleccion/relojeria" }, { mediaId: photo.id, title: "Hecho para durar", position: "arriba" }));
-    const form = await new GetHomeSettings(d.homeSettings).execute();
+    const form = await new GetHomeSettings(d.homeSettings).execute(SITE_CONTENT);
     expect(form.band.position).toBe("arriba");
     const content = await new GetHomeContent(d).execute({ kicker: "Neon Night", cta: "Ver la pieza" });
     expect(content.hero).toMatchObject({ media: { kind: "video" }, title: "Relojería de autor", kicker: "Neon Night", cta: { label: "Ver relojería", href: "/coleccion/relojeria" } });
@@ -86,5 +92,59 @@ describe("Inicio editable desde el panel", () => {
   it("solo borra de Cloudinary lo que está en la carpeta del sitio", () => {
     expect(publicIdOf("https://res.cloudinary.com/demo/image/upload/v1712/neonnight/sitio/abc.jpg")).toBe("neonnight/sitio/abc");
     expect(publicIdOf("https://res.cloudinary.com/demo/video/upload/neonnight/sitio/hero.mp4")).toBe("neonnight/sitio/hero");
+  });
+
+  it("compromisos, testimonios y redes: lo no editado sigue el código y lo editado se aplica en todo el sitio", async () => {
+    const d = setup();
+    const content = new ManagedSiteContentRepository(new StaticSiteContentRepository(), d.homeSettings);
+    const form = await new GetHomeSettings(d.homeSettings).execute(SITE_CONTENT);
+    expect(form.trust).toBeNull();
+    // El editor arranca con el contenido actual; los testimonios del código entran como ejemplo sin autorización.
+    expect(form.defaults.trust.items).toHaveLength(3);
+    expect(form.defaults.testimonials.items.every((t) => t.id.startsWith("ejemplo-") && !t.authorized)).toBe(true);
+    expect(form.defaults.social.networks.find((n) => n.id === "tiktok")?.enabled).toBe(false);
+
+    // Guardar solo el hero no toca los bloques.
+    await new SaveHomeSettings(d).execute(settings({ source: "featured" }));
+    expect((await content.get()).home.testimonials.items).toHaveLength(SITE_CONTENT.home.testimonials.items.length);
+
+    const testimonials = {
+      ...form.defaults.testimonials,
+      items: [
+        { ...form.defaults.testimonials.items[0]!, authorized: true },
+        { ...form.defaults.testimonials.items[1]!, authorized: false },
+        { ...form.defaults.testimonials.items[2]!, authorized: true, visible: false },
+      ],
+    };
+    const trust = { kicker: "Lo que prometemos", items: form.defaults.trust.items.map((t, i) => ({ ...t, title: `Compromiso ${i + 1}` })) };
+    const social = { ...form.defaults.social, networks: form.defaults.social.networks.map((n) => (n.id === "facebook" ? { ...n, enabled: false } : n)) };
+    await new SaveHomeSettings(d).execute({ ...settings({ source: "featured" }), trust, testimonials, social });
+
+    const site = await content.get();
+    expect(site.home.trust.kicker).toBe("Lo que prometemos");
+    expect(site.home.trust.items.map((i) => [i.number, i.title, i.accent])).toEqual([
+      ["01", "Compromiso 1", false],
+      ["02", "Compromiso 2", false],
+      ["03", "Compromiso 3", true],
+    ]);
+    // Solo el visible y autorizado se publica.
+    expect(site.home.testimonials.items.map((t) => t.name)).toEqual([SITE_CONTENT.home.testimonials.items[0]!.name]);
+    expect(site.social.networks.map((n) => n.id)).toEqual(["instagram", "youtube"]);
+    expect(site.social.networks[0]).toMatchObject({ label: "Instagram", cta: "Seguir" });
+  });
+
+  it("valida los bloques: tres compromisos, testimonios completos y enlaces de la red correcta", async () => {
+    const d = setup();
+    const form = await new GetHomeSettings(d.homeSettings).execute(SITE_CONTENT);
+    const save = (over: Partial<HomeSettingsInput>) => new SaveHomeSettings(d).execute({ ...settings({ source: "featured" }), ...over });
+    await expect(save({ trust: { kicker: null, items: form.defaults.trust.items.slice(0, 2) } })).rejects.toBeInstanceOf(ZodError);
+    await expect(save({ testimonials: { ...form.defaults.testimonials, items: [{ ...form.defaults.testimonials.items[0]!, quote: "corto" }] } })).rejects.toBeInstanceOf(ZodError);
+    const bad = form.defaults.social.networks.map((n) => (n.id === "instagram" ? { ...n, href: "https://evil.example/neonnight" } : n));
+    await expect(save({ social: { ...form.defaults.social, networks: bad } })).rejects.toBeInstanceOf(ZodError);
+    const fake = form.defaults.social.networks.map((n) => (n.id === "youtube" ? { ...n, href: "https://www.instagram.com/x" } : n));
+    await expect(save({ social: { ...form.defaults.social, networks: fake } })).rejects.toBeInstanceOf(ZodError);
+    // Una red apagada no necesita enlace.
+    const off = form.defaults.social.networks.map((n) => (n.id === "tiktok" ? { ...n, enabled: false, href: "" } : n));
+    await expect(save({ social: { ...form.defaults.social, networks: off } })).resolves.toBeUndefined();
   });
 });

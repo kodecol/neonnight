@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { SOCIAL_KEYS, isNetworkUrl } from "../lib/social-networks";
 import type { SiteMediaKind } from "../ports/site-media";
 import type { HeroMediaDto, ImageDto } from "./product.dto";
 
@@ -31,7 +32,58 @@ const optional = (max: number) =>
     .nullable()
     .transform((v) => (v ? v : null));
 
-/** Formulario de la página de inicio en el panel. */
+const required = (min: number, max: number, msg = "Obligatorio.") => z.string().trim().min(min, msg).max(max);
+
+export const TrustInputSchema = z.object({
+  kicker: optional(40),
+  items: z
+    .array(z.object({ title: required(1, 40), body: required(1, 220) }))
+    .length(3, "Son tres compromisos."),
+});
+
+export const TestimonialInputSchema = z.object({
+  id: z.string().min(1).max(40),
+  quote: required(20, 400, "Escribe el testimonio (mínimo 20 caracteres)."),
+  name: required(2, 40),
+  city: required(2, 40),
+  piece: required(2, 60),
+  rating: z.number().int().min(1).max(5),
+  authorized: z.boolean(),
+  visible: z.boolean(),
+});
+
+export const TestimonialsInputSchema = z.object({
+  kicker: optional(40),
+  title: optional(90),
+  note: optional(90),
+  items: z.array(TestimonialInputSchema).max(12, "Máximo 12 testimonios."),
+});
+
+export const SocialInputSchema = z
+  .object({
+    kicker: optional(40),
+    title: optional(90),
+    body: optional(220),
+    networks: z.array(
+      z.object({
+        id: z.enum(SOCIAL_KEYS as [(typeof SOCIAL_KEYS)[number], ...(typeof SOCIAL_KEYS)[number][]]),
+        enabled: z.boolean(),
+        handle: z.string().trim().max(40),
+        href: z.string().trim().max(200),
+        description: z.string().trim().max(90),
+      }),
+    ),
+  })
+  .superRefine((s, ctx) => {
+    if (new Set(s.networks.map((n) => n.id)).size !== s.networks.length) ctx.addIssue({ code: "custom", path: ["networks"], message: "Red repetida." });
+    s.networks.forEach((n, i) => {
+      if (!n.enabled) return;
+      if (!isNetworkUrl(n.id, n.href)) ctx.addIssue({ code: "custom", path: ["networks", i, "href"], message: "Pega el enlace https del perfil en esa red." });
+      if (!n.handle) ctx.addIssue({ code: "custom", path: ["networks", i, "handle"], message: "Obligatorio." });
+    });
+  });
+
+/** Formulario de la página de inicio en el panel. Los bloques en null no se tocan (siguen los textos del código). */
 export const HomeSettingsInputSchema = z
   .object({
     hero: z.object({
@@ -48,6 +100,9 @@ export const HomeSettingsInputSchema = z
       title: optional(90),
       position: z.enum(Object.keys(BAND_POSITIONS) as [BandPosition, ...BandPosition[]]),
     }),
+    trust: TrustInputSchema.nullable(),
+    testimonials: TestimonialsInputSchema.nullable(),
+    social: SocialInputSchema.nullable(),
   })
   .superRefine((s, ctx) => {
     if (s.hero.source !== "media") return;
@@ -80,3 +135,10 @@ export const RegisterVideoSchema = z.object({
   width: z.number().int().positive(),
   height: z.number().int().positive(),
 });
+
+/** Lo que el editor muestra de cada bloque: lo guardado o, si nunca se editó, el contenido actual del código. */
+export interface HomeEditorDefaults {
+  trust: NonNullable<HomeSettingsInput["trust"]>;
+  testimonials: NonNullable<HomeSettingsInput["testimonials"]>;
+  social: NonNullable<HomeSettingsInput["social"]>;
+}

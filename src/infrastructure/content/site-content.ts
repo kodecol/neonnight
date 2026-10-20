@@ -297,9 +297,8 @@ export const SITE_CONTENT: SiteContent = {
         links: [
           { label: "Nosotros", href: "/nosotros" },
           { label: "WhatsApp", href: "whatsapp" },
-          { label: "Instagram", href: INSTAGRAM_URL, external: true },
-          { label: "Facebook", href: FACEBOOK_URL, external: true },
-          { label: "YouTube", href: YOUTUBE_URL, external: true },
+          // "redes" se expande con las redes activas (panel › Inicio › Redes).
+          { label: "Redes", href: "redes" },
         ],
       },
     ],

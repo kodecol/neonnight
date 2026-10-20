@@ -11,10 +11,13 @@ import {
   SiteMediaAltSchema,
   type BandPosition,
   type HomeContentDto,
+  type HomeEditorDefaults,
   type HomeSettingsInput,
   type SiteMediaDto,
 } from "../../dto/home.dto";
 import { UploadImage } from "./upload-image";
+import type { SiteContent } from "../../dto/site-content.dto";
+import { SOCIAL_KEYS } from "../../lib/social-networks";
 
 export interface HomeDeps {
   siteMedia: SiteMediaRepository;
@@ -108,9 +111,43 @@ const positionKey = (position: string | null): BandPosition => (Object.entries(B
 export class GetHomeSettings {
   constructor(private readonly homeSettings: HomeSettingsRepository) {}
 
-  async execute(): Promise<HomeSettingsInput & { updatedAt: string | null }> {
+  /** `base`: el contenido del código, para mostrar en el editor los bloques que nunca se editaron. */
+  async execute(base: SiteContent): Promise<HomeSettingsInput & { updatedAt: string | null; defaults: HomeEditorDefaults }> {
     const s = await this.homeSettings.get();
-    return { hero: { ...s.hero }, band: { mediaId: s.band.mediaId, title: s.band.title, position: positionKey(s.band.position) }, updatedAt: s.updatedAt?.toISOString() ?? null };
+    const defaults: HomeEditorDefaults = {
+      trust: s.trust
+        ? { kicker: s.trust.kicker, items: s.trust.items.map((i) => ({ ...i })) }
+        : { kicker: null, items: base.home.trust.items.map(({ title, body }) => ({ title, body })) },
+      testimonials: s.testimonials
+        ? { ...s.testimonials, items: s.testimonials.items.map((t) => ({ ...t })) }
+        : {
+            kicker: null,
+            title: null,
+            note: null,
+            // Los del código son de ejemplo: entran sin autorización hasta que se confirme cada uno.
+            items: base.home.testimonials.items.map((t, i) => ({ id: `ejemplo-${i + 1}`, ...t, authorized: false, visible: true })),
+          },
+      social: s.social
+        ? { ...s.social, networks: s.social.networks.map((n) => ({ ...n })) }
+        : {
+            kicker: null,
+            title: null,
+            body: null,
+            networks: SOCIAL_KEYS.map((id) => {
+              const n = base.social.networks.find((x) => x.id === id);
+              return { id, enabled: Boolean(n), handle: n?.handle ?? "", href: n?.href ?? "", description: n?.description ?? "" };
+            }),
+          },
+    };
+    return {
+      hero: { ...s.hero },
+      band: { mediaId: s.band.mediaId, title: s.band.title, position: positionKey(s.band.position) },
+      trust: s.trust ? defaults.trust : null,
+      testimonials: s.testimonials ? defaults.testimonials : null,
+      social: s.social ? defaults.social : null,
+      updatedAt: s.updatedAt?.toISOString() ?? null,
+      defaults,
+    };
   }
 }
 
@@ -130,6 +167,9 @@ export class SaveHomeSettings {
     const settings: HomeSettings = {
       hero: { ...input.hero, mediaId: input.hero.source === "media" ? input.hero.mediaId : null },
       band: { mediaId: input.band.mediaId, title: input.band.title, position: BAND_POSITIONS[input.band.position] },
+      trust: input.trust,
+      testimonials: input.testimonials,
+      social: input.social,
       updatedAt: this.deps.clock.now(),
     };
     await this.deps.homeSettings.save(settings);

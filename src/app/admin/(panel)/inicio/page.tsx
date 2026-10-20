@@ -21,12 +21,12 @@ export const dynamic = "force-dynamic";
 
 export default async function HomeAdminPage() {
   const c = getContainer();
-  const [settings, media, featured, lines, site] = await Promise.all([
-    new GetHomeSettings(c.homeSettings).execute(),
+  const site = await c.content.get();
+  const [settings, media, featured, lines] = await Promise.all([
+    new GetHomeSettings(c.homeSettings).execute(site),
     new ListSiteMedia(c).execute(),
     new GetFeaturedProduct(c.products).execute(),
     new ListLines(c).execute(),
-    c.content.get(),
   ]);
   // Destinos sugeridos para el botón del hero.
   const links = [
@@ -49,7 +49,14 @@ export default async function HomeAdminPage() {
         initial={settings}
         media={media}
         featured={featured ? { name: featured.name, href: ROUTES.product(featured.kind, featured.slug), editHref: `/admin/catalogo/${featured.id}` } : null}
-        defaults={{ bandTitle: site.home.band.title, bandImage: site.home.band.image.src, heroCta: site.home.hero.primaryCta }}
+        defaults={{
+          bandTitle: site.home.band.title,
+          bandImage: site.home.band.image.src,
+          heroCta: site.home.hero.primaryCta,
+          trustKicker: site.home.trust.kicker,
+          testimonials: { kicker: site.home.testimonials.kicker, title: site.home.testimonials.title, note: site.home.testimonials.note },
+          social: { kicker: site.social.kicker, title: site.social.title, body: site.social.body },
+        }}
         links={links}
         videosEnabled={c.videoSigner.enabled}
         actions={{

@@ -73,9 +73,11 @@ export function SideMenu({
           ) : (
             <span className="text-ink-3">{content.menuFooter.whatsappLabel} (próximamente)</span>
           )}
-          <a href={instagramUrl} target="_blank" rel="noopener noreferrer" className="hover:text-ink">
-            {content.menuFooter.instagramLabel}
-          </a>
+          {instagramUrl && (
+            <a href={instagramUrl} target="_blank" rel="noopener noreferrer" className="hover:text-ink">
+              {content.menuFooter.instagramLabel}
+            </a>
+          )}
           <span className="my-2.5 h-px bg-divider" />
           <span className="text-legal text-ink-3">{content.menuFooter.note}</span>
         </div>

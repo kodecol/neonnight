@@ -37,6 +37,7 @@ import { RandomIdGenerator, SystemClock } from "./system";
 import { SEED_CATEGORIES, SEED_LINES, SEED_PRODUCTS } from "./cms/seed";
 import { SITE_CONTENT } from "./content/site-content";
 import { StaticSiteContentRepository } from "./content/static-site-content-repository";
+import { ManagedSiteContentRepository } from "./content/managed-site-content-repository";
 
 /**
  * Contenedor tipado y explícito. Sin framework de DI.
@@ -131,7 +132,7 @@ export function createContainer(overrides: Partial<Container> = {}): Container {
       }),
     clock: overrides.clock ?? new SystemClock(),
     ids: overrides.ids ?? new RandomIdGenerator(),
-    content: overrides.content ?? new StaticSiteContentRepository(SITE_CONTENT, whatsappNumber),
+    content: overrides.content ?? new ManagedSiteContentRepository(new StaticSiteContentRepository(SITE_CONTENT, whatsappNumber), base.homeSettings),
     tracking: overrides.tracking ?? trackingIds({ ga: process.env.GA_MEASUREMENT_ID, pixel: process.env.META_PIXEL_ID }),
   };
 }
