@@ -64,6 +64,12 @@ La tienda vendía solo relojes, y el modelo lo reflejaba en todas las capas: ent
   - nunca se pisa ni se re-crea lo que el panel editó o borró.
 - **Bolsa en el navegador:** las bolsas `neonnight.cart.v1` se migran a `v2`. El servidor acepta `watchId` y resuelve la variante única.
 
+### Medios
+
+- Los medios del seed (recortes WebP, portadas de línea, referencias y videos) están en el repo para desarrollo y tests en memoria, pero **no viajan en la imagen Docker** (`.dockerignore`).
+- En producción viven en Cloudinary (`neonnight/catalogo/`): `scripts/sync-catalog-media.mjs` los sube y reescribe sus rutas en Atlas, de forma idempotente. Las subidas del panel van a `neonnight/catalogo/subidas/`.
+- `SmartImage` entrega las URLs de Cloudinary con su propio CDN (`f_auto,q_auto,c_limit,w_<ancho>`). El optimizador de Next queda solo para los assets locales de diseño (logos, isotipo y banda de la home), así que el VPS no procesa ni cachea fotos de producto.
+
 ## Consecuencias
 
 - Una línea nueva se crea en el panel con nombre y plantilla. Una plantilla nueva con ficha propia sí exige código:

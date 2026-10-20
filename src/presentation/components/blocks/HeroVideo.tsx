@@ -1,4 +1,5 @@
 "use client";
+import { cloudinaryUrl, isCloudinary } from "@/presentation/lib/cloudinary";
 import { useEffect, useRef, useState } from "react";
 
 /**
@@ -7,6 +8,10 @@ import { useEffect, useRef, useState } from "react";
  * .catch() tras montar: los atributos de autoplay no bastan en todos los navegadores.
  */
 export function HeroVideo({ src, poster, className, parallax }: { src: string; poster: string; className?: string; parallax?: number }) {
+  // Desde Cloudinary: formato, calidad y ancho automáticos en su CDN (el archivo original pesa 12 MB).
+  const media = (u: string) => (isCloudinary(u) ? cloudinaryUrl(u, 1920) : u);
+  src = media(src);
+  poster = media(poster);
   const ref = useRef<HTMLVideoElement>(null);
   const [useVideo, setUseVideo] = useState(false);
 

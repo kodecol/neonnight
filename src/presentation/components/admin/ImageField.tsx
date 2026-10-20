@@ -1,5 +1,5 @@
 "use client";
-import Image from "next/image";
+import { SmartImage as Image } from "@/presentation/components/primitives/SmartImage";
 import { useRef, useState } from "react";
 import type { ActionResult, AdminImageInput } from "@/application/dto/admin.dto";
 import type { StoredMedia } from "@/application/ports/media-uploader";

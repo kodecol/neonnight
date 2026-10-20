@@ -5,7 +5,7 @@ import type { MediaUpload, MediaUploader, StoredMedia } from "@/application/port
 export class CloudinaryMediaUploader implements MediaUploader {
   readonly kind = "cloudinary" as const;
 
-  constructor(private readonly folder = "neonnight/watches") {
+  constructor(private readonly folder = "neonnight/catalogo/subidas") {
     cloudinary.config({ secure: true });
   }
 

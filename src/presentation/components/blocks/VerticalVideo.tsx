@@ -1,7 +1,12 @@
 "use client";
+import { cloudinaryUrl, isCloudinary } from "@/presentation/lib/cloudinary";
 import { useEffect, useRef, useState } from "react";
 
 export function VerticalVideo({ src, poster }: { src: string; poster: string }) {
+  // Desde Cloudinary: formato, calidad y ancho automáticos en su CDN (el archivo original pesa 12 MB).
+  const media = (u: string) => (isCloudinary(u) ? cloudinaryUrl(u, 720) : u);
+  src = media(src);
+  poster = media(poster);
   const ref = useRef<HTMLVideoElement>(null);
   const [failed, setFailed] = useState(false);
   const [play, setPlay] = useState(false);

@@ -10,3 +10,11 @@ test-results
 .env*
 !.env.example
 .data
+# Medios del catálogo: en producción viven en Cloudinary y sus URLs en Atlas
+# (scripts/sync-catalog-media.mjs). Se quedan en el repo solo para desarrollo
+# y tests en memoria; no viajan en la imagen.
+public/assets/products
+public/assets/lines
+public/assets/ref*.png
+public/assets/*.mp4
+public/assets/*-poster.jpg

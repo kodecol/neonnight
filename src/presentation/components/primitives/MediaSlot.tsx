@@ -1,4 +1,4 @@
-import Image from "next/image";
+import { SmartImage as Image } from "@/presentation/components/primitives/SmartImage";
 import type { ImageDto } from "@/application/dto/product.dto";
 import { cn } from "@/presentation/lib/cn";
 

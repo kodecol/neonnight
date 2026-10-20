@@ -32,7 +32,7 @@
 | Publicación y TLS | **nginx-proxy-manager** (NPM) del VPS: proxy host `neonightonline.com` → `neonnight-web:3000` | Certificado Let's Encrypt **propio** que emite NPM. Los proxy hosts de otros servicios no se tocan |
 | Red | Solo la red externa `proxy`, la misma de NPM | No hay red interna porque la app no tiene base de datos local |
 | Base de datos | MongoDB Atlas, cluster M0 gratis, base `neonnight` | **No se usa ninguna base ni caché de otros servicios del VPS.** El primer arranque siembra el catálogo una vez |
-| Fotos | Cloudinary, carpeta `neonnight/watches` | Plan gratuito. Sin `CLOUDINARY_URL`, como respaldo, van al volumen `neonnight-cache` |
+| Fotos y videos | Cloudinary: `neonnight/catalogo/` (medios del catálogo) y `neonnight/catalogo/subidas/` (subidas desde `/admin`) | Plan gratuito. Se entregan desde el CDN de Cloudinary (`f_auto`, `q_auto`, ancho por layout): el VPS no las procesa ni las guarda. Los medios del catálogo **no viajan en la imagen** (`.dockerignore`) |
 | Pagos | Bold: API de Links de pago y webhook `/api/webhooks/bold` | Las llaves se ingresan en `/admin/pagos` y se guardan cifradas en Atlas |
 | Imágenes | `ghcr.io/<owner>/neonnight-web:<sha>` | En el VPS queda **una sola imagen**: el historial vive en GHCR |
 | CI/CD | GitHub Actions (`.github/workflows/deploy.yml`) | Verifica, construye, despliega y comprueba la versión servida |
@@ -218,8 +218,24 @@ Durante un despliegue fallido, `deploy.sh` vuelve solo a la versión que estaba 
 
 ### 5.4 Cambios de datos
 
-- **Campos nuevos** en el catálogo: deben ser **opcionales** o tener un valor por defecto en `src/infrastructure/mongo/watch-mapper.ts`. Así una versión nueva convive con datos viejos y el rollback no rompe.
-- **Respaldo:** Atlas M0 no hace backups automáticos. Antes de cambios grandes de datos, corre desde tu máquina `mongodump --uri "$MONGODB_URI" --out backup-$(date +%F)`.
+- **Campos nuevos** en el catálogo: deben ser **opcionales** o tener un valor por defecto en `src/infrastructure/mongo/product-mapper.ts`, o migrarse en `src/infrastructure/mongo/migrate.ts`. Así una versión nueva convive con datos viejos.
+- **Respaldo:** Atlas M0 no hace backups automáticos. Antes de cambios grandes de datos, corre desde tu máquina `mongodump --uri "$MONGODB_URI" --archive=backup-$(date +%F).archive.gz --gzip`, y guarda el archivo fuera del repo.
+- **Migraciones al arrancar:** la primera conexión de una versión nueva corre `migrateToProducts` y luego `seedCatalog`. Las dos son idempotentes, y el seed solo inserta lo que falta, sin pisar lo editado en `/admin` (ADR 0005). Una migración de esquema (como `watches` → `products`) no tiene vuelta atrás automática: **el rollback a una versión anterior a la migración exige restaurar el respaldo** (`mongorestore --drop`).
+
+### 5.5 Medios del catálogo (Cloudinary)
+
+Las fotos, portadas y videos del seed están en el repo (`public/assets/…`) solo para desarrollo y tests en memoria. En producción viven en Cloudinary y sus URLs, en Atlas:
+
+1. Despliega la versión. Al arrancar, el seed inserta lo nuevo con rutas locales (`/assets/…`).
+2. Desde la máquina de desarrollo, con `MONGODB_URI`, `MONGODB_DB` y `CLOUDINARY_URL` de producción **en el entorno** (nunca en la línea de comandos), corre:
+   ```bash
+   node scripts/sync-catalog-media.mjs --dry-run   # qué subiría y cuántos documentos cambiaría
+   node scripts/sync-catalog-media.mjs             # sube a neonnight/catalogo/ y reescribe las rutas en Atlas
+   ```
+   El script es idempotente: cada archivo tiene un `public_id` fijo, se sube con `overwrite: false` y solo se reescriben las rutas que aún son locales.
+3. Comprueba que ninguna página pida `/assets/products/…`. Esas rutas no existen en la imagen y darían 404.
+
+Repite el paso 2 cada vez que una versión suba `SEED_VERSION` con medios nuevos.
 
 ---
 

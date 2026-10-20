@@ -1,5 +1,5 @@
 "use client";
-import Image from "next/image";
+import { SmartImage as Image } from "@/presentation/components/primitives/SmartImage";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import type { AdminLineDto, AdminProductRowDto } from "@/application/dto/admin.dto";
