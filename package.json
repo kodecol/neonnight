@@ -21,9 +21,9 @@
   "dependencies": {
     "cloudinary": "^2.11.0",
     "mongodb": "^7.7.0",
-    "next": "15.5.25",
-    "react": "19.1.0",
-    "react-dom": "19.1.0",
+    "next": "16.4.2",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
     "zod": "^4.6.4"
   },
   "devDependencies": {
@@ -38,7 +38,7 @@
     "@types/react-dom": "^19",
     "@vitejs/plugin-react": "^6.1.1",
     "eslint": "^9",
-    "eslint-config-next": "15.5.25",
+    "eslint-config-next": "16.4.2",
     "eslint-plugin-boundaries": "^7.2.0",
     "jsdom": "^30.0.1",
     "tailwindcss": "^4",
