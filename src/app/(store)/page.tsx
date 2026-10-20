@@ -14,6 +14,7 @@ import { BrandMarquee } from "@/presentation/components/blocks/BrandMarquee";
 import { Testimonials } from "@/presentation/components/blocks/Testimonials";
 import { PaymentMethods } from "@/presentation/components/blocks/PaymentMethods";
 import { ListBrands } from "@/application/use-cases/list-brands";
+import { GetHomeContent } from "@/application/use-cases/admin/home";
 import type { Metadata } from "next";
 import { JsonLd } from "@/presentation/components/seo/JsonLd";
 import { TrackEvent } from "@/presentation/components/seo/TrackEvent";
@@ -38,13 +39,15 @@ export default async function HomePage() {
   const container = getContainer();
   const { products, whatsapp, content } = container;
   const site = await content.get();
-  const [selection, total, featured, brands, lines] = await Promise.all([
+  const [selection, total, featured, brands, lines, custom] = await Promise.all([
     // Selección corta y variada: una pieza de cada línea por turno.
     new ListProducts(products).execute({ mixLines: true, limit: site.home.catalog.featuredCount }),
     products.findAll().then((all) => all.length),
     new GetFeaturedProduct(products).execute(),
     new ListBrands(products).execute(),
     new ListLines(container).execute(),
+    // Lo que se edita en el panel › Inicio (hero y banda); lo vacío usa los textos por defecto.
+    new GetHomeContent(container).execute({ kicker: site.home.hero.fallbackKicker, cta: site.home.hero.primaryCta }),
   ]);
   const items = selection.map((p) => ({ product: p }));
 
@@ -60,14 +63,14 @@ export default async function HomePage() {
         }}
       />
       <TrackEvent event={{ name: "view_item_list", listName: "Inicio · Selección", items: selection.map((p) => ({ id: p.id, name: p.name, brand: p.brand, priceCents: p.price.cents })) }} />
-      <Hero featured={featured} content={site.home.hero} tagline={site.brand.tagline} />
+      <Hero featured={featured} custom={custom.hero} content={site.home.hero} tagline={site.brand.tagline} />
       <BrandMarquee brands={brands} content={site.home.brands} />
       <LineShowcase lines={lines} content={site.home.lines} />
       <CatalogHeader total={total} content={site.home.catalog} />
       <section className="px-page pb-section pt-16">
         <ProductGrid items={items} columns={3} actions />
       </section>
-      <ParallaxBand image={site.home.band.image} title={site.home.band.title} label={site.home.band.image.alt} />
+      <ParallaxBand image={custom.band?.image ?? site.home.band.image} title={custom.band?.title ?? site.home.band.title} label={(custom.band?.image.alt || site.home.band.image.alt) ?? ""} />
       <TrustColumns content={site.home.trust} />
       <Testimonials content={site.home.testimonials} />
       <MotionSection video={featured?.video ?? null} whatsappUrl={whatsapp.generic(site.home.motion.whatsappMessage)} content={site.home.motion} />

@@ -91,18 +91,19 @@ docs/handoff        Prototipo y README originales      docs/adr   Decisiones
 
 1. **Catálogo:** MongoDB (`src/infrastructure/mongo/`), con respaldo en memoria si no hay `MONGODB_URI`. Ver `src/infrastructure/cms/README.md`.
 2. **Pagos:** `BoldPaymentGateway` (API de Links de pago). Con Bold inactivo en el panel delega en `NoopPaymentGateway`. Las órdenes se guardan en Mongo.
-3. **Analítica:** sigue siendo un stub. Hay que implementar `Analytics` con el proveedor elegido. Los eventos ya emitidos son `view_item` y `begin_checkout`. `add_to_cart` y `whatsapp_click` se emitirán desde el cliente cuando exista el proveedor.
+3. **Analítica:** GA4 y píxel de Meta en el cliente, solo con consentimiento (ADR 0006). El puerto `Analytics` del servidor sigue siendo un registro en consola.
 
 ## Panel de administración (`/admin`)
 
-Un solo administrador entra con `ADMIN_PASSWORD`. La sesión es una cookie firmada que dura 7 días. El panel tiene dos secciones:
+Un solo administrador entra con `ADMIN_PASSWORD`. La sesión es una cookie firmada que dura 7 días. El panel tiene tres secciones:
 
 - **Catálogo:**
   - **Líneas** (Relojería, Joyería, Perfumería…): se crean con nombre y plantilla (`reloj`, `joya`, `perfume` o `general`), con portada y frase para la home. La plantilla decide la ficha técnica y los filtros, y no cambia después (ADR 0005).
   - **Productos:** alta por línea, edición y baja. Incluyen identidad, ficha según la plantilla, presentaciones con precio y stock, categoría, disponibilidad, condición, destacado y textos.
-  - Fotos principal, segunda vista y galería ordenable.
+  - **Fotos:** una sola biblioteca por pieza (se suben varias a la vez). Cada foto se asigna a uno o varios usos: portada, segunda vista, fondo del hero, imagen final y galería (ADR 0007).
   - Categorías agrupadas por línea, editables en línea.
   - Los cambios se publican en la tienda al guardar.
+- **Inicio** (`/admin/inicio`): biblioteca de medios del sitio (fotos por el servidor; videos directo a Cloudinary con firma, hasta 100 MB) y contenido de la home: hero (pieza destacada o foto o video propio con antetítulo, título, texto y botón) y banda (foto, frase y encuadre). Lo vacío usa los textos por defecto. Guardar publica al instante (ADR 0008).
 - **Pagos:**
   - Configuración de Bold: activar el cobro, elegir ambiente (pruebas o producción) e ingresar la llave de identidad y la llave secreta (se guarda cifrada).
   - Muestra la URL del webhook para registrarla en Bold.
@@ -161,6 +162,7 @@ La guía completa está en **[`docs/DEPLOY.md`](docs/DEPLOY.md)**: infraestructu
 - Crear el buzón `contacto@neonightonline.com` (es el canal legal de reclamos y de datos personales) o cambiar `company.email`.
 - IDs de Google Analytics 4 y del píxel de Meta (`GA_MEASUREMENT_ID`, `META_PIXEL_ID`).
 - Revisión de las páginas legales por un abogado antes del lanzamiento.
+- Imagen final (foto de ambiente) de Cartier Juste un Clou y Tom Ford Oud Wood: no se encontró una foto de la pieza exacta; se sube desde el panel (Catálogo › pieza › Fotos › Imagen final).
 - **Testimonios:** los 4 actuales (`home.testimonials` en `site-content.ts`) son textos de **ejemplo**. Antes de publicar hay que reemplazarlos por testimonios reales, con autorización escrita de cada cliente. Publicar comentarios inventados como reales es publicidad engañosa (Ley 1480, Estatuto del Consumidor). Por eso no se emiten datos estructurados de reseñas.
 - **Métodos de pago:** confirmar en el panel de Bold qué medios tiene habilitados el comercio y ajustar `home.payments.logos`. En especial **Daviplata**: no hay logo oficial descargable (el sitio está protegido), así que hoy se muestra como texto. Pedir el arte a Bold o Davivienda y guardarlo en `public/assets/logos/payments/`.
 - Video vertical nativo para "En movimiento" (el actual es un recorte horizontal).

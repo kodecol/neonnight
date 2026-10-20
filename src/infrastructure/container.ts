@@ -9,6 +9,8 @@ import type { Analytics } from "@/application/ports/analytics";
 import type { WhatsAppLinkBuilder } from "@/application/ports/whatsapp-link-builder";
 import type { Clock, IdGenerator } from "@/application/ports/clock";
 import type { SiteContentRepository } from "@/application/ports/site-content-repository";
+import type { MediaRemover, SiteMediaRepository, VideoUploadSigner } from "@/application/ports/site-media";
+import type { HomeSettingsRepository } from "@/application/ports/home-settings";
 import { trackingIds, type TrackingIds } from "@/application/lib/tracking-ids";
 import { InMemoryProductRepository } from "./repositories/in-memory-product-repository";
 import { InMemoryLineRepository } from "./repositories/in-memory-line-repository";
@@ -21,6 +23,9 @@ import { MongoLineRepository } from "./mongo/mongo-line-repository";
 import { MongoOrderRepository } from "./mongo/mongo-order-repository";
 import { MongoCategoryRepository } from "./mongo/mongo-category-repository";
 import { MongoPaymentSettingsRepository } from "./mongo/mongo-payment-settings-repository";
+import { MongoHomeSettingsRepository, MongoSiteMediaRepository } from "./mongo/mongo-site-content-repositories";
+import { InMemoryHomeSettingsRepository, InMemorySiteMediaRepository } from "./repositories/in-memory-site-content-repositories";
+import { CloudinaryMediaRemover, CloudinaryVideoSigner, DisabledVideoSigner, NoopMediaRemover, SITE_FOLDER } from "./media/cloudinary-site-media";
 import { NoopPaymentGateway } from "./payments/noop-payment-gateway";
 import { BoldPaymentGateway } from "./payments/bold-payment-gateway";
 import { LocalDiskMediaUploader } from "./media/local-disk-uploader";
@@ -48,6 +53,13 @@ export interface Container {
   categories: CategoryRepository;
   orders: OrderRepository;
   paymentSettings: PaymentSettingsRepository;
+  /** Biblioteca de medios y contenido de la home (sección "Inicio" del panel). */
+  siteMedia: SiteMediaRepository;
+  homeSettings: HomeSettingsRepository;
+  /** Fotos del sitio: Cloudinary `neonnight/sitio` o disco local. */
+  siteUploader: MediaUploader;
+  videoSigner: VideoUploadSigner;
+  mediaRemover: MediaRemover;
   payments: PaymentGateway;
   media: MediaUploader;
   analytics: Analytics;
@@ -68,7 +80,7 @@ export interface Container {
 const g: { __nnContainer?: Container | null } =
   process.env.NODE_ENV === "production" ? (globalThis as unknown as { __nnContainer?: Container | null }) : {};
 
-function persistence(): Pick<Container, "products" | "lines" | "categories" | "orders" | "paymentSettings"> {
+function persistence(): Pick<Container, "products" | "lines" | "categories" | "orders" | "paymentSettings" | "siteMedia" | "homeSettings"> {
   const uri = process.env.MONGODB_URI;
   if (!uri) {
     return {
@@ -77,6 +89,8 @@ function persistence(): Pick<Container, "products" | "lines" | "categories" | "o
       categories: new InMemoryCategoryRepository(SEED_CATEGORIES),
       orders: new InMemoryOrderRepository(),
       paymentSettings: new InMemoryPaymentSettingsRepository(),
+      siteMedia: new InMemorySiteMediaRepository(),
+      homeSettings: new InMemoryHomeSettingsRepository(),
     };
   }
   const db = mongoDb(uri, process.env.MONGODB_DB || "neonnight");
@@ -86,6 +100,8 @@ function persistence(): Pick<Container, "products" | "lines" | "categories" | "o
     categories: new MongoCategoryRepository(db),
     orders: new MongoOrderRepository(db),
     paymentSettings: new MongoPaymentSettingsRepository(db, adminSecret),
+    siteMedia: new MongoSiteMediaRepository(db),
+    homeSettings: new MongoHomeSettingsRepository(db),
   };
 }
 
@@ -98,6 +114,11 @@ export function createContainer(overrides: Partial<Container> = {}): Container {
     categories: base.categories,
     orders: base.orders,
     paymentSettings: base.paymentSettings,
+    siteMedia: base.siteMedia,
+    homeSettings: base.homeSettings,
+    siteUploader: overrides.siteUploader ?? (process.env.CLOUDINARY_URL ? new CloudinaryMediaUploader(SITE_FOLDER) : new LocalDiskMediaUploader()),
+    videoSigner: overrides.videoSigner ?? (process.env.CLOUDINARY_URL ? new CloudinaryVideoSigner() : new DisabledVideoSigner()),
+    mediaRemover: overrides.mediaRemover ?? (process.env.CLOUDINARY_URL ? new CloudinaryMediaRemover() : new NoopMediaRemover()),
     payments: overrides.payments ?? new BoldPaymentGateway(base.paymentSettings, new NoopPaymentGateway()),
     media: overrides.media ?? (process.env.CLOUDINARY_URL ? new CloudinaryMediaUploader() : new LocalDiskMediaUploader()),
     analytics: overrides.analytics ?? new ConsoleAnalytics(),

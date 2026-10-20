@@ -48,3 +48,9 @@ export class DuplicateSlugError extends DomainError {
     super(`Ya existe otro elemento con el slug "${slug}".`);
   }
 }
+
+export class MediaInUseError extends DomainError {
+  constructor(public readonly id: string, public readonly where: readonly string[]) {
+    super(`Esta foto se usa en: ${where.join(", ")}. Cámbiala allí antes de quitarla.`);
+  }
+}
