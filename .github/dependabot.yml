@@ -1,11 +1,16 @@
 # Actualizaciones de dependencias. Cada PR pasa por el CI (check) antes del merge.
 # Los mensajes siguen gitmoji (⬆️) para que el PR title-check no los rechace.
+# Solo versiones menores y parches: las mayores (Next, TypeScript, ESLint, Node, Actions…)
+# se actualizan a mano, en una rama propia y con e2e, porque suelen traer cambios incompatibles.
 version: 2
 updates:
   - package-ecosystem: npm
     directory: /
     schedule: { interval: weekly, day: monday, time: "07:00", timezone: America/Bogota }
     open-pull-requests-limit: 5
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
     commit-message: { prefix: "⬆️ (deps):" }
     labels: ["tipo: dependencias"]
     groups:
@@ -18,9 +23,15 @@ updates:
     directory: /
     schedule: { interval: monthly }
     commit-message: { prefix: "⬆️ (ci):" }
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
     labels: ["tipo: dependencias", "área: ci"]
   - package-ecosystem: docker
     directory: /
     schedule: { interval: monthly }
     commit-message: { prefix: "⬆️ (docker):" }
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
     labels: ["tipo: dependencias", "área: infraestructura"]

@@ -186,7 +186,7 @@ Todo lo de esta sección lo aplica [`scripts/github-setup.sh`](../scripts/github
 | Merge | Solo squash, con el título del PR como commit. Auto-merge activado. Las ramas se borran al hacer merge |
 | Protección de `main` (ruleset "main protegida") | PR obligatorio con 1 aprobación. Las aprobaciones se descartan con cada push nuevo. Conversaciones resueltas. Checks `check` y `pr-title` con la rama al día. Historia lineal. No se permite force-push ni borrar la rama |
 | Seguridad | Alertas y actualizaciones de seguridad de Dependabot, escaneo de secretos y *push protection* |
-| Dependabot | `.github/dependabot.yml`: npm cada semana (agrupado) y Actions y Docker cada mes, con mensajes `⬆️ (deps): …` |
+| Dependabot | `.github/dependabot.yml`: npm cada semana (agrupado) y Actions y Docker cada mes, con mensajes `⬆️ (deps): …`. **Solo versiones menores y parches**: las mayores se actualizan a mano, en una rama `chore/…`, con `npm run check` y `npm run e2e` |
 | Entorno | `production`, con la variable `SITE_URL` |
 | Secretos del CI | `DEPLOY_SSH_KEY`, `DEPLOY_HOST_KEY`, `DEPLOY_HOST` y `DEPLOY_USER` (ver [`DEPLOY.md`](DEPLOY.md) §8.4). Se cargan con `gh secret set`, nunca en archivos del repo |
 
