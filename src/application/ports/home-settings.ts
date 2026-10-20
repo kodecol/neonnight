@@ -6,6 +6,35 @@ export type HeroSource = "featured" | "media";
 
 export type SocialNetworkKey = "instagram" | "facebook" | "tiktok" | "youtube";
 
+/** Bloques de la home que se pueden reordenar u ocultar (el hero va siempre primero). */
+export const HOME_BLOCKS = {
+  marcas: "Marcas",
+  lineas: "Líneas",
+  seleccion: "Selección de piezas",
+  banda: "Banda",
+  garantia: "Garantía y autenticidad",
+  testimonios: "Testimonios",
+  movimiento: "En movimiento",
+  pagos: "Métodos de pago",
+  redes: "Redes",
+} as const;
+export type HomeBlockId = keyof typeof HOME_BLOCKS;
+export const HOME_BLOCK_IDS = Object.keys(HOME_BLOCKS) as HomeBlockId[];
+export type HomeLayout = ReadonlyArray<{ readonly id: HomeBlockId; readonly visible: boolean }>;
+
+/** Orden completo: el guardado, sin ids desconocidos ni repetidos, y lo que falte al final y visible. */
+export function resolveLayout(layout: HomeLayout | null | undefined): HomeLayout {
+  const seen = new Set<HomeBlockId>();
+  const out: Array<{ id: HomeBlockId; visible: boolean }> = [];
+  for (const b of layout ?? []) {
+    if (!(b.id in HOME_BLOCKS) || seen.has(b.id)) continue;
+    seen.add(b.id);
+    out.push({ id: b.id, visible: b.visible });
+  }
+  for (const id of HOME_BLOCK_IDS) if (!seen.has(id)) out.push({ id, visible: true });
+  return out;
+}
+
 export interface ManagedTestimonial {
   readonly id: string;
   readonly quote: string;
@@ -48,6 +77,8 @@ export interface HomeSettings {
     readonly body: string | null;
     readonly networks: ReadonlyArray<{ readonly id: SocialNetworkKey; readonly enabled: boolean; readonly handle: string; readonly href: string; readonly description: string }>;
   } | null;
+  /** Orden y visibilidad de los bloques. null: el orden de siempre, todo visible. */
+  readonly layout: HomeLayout | null;
   readonly updatedAt: Date | null;
 }
 
@@ -57,19 +88,41 @@ export const DEFAULT_HOME_SETTINGS: HomeSettings = {
   trust: null,
   testimonials: null,
   social: null,
+  layout: null,
   updatedAt: null,
 };
 
-/** Ids de medios que usa la home: no se pueden borrar de la biblioteca. */
-export function mediaInUse(s: HomeSettings): Map<string, string[]> {
+/** Versiones publicadas que se guardan para volver atrás. */
+export const HOME_HISTORY_LIMIT = 10;
+
+/** Ids de medios que usa la home (publicada y borrador): no se pueden borrar de la biblioteca. */
+export function mediaInUse(...versions: ReadonlyArray<HomeSettings | null>): Map<string, string[]> {
   const uses = new Map<string, string[]>();
-  const add = (id: string | null, where: string) => id && uses.set(id, [...(uses.get(id) ?? []), where]);
-  if (s.hero.source === "media") add(s.hero.mediaId, "Hero");
-  add(s.band.mediaId, "Banda");
+  const add = (id: string | null, where: string) => {
+    if (!id) return;
+    const list = uses.get(id) ?? [];
+    if (!list.includes(where)) uses.set(id, [...list, where]);
+  };
+  for (const s of versions) {
+    if (!s) continue;
+    if (s.hero.source === "media") add(s.hero.mediaId, "Hero");
+    add(s.band.mediaId, "Banda");
+  }
   return uses;
 }
 
+/**
+ * Contenido publicado, un borrador para la vista previa y las últimas
+ * versiones publicadas.
+ */
 export interface HomeSettingsRepository {
+  /** Lo publicado (lo que ve la tienda). */
   get(): Promise<HomeSettings>;
-  save(settings: HomeSettings): Promise<void>;
+  getDraft(): Promise<HomeSettings | null>;
+  saveDraft(settings: HomeSettings): Promise<void>;
+  discardDraft(): Promise<void>;
+  /** Publica, borra el borrador y guarda lo que estaba publicado en el historial. */
+  publish(settings: HomeSettings): Promise<void>;
+  /** Versiones anteriores, la más reciente primero. */
+  history(): Promise<readonly HomeSettings[]>;
 }

@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { SOCIAL_KEYS, isNetworkUrl } from "../lib/social-networks";
 import type { SiteMediaKind } from "../ports/site-media";
+import { HOME_BLOCK_IDS, type HomeBlockId, type HomeLayout } from "../ports/home-settings";
 import type { HeroMediaDto, ImageDto } from "./product.dto";
 
 /** Un medio de la biblioteca del sitio tal como lo ve el panel. */
@@ -103,6 +104,11 @@ export const HomeSettingsInputSchema = z
     trust: TrustInputSchema.nullable(),
     testimonials: TestimonialsInputSchema.nullable(),
     social: SocialInputSchema.nullable(),
+    /** Orden y visibilidad de los bloques; null: el orden de siempre. */
+    layout: z
+      .array(z.object({ id: z.enum(HOME_BLOCK_IDS as [HomeBlockId, ...HomeBlockId[]]), visible: z.boolean() }))
+      .max(HOME_BLOCK_IDS.length)
+      .nullable(),
   })
   .superRefine((s, ctx) => {
     if (s.hero.source !== "media") return;
@@ -126,6 +132,8 @@ export interface HomeContentDto {
   hero: HomeHeroDto | null;
   /** null: se usa la banda por defecto. */
   band: { image: ImageDto & { position?: string }; title: string | null } | null;
+  /** Orden completo de los bloques y cuáles se ven. */
+  layout: HomeLayout;
 }
 
 export const SiteMediaAltSchema = z.object({ id: z.string().min(1), alt: z.string().trim().max(160) });

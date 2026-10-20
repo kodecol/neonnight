@@ -25,7 +25,7 @@ test.describe("Panel › Inicio", () => {
     await page.getByTestId("band-media").getByRole("radio").nth(1).click();
     await page.getByLabel("Frase").fill("Una frase desde el panel");
     await page.getByTestId("save-home").click();
-    await expect(page.getByText("Guardado · publicado en la home")).toBeVisible();
+    await expect(page.getByText("Publicado en la home")).toBeVisible();
     await expect(page.getByTestId("site-media-grid").getByText("Hero")).toBeVisible();
 
     // Lo que está en uso no se puede quitar.
@@ -43,7 +43,7 @@ test.describe("Panel › Inicio", () => {
     await page.getByTestId("band-media").getByRole("radio", { name: "Foto por defecto" }).click();
     await page.getByLabel("Frase").fill("");
     await page.getByTestId("save-home").click();
-    await expect(page.getByText("Guardado · publicado en la home")).toBeVisible();
+    await expect(page.getByText("Publicado en la home")).toBeVisible();
     page.once("dialog", (d) => void d.accept());
     await page.getByTestId("site-media-remove").click();
     await expect(page.getByTestId("site-media-grid").locator("button[aria-pressed]")).toHaveCount(0);
@@ -67,7 +67,7 @@ test.describe("Panel › Inicio", () => {
 
     await page.getByTestId("network-facebook").getByRole("switch").click();
     await page.getByTestId("save-home").click();
-    await expect(page.getByText("Guardado · publicado en la home")).toBeVisible();
+    await expect(page.getByText("Publicado en la home")).toBeVisible();
 
     await page.goto("/");
     await expect(page.locator("#autenticidad")).toContainText("Verificado de verdad");
@@ -80,6 +80,54 @@ test.describe("Panel › Inicio", () => {
     await page.getByTestId("trust-editor").getByLabel("Título").first().fill(original);
     await page.getByTestId("network-facebook").getByRole("switch").click();
     await page.getByTestId("save-home").click();
-    await expect(page.getByText("Guardado · publicado en la home")).toBeVisible();
+    await expect(page.getByText("Publicado en la home")).toBeVisible();
+  });
+
+  test("vista previa del borrador, orden de bloques y versiones", async ({ page, context }) => {
+    await page.goto("/admin/inicio");
+    // Oculta los testimonios y sube "Garantía" al primer lugar.
+    const layout = page.getByTestId("home-layout");
+    await layout.getByTestId("block-testimonios").getByRole("switch").click();
+    const garantia = layout.getByTestId("block-garantia");
+    for (let i = 0; i < 4; i++) await garantia.getByRole("button", { name: /Subir/ }).click();
+    await expect(layout.locator("li").first()).toContainText("Garantía");
+
+    // Vista previa: se abre en otra pestaña con el borrador; la tienda sigue igual.
+    const [preview] = await Promise.all([context.waitForEvent("page"), page.getByTestId("preview-home").click()]);
+    await preview.waitForURL(/\/admin\/vista-previa/);
+    await expect(preview.getByTestId("preview-banner")).toBeVisible();
+    await expect(preview.locator("#autenticidad")).toBeVisible();
+    const order = await preview.locator("main > section").evaluateAll((els) => els.map((e) => e.id || e.getAttribute("aria-labelledby") || ""));
+    expect(order.indexOf("autenticidad")).toBe(1);
+    await expect(preview.getByText("Lo que cuentan quienes ya compraron")).toHaveCount(0);
+    await preview.close();
+
+    await page.goto("/");
+    await expect(page.getByText("Lo que cuentan quienes ya compraron")).toBeVisible();
+
+    // Publicar lleva el borrador a la tienda.
+    await page.goto("/admin/inicio");
+    await expect(page.getByText("Borrador sin publicar", { exact: true })).toBeVisible();
+    await page.getByTestId("save-home").click();
+    await expect(page.getByText("Publicado en la home")).toBeVisible();
+    await page.goto("/");
+    await expect(page.getByText("Lo que cuentan quienes ya compraron")).toHaveCount(0);
+
+    // Volver a la versión anterior desde el historial.
+    await page.goto("/admin/inicio");
+    await page.getByTestId("home-versions").getByRole("button", { name: "Cargar en el editor" }).first().click();
+    await expect(page.getByTestId("home-layout").locator("li").first()).toContainText("Marcas");
+    await page.getByTestId("save-home").click();
+    await expect(page.getByText("Publicado en la home")).toBeVisible();
+    await page.goto("/");
+    await expect(page.getByText("Lo que cuentan quienes ya compraron")).toBeVisible();
+  });
+
+  test("la vista previa exige sesión del panel", async ({ browser }) => {
+    const anon = await browser.newContext();
+    const page = await anon.newPage();
+    await page.goto("/admin/vista-previa");
+    await expect(page).toHaveURL(/\/admin\/login/);
+    await anon.close();
   });
 });

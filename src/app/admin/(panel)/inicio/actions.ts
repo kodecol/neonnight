@@ -3,6 +3,7 @@ import { revalidatePath } from "next/cache";
 import { getContainer } from "@/infrastructure/container";
 import {
   DeleteSiteMedia,
+  DiscardHomeDraft,
   ListSiteMedia,
   RegisterSiteVideo,
   RequestVideoUpload,
@@ -87,13 +88,24 @@ export async function deleteSiteMediaAction(id: string): Promise<ActionResult> {
   }
 }
 
-export async function saveHomeSettingsAction(input: HomeSettingsInput): Promise<ActionResult> {
+/** `draft`: guarda el borrador para la vista previa (la tienda no cambia). `publish`: lo lleva a la tienda. */
+export async function saveHomeSettingsAction(input: HomeSettingsInput, mode: "draft" | "publish"): Promise<ActionResult> {
   await requireAdmin();
   try {
-    await new SaveHomeSettings(getContainer()).execute(input);
-    publish();
+    await new SaveHomeSettings(getContainer()).execute(input, mode === "draft" ? "draft" : "publish");
+    if (mode !== "draft") publish();
     return { ok: true, data: undefined };
   } catch (e) {
     return toActionError(e, "home-settings");
+  }
+}
+
+export async function discardHomeDraftAction(): Promise<ActionResult> {
+  await requireAdmin();
+  try {
+    await new DiscardHomeDraft(getContainer().homeSettings).execute();
+    return { ok: true, data: undefined };
+  } catch (e) {
+    return toActionError(e, "home-draft");
   }
 }

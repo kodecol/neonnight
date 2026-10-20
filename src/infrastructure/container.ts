@@ -68,6 +68,8 @@ export interface Container {
   clock: Clock;
   ids: IdGenerator;
   content: SiteContentRepository;
+  /** Contenido del código, sin lo editado en el panel (la vista previa le aplica el borrador). */
+  baseContent: SiteContentRepository;
   /** IDs de Google Analytics y del píxel de Meta (runtime, ya validados). */
   tracking: TrackingIds;
 }
@@ -109,6 +111,7 @@ function persistence(): Pick<Container, "products" | "lines" | "categories" | "o
 export function createContainer(overrides: Partial<Container> = {}): Container {
   const base = { ...persistence(), ...overrides };
   const whatsappNumber = process.env.WHATSAPP_NUMBER || process.env.NEXT_PUBLIC_WHATSAPP_NUMBER;
+  const staticContent = new StaticSiteContentRepository(SITE_CONTENT, whatsappNumber);
   return {
     products: base.products,
     lines: base.lines,
@@ -132,7 +135,8 @@ export function createContainer(overrides: Partial<Container> = {}): Container {
       }),
     clock: overrides.clock ?? new SystemClock(),
     ids: overrides.ids ?? new RandomIdGenerator(),
-    content: overrides.content ?? new ManagedSiteContentRepository(new StaticSiteContentRepository(SITE_CONTENT, whatsappNumber), base.homeSettings),
+    baseContent: overrides.baseContent ?? staticContent,
+    content: overrides.content ?? new ManagedSiteContentRepository(staticContent, base.homeSettings),
     tracking: overrides.tracking ?? trackingIds({ ga: process.env.GA_MEASUREMENT_ID, pixel: process.env.META_PIXEL_ID }),
   };
 }

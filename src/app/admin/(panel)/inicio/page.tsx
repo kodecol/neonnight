@@ -9,6 +9,8 @@ import { Button } from "@/presentation/components/primitives/Button";
 import { ROUTES } from "@/presentation/lib/site";
 import {
   deleteSiteMediaAction,
+  discardHomeDraftAction,
+  listSiteMediaAction,
   registerSiteVideoAction,
   requestVideoUploadAction,
   saveHomeSettingsAction,
@@ -61,6 +63,8 @@ export default async function HomeAdminPage() {
         videosEnabled={c.videoSigner.enabled}
         actions={{
           save: saveHomeSettingsAction,
+          discard: discardHomeDraftAction,
+          listMedia: listSiteMediaAction,
           uploadImage: uploadSiteImageAction,
           requestVideo: requestVideoUploadAction,
           registerVideo: registerSiteVideoAction,

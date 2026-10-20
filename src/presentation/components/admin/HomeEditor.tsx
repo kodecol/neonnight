@@ -9,10 +9,16 @@ import { cn } from "@/presentation/lib/cn";
 import { FormSection, Segmented, TextArea, TextInput } from "./fields";
 import { SiteMediaLibrary, type SiteMediaActions } from "./SiteMediaLibrary";
 import { SocialEditor, TestimonialsEditor, TrustEditor } from "./HomeBlocksEditor";
+import type { HomeEditorState, HomeEditorVersion } from "@/application/use-cases/admin/home";
+import { HOME_BLOCKS, resolveLayout } from "@/application/ports/home-settings";
 
 type BlockKey = "trust" | "testimonials" | "social";
+type Layout = NonNullable<HomeSettingsInput["layout"]>;
 
-type Status = { kind: "idle" } | { kind: "saved" } | { kind: "error"; message: string };
+const PREVIEW_PATH = "/admin/vista-previa";
+const formatDate = (iso: string) => new Date(iso).toLocaleString("es-CO", { dateStyle: "medium", timeStyle: "short" });
+
+type Status = { kind: "idle" } | { kind: "saved" } | { kind: "loaded"; at: string } | { kind: "error"; message: string };
 
 /** Elige un medio de la biblioteca (o ninguno) para un lugar de la home. */
 function MediaPicker({
@@ -70,8 +76,9 @@ const POSITION_LABEL: Record<BandPosition, string> = { arriba: "Arriba", centro:
 
 /**
  * Sección "Inicio" del panel: biblioteca de medios del sitio y el contenido
- * editable de la home (hero y banda). Lo que se deja vacío usa el texto por
- * defecto; guardar publica al instante.
+ * editable de la home. Lo vacío usa el texto por defecto. "Vista previa"
+ * guarda un borrador y abre la home con él; "Publicar" lo lleva a la tienda.
+ * Las últimas publicaciones se pueden volver a cargar.
  */
 export function HomeEditor({
   initial,
@@ -82,7 +89,7 @@ export function HomeEditor({
   videosEnabled,
   actions,
 }: {
-  initial: HomeSettingsInput & { updatedAt: string | null; defaults: HomeEditorDefaults };
+  initial: HomeEditorState;
   media: SiteMediaDto[];
   featured: { name: string; href: string; editHref: string } | null;
   defaults: {
@@ -95,7 +102,11 @@ export function HomeEditor({
   };
   links: Array<{ href: string; label: string }>;
   videosEnabled: boolean;
-  actions: SiteMediaActions & { save: (input: HomeSettingsInput) => Promise<ActionResult> };
+  actions: SiteMediaActions & {
+    save: (input: HomeSettingsInput, mode: "draft" | "publish") => Promise<ActionResult>;
+    discard: () => Promise<ActionResult>;
+    listMedia: () => Promise<ActionResult<SiteMediaDto[]>>;
+  };
 }) {
   const router = useRouter();
   const [media, setMedia] = useState(initialMedia);
@@ -103,14 +114,24 @@ export function HomeEditor({
   // Los bloques se muestran siempre con su contenido actual, pero solo se guardan si se editaron
   // (un bloque nunca editado sigue los textos del código).
   const [blocks, setBlocks] = useState<HomeEditorDefaults>(initial.defaults);
-  const [touched, setTouched] = useState<Record<BlockKey, boolean>>({ trust: initial.trust !== null, testimonials: initial.testimonials !== null, social: initial.social !== null });
+  const [touched, setTouched] = useState<Record<BlockKey | "layout", boolean>>({
+    trust: initial.trust !== null,
+    testimonials: initial.testimonials !== null,
+    social: initial.social !== null,
+    layout: initial.layout !== null,
+  });
+  const [layout, setLayout] = useState<Layout>(() => resolveLayout(initial.layout).map((b) => ({ ...b })));
   const payload = (): HomeSettingsInput => ({
     ...draft,
     trust: touched.trust ? blocks.trust : null,
     testimonials: touched.testimonials ? blocks.testimonials : null,
     social: touched.social ? blocks.social : null,
+    layout: touched.layout ? layout : null,
   });
-  const [saved, setSaved] = useState(() => JSON.stringify({ hero: initial.hero, band: initial.band, trust: initial.trust, testimonials: initial.testimonials, social: initial.social }));
+  const [saved, setSaved] = useState(() =>
+    JSON.stringify({ hero: initial.hero, band: initial.band, trust: initial.trust, testimonials: initial.testimonials, social: initial.social, layout: initial.layout }),
+  );
+  const [hasDraft, setHasDraft] = useState(initial.hasDraft);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [status, setStatus] = useState<Status>({ kind: "idle" });
   const [pending, start] = useTransition();
@@ -141,39 +162,90 @@ export function HomeEditor({
   const err = (k: string) => errors[k];
   const bandMedia = media.find((m) => m.id === draft.band.mediaId);
 
+  /** Guarda como borrador o publica; devuelve si salió bien. */
+  async function persist(mode: "draft" | "publish"): Promise<boolean> {
+    const input = payload();
+    const res = await actions.save(input, mode);
+    if (!res.ok) {
+      setErrors(res.fieldErrors ?? {});
+      setStatus({ kind: "error", message: res.error });
+      return false;
+    }
+    setErrors({});
+    setSaved(JSON.stringify(input));
+    setHasDraft(mode === "draft");
+    setStatus({ kind: mode === "draft" ? "idle" : "saved" });
+    // Los usos de la biblioteca cambian con lo guardado.
+    const list = await actions.listMedia();
+    if (list.ok) setMedia(list.data);
+    return true;
+  }
+
   function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     start(async () => {
-      const input = payload();
-      const res = await actions.save(input);
-      if (!res.ok) {
-        setErrors(res.fieldErrors ?? {});
-        setStatus({ kind: "error", message: res.error });
-        return;
-      }
-      setErrors({});
-      setSaved(JSON.stringify(input));
-      setStatus({ kind: "saved" });
-      // Los usos de la biblioteca cambian con lo guardado.
-      setMedia((items) =>
-        items.map((m) => ({
-          ...m,
-          usedIn: [...(draft.hero.source === "media" && draft.hero.mediaId === m.id ? ["Hero"] : []), ...(draft.band.mediaId === m.id ? ["Banda"] : [])],
-        })),
-      );
-      router.refresh();
+      if (await persist("publish")) router.refresh();
     });
   }
+
+  function onPreview() {
+    // La pestaña se abre ya (si se abre después de esperar, el navegador la bloquea).
+    const tab = window.open("about:blank", "_blank");
+    start(async () => {
+      const ok = await persist("draft");
+      if (ok && tab) tab.location.href = `${PREVIEW_PATH}?t=${Date.now()}`;
+      else tab?.close();
+    });
+  }
+
+  function onDiscard() {
+    if (!window.confirm("¿Descartar el borrador? El editor vuelve a lo publicado.")) return;
+    start(async () => {
+      const res = await actions.discard();
+      if (!res.ok) return setStatus({ kind: "error", message: res.error });
+      window.location.reload();
+    });
+  }
+
+  function loadVersion(v: HomeEditorVersion) {
+    if (dirty && !window.confirm("Tienes cambios sin guardar. ¿Cargar esta versión de todos modos?")) return;
+    setDraft({ hero: v.input.hero, band: v.input.band });
+    setBlocks(v.blocks);
+    setTouched({ trust: v.input.trust !== null, testimonials: v.input.testimonials !== null, social: v.input.social !== null, layout: v.input.layout !== null });
+    setLayout(resolveLayout(v.input.layout).map((b) => ({ ...b })));
+    setErrors({});
+    setStatus({ kind: "loaded", at: v.at });
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  const moveBlock = (i: number, d: -1 | 1) => {
+    const j = i + d;
+    if (j < 0 || j >= layout.length) return;
+    const next = [...layout];
+    [next[i], next[j]] = [next[j]!, next[i]!];
+    setLayout(next);
+    setTouched((t) => ({ ...t, layout: true }));
+    setStatus({ kind: "idle" });
+  };
+  const toggleBlock = (i: number) => {
+    setLayout(layout.map((b, j) => (j === i ? { ...b, visible: !b.visible } : b)));
+    setTouched((t) => ({ ...t, layout: true }));
+    setStatus({ kind: "idle" });
+  };
 
   const [text, tone] = pending
     ? ["Guardando…", "text-ink-2"]
     : status.kind === "error"
       ? [status.message, "text-accent"]
-      : dirty
-        ? ["Cambios sin guardar", "text-ink-2"]
-        : status.kind === "saved"
-          ? ["Guardado · publicado en la home", "text-ink"]
-          : ["Sin cambios", "text-ink-3"];
+      : status.kind === "loaded"
+        ? [`Versión del ${formatDate(status.at)} cargada · revisa y publica`, "text-ink-2"]
+        : dirty
+          ? ["Cambios sin guardar", "text-ink-2"]
+          : hasDraft
+            ? ["Borrador sin publicar", "text-ink-2"]
+            : status.kind === "saved"
+              ? ["Publicado en la home", "text-ink"]
+              : ["Publicado · sin cambios", "text-ink-3"];
 
   return (
     <form onSubmit={onSubmit} noValidate className="pb-24" data-testid="home-editor">
@@ -274,15 +346,81 @@ export function HomeEditor({
         <SocialEditor value={blocks.social} onChange={block("social")} err={err} defaults={defaults.social} />
       </FormSection>
 
+      <FormSection n="07" title="Orden de la página" aside={<span className="text-legal text-ink-3">El hero va siempre primero</span>}>
+        <ol className="m-0 flex list-none flex-col gap-px border border-divider bg-divider p-0" data-testid="home-layout">
+          {layout.map((b, i) => (
+            <li key={b.id} className="flex items-center justify-between gap-4 bg-bg px-5 py-3.5" data-testid={`block-${b.id}`}>
+              <span className={cn("flex items-baseline gap-4 text-label-lg uppercase", b.visible ? "text-ink" : "text-ink-3 line-through")}>
+                <span className="text-label-sm text-ink-3">{String(i + 1).padStart(2, "0")}</span>
+                {HOME_BLOCKS[b.id]}
+              </span>
+              <span className="flex items-center gap-5">
+                <button type="button" onClick={() => moveBlock(i, -1)} disabled={i === 0} aria-label={`Subir ${HOME_BLOCKS[b.id]}`} className="cursor-pointer text-label-sm text-ink-2 hover:text-ink disabled:opacity-30">
+                  ↑
+                </button>
+                <button type="button" onClick={() => moveBlock(i, 1)} disabled={i === layout.length - 1} aria-label={`Bajar ${HOME_BLOCKS[b.id]}`} className="cursor-pointer text-label-sm text-ink-2 hover:text-ink disabled:opacity-30">
+                  ↓
+                </button>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={b.visible}
+                  aria-label={`Mostrar ${HOME_BLOCKS[b.id]}`}
+                  onClick={() => toggleBlock(i)}
+                  className={cn("relative h-6 w-11 cursor-pointer border transition-colors", b.visible ? "border-accent bg-accent" : "border-border-strong hover:border-ink")}
+                >
+                  <span aria-hidden="true" className={cn("absolute top-[3px] h-4 w-4 transition-all", b.visible ? "left-[23px] bg-ink" : "left-[3px] bg-ink-2")} />
+                </button>
+              </span>
+            </li>
+          ))}
+        </ol>
+      </FormSection>
+
+      <FormSection n="08" title="Versiones" aside={<span className="text-legal text-ink-3">Las últimas {initial.history.length || 10} publicaciones</span>}>
+        <div className="flex flex-col gap-4" data-testid="home-versions">
+          <p className="m-0 text-small text-ink-2">
+            {initial.publishedAt ? <>Publicado por última vez el {formatDate(initial.publishedAt)}.</> : <>La home usa los textos de fábrica: todavía no se ha publicado nada desde el panel.</>}
+            {hasDraft && (
+              <>
+                {" "}Hay un borrador sin publicar.{" "}
+                <button type="button" onClick={onDiscard} className="cursor-pointer text-ink underline decoration-accent underline-offset-4 hover:text-accent" data-testid="discard-draft">
+                  Descartar borrador
+                </button>
+              </>
+            )}
+          </p>
+          {initial.history.length > 0 ? (
+            <ul className="m-0 flex list-none flex-col gap-px border border-divider bg-divider p-0">
+              {initial.history.map((v) => (
+                <li key={v.at} className="flex items-center justify-between gap-4 bg-bg px-5 py-3.5">
+                  <span className="text-small text-ink-2">{formatDate(v.at)}</span>
+                  <button type="button" onClick={() => loadVersion(v)} className="cursor-pointer text-label-sm uppercase text-ink-2 hover:text-ink">
+                    Cargar en el editor
+                  </button>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="m-0 text-legal text-ink-3">Cada vez que publiques, la versión anterior queda aquí para volver a ella.</p>
+          )}
+        </div>
+      </FormSection>
+
       <div className="backdrop-glass fixed inset-x-0 bottom-0 z-30 border-t border-divider bg-glass-deep lg:left-[248px]">
         <div className="flex items-center justify-between gap-4 px-5 py-4 md:px-10 lg:px-14">
           <p className={cn("m-0 flex min-w-0 items-center gap-2.5 text-label-sm uppercase", tone)} role="status" aria-live="polite">
             <span className={cn("h-1.5 w-1.5 shrink-0", status.kind === "error" || dirty ? "bg-accent" : status.kind === "saved" ? "bg-ink" : "bg-ink-3")} aria-hidden="true" />
             <span className="truncate">{text}</span>
           </p>
-          <Button type="submit" size="sm" disabled={pending || !dirty} data-testid="save-home">
-            {pending ? "Guardando…" : "Guardar y publicar"}
-          </Button>
+          <div className="flex shrink-0 items-center gap-3">
+            <Button variant="secondary" size="sm" onClick={onPreview} disabled={pending} data-testid="preview-home">
+              Vista previa ↗
+            </Button>
+            <Button type="submit" size="sm" disabled={pending || (!dirty && !hasDraft)} data-testid="save-home">
+              {pending ? "Guardando…" : "Publicar"}
+            </Button>
+          </div>
         </div>
       </div>
     </form>

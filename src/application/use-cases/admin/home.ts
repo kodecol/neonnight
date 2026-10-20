@@ -1,7 +1,7 @@
 import { MediaInUseError } from "@/domain/errors";
 import type { Clock, IdGenerator } from "../../ports/clock";
 import type { MediaUploader } from "../../ports/media-uploader";
-import { DEFAULT_HOME_SETTINGS, mediaInUse, type HomeSettings, type HomeSettingsRepository } from "../../ports/home-settings";
+import { DEFAULT_HOME_SETTINGS, mediaInUse, resolveLayout, type HomeSettings, type HomeSettingsRepository } from "../../ports/home-settings";
 import type { DirectUploadTicket, MediaRemover, SiteMedia, SiteMediaRepository, VideoUploadSigner } from "../../ports/site-media";
 import { FieldValidationError } from "../../lib/errors";
 import {
@@ -31,8 +31,8 @@ export class ListSiteMedia {
   constructor(private readonly deps: HomeDeps) {}
 
   async execute(): Promise<SiteMediaDto[]> {
-    const [media, settings] = await Promise.all([this.deps.siteMedia.list(), this.deps.homeSettings.get()]);
-    const uses = mediaInUse(settings);
+    const [media, published, draft] = await Promise.all([this.deps.siteMedia.list(), this.deps.homeSettings.get(), this.deps.homeSettings.getDraft()]);
+    const uses = mediaInUse(published, draft);
     return [...media].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()).map((m) => toDto(m, uses.get(m.id)));
   }
 }
@@ -92,14 +92,14 @@ export class UpdateSiteMediaAlt {
   }
 }
 
-/** Quita un medio de la biblioteca y del proveedor; si la home lo usa, no deja. */
+/** Quita un medio de la biblioteca y del proveedor; si la home (publicada o en borrador) lo usa, no deja. */
 export class DeleteSiteMedia {
   constructor(private readonly deps: HomeDeps & { remover: MediaRemover }) {}
 
   async execute(id: string): Promise<void> {
-    const [media, settings] = await Promise.all([this.deps.siteMedia.findById(id), this.deps.homeSettings.get()]);
+    const [media, published, draft] = await Promise.all([this.deps.siteMedia.findById(id), this.deps.homeSettings.get(), this.deps.homeSettings.getDraft()]);
     if (!media) return;
-    const where = mediaInUse(settings).get(id);
+    const where = mediaInUse(published, draft).get(id);
     if (where) throw new MediaInUseError(id, where);
     await this.deps.remover.remove(media.src, media.kind);
     await this.deps.siteMedia.delete(id);
@@ -108,54 +108,94 @@ export class DeleteSiteMedia {
 
 const positionKey = (position: string | null): BandPosition => (Object.entries(BAND_POSITIONS).find(([, v]) => v === position)?.[0] as BandPosition | undefined) ?? "centro";
 
+/** Bloques tal como los muestra el editor: lo guardado o, si nunca se editaron, el contenido del código. */
+function editorBlocks(s: HomeSettings, base: SiteContent): HomeEditorDefaults {
+  return {
+    trust: s.trust
+      ? { kicker: s.trust.kicker, items: s.trust.items.map((i) => ({ ...i })) }
+      : { kicker: null, items: base.home.trust.items.map(({ title, body }) => ({ title, body })) },
+    testimonials: s.testimonials
+      ? { ...s.testimonials, items: s.testimonials.items.map((t) => ({ ...t })) }
+      : {
+          kicker: null,
+          title: null,
+          note: null,
+          // Los del código son de ejemplo: entran sin autorización hasta que se confirme cada uno.
+          items: base.home.testimonials.items.map((t, i) => ({ id: `ejemplo-${i + 1}`, ...t, authorized: false, visible: true })),
+        },
+    social: s.social
+      ? { ...s.social, networks: s.social.networks.map((n) => ({ ...n })) }
+      : {
+          kicker: null,
+          title: null,
+          body: null,
+          networks: SOCIAL_KEYS.map((id) => {
+            const n = base.social.networks.find((x) => x.id === id);
+            return { id, enabled: Boolean(n), handle: n?.handle ?? "", href: n?.href ?? "", description: n?.description ?? "" };
+          }),
+        },
+  };
+}
+
+function toInput(s: HomeSettings, blocks: HomeEditorDefaults): HomeSettingsInput {
+  return {
+    hero: { ...s.hero },
+    band: { mediaId: s.band.mediaId, title: s.band.title, position: positionKey(s.band.position) },
+    trust: s.trust ? blocks.trust : null,
+    testimonials: s.testimonials ? blocks.testimonials : null,
+    social: s.social ? blocks.social : null,
+    layout: s.layout ? resolveLayout(s.layout).map((b) => ({ ...b })) : null,
+  };
+}
+
+export interface HomeEditorVersion {
+  /** Fecha de publicación (ISO). */
+  at: string;
+  input: HomeSettingsInput;
+  blocks: HomeEditorDefaults;
+}
+
+export interface HomeEditorState extends HomeSettingsInput {
+  /** Bloques para mostrar (los nunca editados, con el contenido del código). */
+  defaults: HomeEditorDefaults;
+  /** Hay un borrador guardado distinto de lo publicado; el editor parte de él. */
+  hasDraft: boolean;
+  publishedAt: string | null;
+  /** Versiones publicadas anteriores, para cargarlas en el editor. */
+  history: HomeEditorVersion[];
+}
+
 export class GetHomeSettings {
   constructor(private readonly homeSettings: HomeSettingsRepository) {}
 
   /** `base`: el contenido del código, para mostrar en el editor los bloques que nunca se editaron. */
-  async execute(base: SiteContent): Promise<HomeSettingsInput & { updatedAt: string | null; defaults: HomeEditorDefaults }> {
-    const s = await this.homeSettings.get();
-    const defaults: HomeEditorDefaults = {
-      trust: s.trust
-        ? { kicker: s.trust.kicker, items: s.trust.items.map((i) => ({ ...i })) }
-        : { kicker: null, items: base.home.trust.items.map(({ title, body }) => ({ title, body })) },
-      testimonials: s.testimonials
-        ? { ...s.testimonials, items: s.testimonials.items.map((t) => ({ ...t })) }
-        : {
-            kicker: null,
-            title: null,
-            note: null,
-            // Los del código son de ejemplo: entran sin autorización hasta que se confirme cada uno.
-            items: base.home.testimonials.items.map((t, i) => ({ id: `ejemplo-${i + 1}`, ...t, authorized: false, visible: true })),
-          },
-      social: s.social
-        ? { ...s.social, networks: s.social.networks.map((n) => ({ ...n })) }
-        : {
-            kicker: null,
-            title: null,
-            body: null,
-            networks: SOCIAL_KEYS.map((id) => {
-              const n = base.social.networks.find((x) => x.id === id);
-              return { id, enabled: Boolean(n), handle: n?.handle ?? "", href: n?.href ?? "", description: n?.description ?? "" };
-            }),
-          },
-    };
+  async execute(base: SiteContent): Promise<HomeEditorState> {
+    const [published, draft, history] = await Promise.all([this.homeSettings.get(), this.homeSettings.getDraft(), this.homeSettings.history()]);
+    const s = draft ?? published;
+    const defaults = editorBlocks(s, base);
     return {
-      hero: { ...s.hero },
-      band: { mediaId: s.band.mediaId, title: s.band.title, position: positionKey(s.band.position) },
-      trust: s.trust ? defaults.trust : null,
-      testimonials: s.testimonials ? defaults.testimonials : null,
-      social: s.social ? defaults.social : null,
-      updatedAt: s.updatedAt?.toISOString() ?? null,
+      ...toInput(s, defaults),
       defaults,
+      hasDraft: draft !== null,
+      publishedAt: published.updatedAt?.toISOString() ?? null,
+      history: history
+        .filter((h) => h.updatedAt)
+        .map((h) => {
+          const blocks = editorBlocks(h, base);
+          return { at: h.updatedAt!.toISOString(), input: toInput(h, blocks), blocks };
+        }),
     };
   }
 }
 
-/** Guarda el contenido de la home: los medios elegidos deben existir y ser del tipo correcto. */
+/**
+ * Guarda el contenido de la home como borrador (para la vista previa) o lo
+ * publica. Los medios elegidos deben existir y ser del tipo correcto.
+ */
 export class SaveHomeSettings {
   constructor(private readonly deps: HomeDeps & { clock: Clock }) {}
 
-  async execute(raw: unknown): Promise<void> {
+  async execute(raw: unknown, mode: "draft" | "publish" = "publish"): Promise<void> {
     const input = HomeSettingsInputSchema.parse(raw);
     const heroMedia = input.hero.source === "media" && input.hero.mediaId ? await this.deps.siteMedia.findById(input.hero.mediaId) : null;
     if (input.hero.source === "media" && !heroMedia) throw new FieldValidationError("hero.mediaId", "La foto o el video del hero ya no está en la biblioteca.");
@@ -170,18 +210,29 @@ export class SaveHomeSettings {
       trust: input.trust,
       testimonials: input.testimonials,
       social: input.social,
+      layout: input.layout ? resolveLayout(input.layout) : null,
       updatedAt: this.deps.clock.now(),
     };
-    await this.deps.homeSettings.save(settings);
+    if (mode === "draft") await this.deps.homeSettings.saveDraft(settings);
+    else await this.deps.homeSettings.publish(settings);
   }
 }
 
-/** Lo que la home toma del panel; lo que falte sigue los textos por defecto. */
+export class DiscardHomeDraft {
+  constructor(private readonly homeSettings: HomeSettingsRepository) {}
+
+  execute(): Promise<void> {
+    return this.homeSettings.discardDraft();
+  }
+}
+
+/** Lo que la home toma del panel; lo que falte sigue los textos por defecto. `preview`: usa el borrador. */
 export class GetHomeContent {
   constructor(private readonly deps: HomeDeps) {}
 
-  async execute(defaults: { kicker: string; cta: string }): Promise<HomeContentDto> {
-    const s = await this.deps.homeSettings.get().catch(() => DEFAULT_HOME_SETTINGS);
+  async execute(defaults: { kicker: string; cta: string }, opts: { preview?: boolean } = {}): Promise<HomeContentDto & { settings: HomeSettings }> {
+    const published = await this.deps.homeSettings.get().catch(() => DEFAULT_HOME_SETTINGS);
+    const s = opts.preview ? ((await this.deps.homeSettings.getDraft()) ?? published) : published;
     const [heroMedia, bandMedia] = await Promise.all([
       s.hero.source === "media" && s.hero.mediaId ? this.deps.siteMedia.findById(s.hero.mediaId) : null,
       s.band.mediaId ? this.deps.siteMedia.findById(s.band.mediaId) : null,
@@ -203,6 +254,6 @@ export class GetHomeContent {
       bandMedia && bandMedia.kind === "image"
         ? { image: { src: bandMedia.src, alt: bandMedia.alt, width: bandMedia.width, height: bandMedia.height, position: s.band.position ?? undefined }, title: s.band.title }
         : null;
-    return { hero, band };
+    return { hero, band, layout: resolveLayout(s.layout), settings: s };
   }
 }

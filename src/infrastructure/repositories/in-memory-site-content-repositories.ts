@@ -1,4 +1,4 @@
-import { DEFAULT_HOME_SETTINGS, type HomeSettings, type HomeSettingsRepository } from "@/application/ports/home-settings";
+import { DEFAULT_HOME_SETTINGS, HOME_HISTORY_LIMIT, type HomeSettings, type HomeSettingsRepository } from "@/application/ports/home-settings";
 import type { SiteMedia, SiteMediaRepository } from "@/application/ports/site-media";
 
 export class InMemorySiteMediaRepository implements SiteMediaRepository {
@@ -26,13 +26,35 @@ export class InMemorySiteMediaRepository implements SiteMediaRepository {
 }
 
 export class InMemoryHomeSettingsRepository implements HomeSettingsRepository {
+  private draft: HomeSettings | null = null;
+  private past: HomeSettings[] = [];
+
   constructor(private settings: HomeSettings = DEFAULT_HOME_SETTINGS) {}
 
   async get(): Promise<HomeSettings> {
     return this.settings;
   }
 
-  async save(settings: HomeSettings): Promise<void> {
+  async getDraft(): Promise<HomeSettings | null> {
+    return this.draft;
+  }
+
+  async saveDraft(settings: HomeSettings): Promise<void> {
+    this.draft = settings;
+  }
+
+  async discardDraft(): Promise<void> {
+    this.draft = null;
+  }
+
+  async publish(settings: HomeSettings): Promise<void> {
+    // Lo nunca publicado (los textos del código) no entra al historial.
+    if (this.settings.updatedAt) this.past = [this.settings, ...this.past].slice(0, HOME_HISTORY_LIMIT);
     this.settings = settings;
+    this.draft = null;
+  }
+
+  async history(): Promise<readonly HomeSettings[]> {
+    return this.past;
   }
 }

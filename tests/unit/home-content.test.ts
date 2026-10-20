@@ -7,6 +7,8 @@ import type { HomeSettingsInput } from "@/application/dto/home.dto";
 import type { MediaUploader } from "@/application/ports/media-uploader";
 import type { VideoUploadSigner } from "@/application/ports/site-media";
 import { MediaInUseError } from "@/domain/errors";
+import { DiscardHomeDraft } from "@/application/use-cases/admin/home";
+import { HOME_BLOCK_IDS, HOME_HISTORY_LIMIT, resolveLayout } from "@/application/ports/home-settings";
 import { SITE_CONTENT } from "@/infrastructure/content/site-content";
 import { StaticSiteContentRepository } from "@/infrastructure/content/static-site-content-repository";
 import { ManagedSiteContentRepository } from "@/infrastructure/content/managed-site-content-repository";
@@ -42,6 +44,7 @@ const settings = (over: Partial<HomeSettingsInput["hero"]> = {}, band: Partial<H
   trust: null,
   testimonials: null,
   social: null,
+  layout: null,
 });
 
 describe("Inicio editable desde el panel", () => {
@@ -146,5 +149,59 @@ describe("Inicio editable desde el panel", () => {
     // Una red apagada no necesita enlace.
     const off = form.defaults.social.networks.map((n) => (n.id === "tiktok" ? { ...n, enabled: false, href: "" } : n));
     await expect(save({ social: { ...form.defaults.social, networks: off } })).resolves.toBeUndefined();
+  });
+
+  it("borrador para la vista previa: la tienda no cambia hasta publicar", async () => {
+    const d = setup();
+    const photo = await new UploadSiteImage(d).execute(file);
+    await new SaveHomeSettings(d).execute(settings({ mediaId: photo.id, title: "Borrador" }), "draft");
+    expect((await new GetHomeContent(d).execute({ kicker: "k", cta: "c" })).hero).toBeNull();
+    expect((await new GetHomeContent(d).execute({ kicker: "k", cta: "c" }, { preview: true })).hero?.title).toBe("Borrador");
+    const form = await new GetHomeSettings(d.homeSettings).execute(SITE_CONTENT);
+    expect(form.hasDraft).toBe(true);
+    expect(form.hero.title).toBe("Borrador");
+    // Lo que usa el borrador tampoco se puede borrar.
+    await expect(new DeleteSiteMedia(d).execute(photo.id)).rejects.toBeInstanceOf(MediaInUseError);
+
+    await new DiscardHomeDraft(d.homeSettings).execute();
+    expect((await new GetHomeSettings(d.homeSettings).execute(SITE_CONTENT)).hasDraft).toBe(false);
+
+    await new SaveHomeSettings(d).execute(settings({ mediaId: photo.id, title: "Publicado" }), "draft");
+    await new SaveHomeSettings(d).execute(settings({ mediaId: photo.id, title: "Publicado" }), "publish");
+    expect((await new GetHomeContent(d).execute({ kicker: "k", cta: "c" })).hero?.title).toBe("Publicado");
+    expect((await d.homeSettings.getDraft())).toBeNull();
+  });
+
+  it("guarda las últimas versiones publicadas, la más reciente primero", async () => {
+    const d = setup();
+    let t = Date.parse("2026-10-20T12:00:00Z");
+    const save = new SaveHomeSettings({ ...d, clock: { now: () => new Date((t += 60_000)) } });
+    for (let i = 1; i <= HOME_HISTORY_LIMIT + 3; i++) await save.execute(settings({ source: "featured" }, { title: `Frase ${i}` }));
+    const form = await new GetHomeSettings(d.homeSettings).execute(SITE_CONTENT);
+    expect(form.band.title).toBe(`Frase ${HOME_HISTORY_LIMIT + 3}`);
+    expect(form.history).toHaveLength(HOME_HISTORY_LIMIT);
+    expect(form.history[0]!.input.band.title).toBe(`Frase ${HOME_HISTORY_LIMIT + 2}`);
+    expect(new Date(form.history[0]!.at).getTime()).toBeGreaterThan(new Date(form.history[1]!.at).getTime());
+  });
+
+  it("orden y visibilidad de bloques: se completa y no admite repetidos", async () => {
+    expect(resolveLayout(null).map((b) => b.id)).toEqual(HOME_BLOCK_IDS);
+    const custom = resolveLayout([
+      { id: "redes", visible: true },
+      { id: "redes", visible: false },
+      { id: "testimonios", visible: false },
+    ]);
+    expect(custom.slice(0, 2)).toEqual([
+      { id: "redes", visible: true },
+      { id: "testimonios", visible: false },
+    ]);
+    expect(custom).toHaveLength(HOME_BLOCK_IDS.length);
+
+    const d = setup();
+    await new SaveHomeSettings(d).execute({ ...settings({ source: "featured" }), layout: [{ id: "garantia", visible: true }, { id: "marcas", visible: false }] });
+    const content = await new GetHomeContent(d).execute({ kicker: "k", cta: "c" });
+    expect(content.layout[0]).toEqual({ id: "garantia", visible: true });
+    expect(content.layout.find((b) => b.id === "marcas")?.visible).toBe(false);
+    await expect(new SaveHomeSettings(d).execute({ ...settings({ source: "featured" }), layout: [{ id: "hero" as never, visible: true }] })).rejects.toBeInstanceOf(ZodError);
   });
 });
