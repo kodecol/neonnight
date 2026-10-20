@@ -4,6 +4,8 @@ import { ListWatches } from "@/application/use-cases/list-watches";
 import { GetWatchBySlug } from "@/application/use-cases/get-watch-by-slug";
 import { ROUTES, absoluteUrl } from "@/presentation/lib/site";
 
+export const dynamic = "force-dynamic";
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const { watches } = getContainer();
   const list = await new ListWatches(watches).execute();

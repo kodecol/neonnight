@@ -2,6 +2,7 @@ import { defineConfig, devices } from "@playwright/test";
 
 const PORT = 3100;
 const baseURL = `http://localhost:${PORT}`;
+export const E2E_ADMIN_PASSWORD = "e2e-admin";
 
 export default defineConfig({
   testDir: "./tests/e2e",
@@ -22,8 +23,13 @@ export default defineConfig({
     reuseExistingServer: !process.env.CI,
     timeout: 240_000,
     env: {
-      NEXT_PUBLIC_SITE_URL: baseURL,
-      NEXT_PUBLIC_WHATSAPP_NUMBER: "573000000000",
+      SITE_URL: baseURL, // runtime: misma imagen para cualquier dominio
+      WHATSAPP_NUMBER: "573000000000",
+      // Vacías a propósito: ganan sobre .env.local → repositorios en memoria y fotos en disco, datos deterministas.
+      MONGODB_URI: "",
+      CLOUDINARY_URL: "",
+      ADMIN_PASSWORD: E2E_ADMIN_PASSWORD,
+      ADMIN_SECRET: "e2e-secret-e2e-secret-e2e-secret-0000",
     },
   },
 });

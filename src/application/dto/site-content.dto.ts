@@ -10,12 +10,17 @@ export interface LinkItem {
   external?: boolean;
 }
 
-export interface SocialPost {
-  src: string;
-  alt: string;
+export type SocialNetworkId = "instagram" | "facebook" | "tiktok" | "youtube";
+
+export interface SocialNetwork {
+  id: SocialNetworkId;
+  label: string;
+  handle: string;
   href: string;
-  width: number;
-  height: number;
+  /** Qué publica la marca en esa red (una línea). */
+  description: string;
+  /** Texto de acción que aparece al pasar el cursor (p. ej. "Seguir"). */
+  cta: string;
 }
 
 export interface TrustItem {
@@ -24,6 +29,53 @@ export interface TrustItem {
   body: string;
   /** Resalta el borde y el número con el acento. */
   accent?: boolean;
+}
+
+export interface Testimonial {
+  quote: string;
+  name: string;
+  city: string;
+  /** Pieza que compró, tal como se muestra (p. ej. "Rolex Datejust 36"). */
+  piece: string;
+  /** 1–5 */
+  rating: number;
+}
+
+export interface ImageAsset {
+  src: string;
+  alt: string;
+  width: number;
+  height: number;
+  /** `object-position` al recortar (p. ej. "50% 25%"). */
+  position?: string;
+}
+
+/** Logo de tercero. En reposo se muestra monocromo; al pasar el cursor, a color. */
+export interface LogoAsset {
+  src: string;
+  /** Proporción ancho/alto del arte (viewBox recortado). */
+  ratio: number;
+  /** Reposo: silueta blanca (por defecto) o escala de grises (logos de varios tonos o rasterizados). */
+  mono?: "silhouette" | "grayscale";
+  /** Recorte circular (logos redondos rasterizados). */
+  round?: boolean;
+  /** Ajuste óptico del tamaño (1 = normal). */
+  scale?: number;
+}
+
+export interface BrandLogo {
+  src: string;
+  ratio: number;
+  /** Color de marca al pasar el cursor (el logo se pinta como silueta). */
+  color: string;
+}
+
+export interface PaymentLogo {
+  name: string;
+  /** Tipo de medio, p. ej. "Crédito y débito". */
+  caption: string;
+  /** Sin logo oficial disponible → se muestra el nombre como texto. */
+  logo?: LogoAsset;
 }
 
 export interface SiteContent {
@@ -39,7 +91,10 @@ export interface SiteContent {
     logo: { mono: string; color: string };
   };
   social: {
-    instagram: { handle: string; url: string; followLabel: string; posts: SocialPost[] };
+    kicker: string;
+    title: string;
+    body: string;
+    networks: SocialNetwork[];
   };
   navigation: {
     menu: LinkItem[];
@@ -56,8 +111,12 @@ export interface SiteContent {
       secondaryCta: string;
     };
     catalog: { kicker: string; title: string; /** `{count}` se sustituye por el total. */ ctaTemplate: string; featuredCount: number };
-    band: { title: string };
+    band: { title: string; image: ImageAsset };
+    /** Las marcas del marquee salen del catálogo; aquí textos y logos por marca (clave en minúsculas). */
+    brands: { label: string; disclaimer: string; logos: Record<string, BrandLogo> };
     trust: { kicker: string; items: TrustItem[] };
+    testimonials: { kicker: string; title: string; note: string; items: Testimonial[] };
+    payments: { kicker: string; title: string; body: string; /** Texto junto al logo de Bold. */ processedBy: string; logos: PaymentLogo[]; assurances: string[]; whatsappCta: string; whatsappMessage: string };
     motion: { kicker: string; title: string; body: string; cta: string; whatsappMessage: string };
   };
   collection: {

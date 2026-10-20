@@ -24,3 +24,15 @@ export class EmptyCartError extends DomainError {
     super("La bolsa está vacía.");
   }
 }
+
+export class CategoryInUseError extends DomainError {
+  constructor(public readonly slug: string, public readonly count: number) {
+    super(`La categoría "${slug}" tiene ${count} reloj(es) asignados. Reasígnalos antes de borrarla.`);
+  }
+}
+
+export class DuplicateSlugError extends DomainError {
+  constructor(public readonly slug: string) {
+    super(`Ya existe otro elemento con el slug "${slug}".`);
+  }
+}

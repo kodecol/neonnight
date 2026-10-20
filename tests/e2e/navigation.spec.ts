@@ -5,7 +5,17 @@ test.describe("Navegación entre las tres vistas", () => {
     await page.goto("/");
     await expect(page.getByRole("heading", { level: 1 })).toHaveText(/Sky-Dweller/i);
     await expect(page.locator("[data-testid=product-card]")).toHaveCount(6);
-    await expect(page.locator("[data-testid=instagram-grid] img")).toHaveCount(4);
+    const social = page.locator("[data-testid=social-links] a");
+    await expect(social).toHaveCount(4);
+    await expect(social.first()).toHaveAttribute("target", "_blank");
+    await expect(page.locator("#autenticidad")).toContainText("Garantía de 12 meses");
+    await expect(page.locator("footer")).not.toContainText("Financiación");
+    await expect(page.locator("#marcas li")).toHaveText(["Rolex", "Omega", "Cartier", "Tudor"]);
+    await expect(page.locator("[data-testid=payment-methods] li")).toHaveCount(8);
+    await expect(page.locator("[data-testid=payment-methods] img")).toHaveCount(7);
+    const order = await page.locator("main > section[id]").evaluateAll((els) => els.map((e) => e.id));
+    expect(order.indexOf("clientes")).toBeGreaterThan(order.indexOf("autenticidad"));
+    expect(order.indexOf("pagos")).toBe(order.indexOf("redes") - 1);
 
     await page.getByRole("link", { name: /Ver las 8 referencias/i }).click();
     await expect(page).toHaveURL(/\/coleccion$/);

@@ -8,8 +8,13 @@ describe("Contenido centralizado", () => {
   it("el repositorio estático devuelve el contenido", async () => {
     const c = await new StaticSiteContentRepository().get();
     expect(c.brand.name).toBe("Neon Night");
-    expect(c.social.instagram.posts.length).toBeGreaterThanOrEqual(4);
-    expect(c.home.trust.items).toHaveLength(3);
+    expect(c.social.networks.map((n) => n.id)).toEqual(["instagram", "facebook", "tiktok", "youtube"]);
+    expect(c.social.networks.every((n) => n.href.startsWith("https://"))).toBe(true);
+    expect(c.home.trust.items.map((i) => i.title)).toEqual(["Respaldo por defectos de fábrica", "Garantía de 12 meses", "Envíos en menos de 3 días"]);
+    expect(c.home.payments.logos.map((l) => l.name)).toEqual(["Visa", "Mastercard", "American Express", "Bold", "PSE", "Nequi", "Bancolombia", "Daviplata"]);
+    expect(Object.keys(c.home.brands.logos)).toEqual(expect.arrayContaining(["rolex", "omega", "cartier", "tudor"]));
+    expect(c.home.testimonials.items.every((t) => t.rating >= 1 && t.rating <= 5 && t.quote.length > 20)).toBe(true);
+    expect(c.footer.columns.flatMap((col) => col.links.map((l) => l.label))).not.toContain("Financiación");
   });
 
   it("todas las plantillas tienen sus claves", () => {

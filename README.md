@@ -4,24 +4,26 @@ Tienda de relojes de lujo verificados (Colombia). Reconstrucción en **Next.js 1
 
 - **Stack:** Next.js 15 (App Router, RSC), React 19, TypeScript strict, Tailwind CSS 4 (`@theme`), Zod, Vitest, Playwright + axe-core.
 - **Arquitectura:** clean architecture en cuatro capas con fronteras verificadas por lint (ver `docs/adr/`).
-- **Estado:** pasos 1–5 del handoff + SEO base. CMS, pasarela y analítica son **puertos con stubs**.
+- **Estado:** pasos 1–5 del handoff + SEO base + **panel `/admin`** (catálogo y pagos con Bold) sobre MongoDB y Cloudinary. La analítica sigue siendo un stub.
 
 ## Requisitos
 
 - Node 22+ y npm.
 - Para e2e: `npm run e2e:install` (descarga Chromium).
-- Para Docker: Docker 24+.
+- Para Docker y MongoDB local: Docker 24+.
 
 ## Comandos
 
 ```bash
-cp .env.example .env.local      # ajusta NEXT_PUBLIC_SITE_URL y el número de WhatsApp
+cp .env.example .env.local      # ajusta NEXT_PUBLIC_SITE_URL, WhatsApp, Mongo y credenciales del admin
 npm install
-npm run dev                     # http://localhost:3000
+npm run db:up                   # MongoDB local en Docker (puerto 27018)
+npm run dev                     # http://localhost:3000 · panel en /admin
 
 npm run typecheck               # tsc --noEmit
 npm run lint                    # eslint (incluye fronteras y prohibición de rounded-*)
 npm run test                    # Vitest: dominio, casos de uso, infraestructura
+MONGODB_TEST_URI=mongodb://localhost:27018 npm test   # + integración contra Mongo real
 npm run e2e                     # Playwright: build + start en :3100 + navegación, conversión, axe
 npm run check                   # typecheck + lint + test
 npm run build && npm start      # producción
@@ -31,20 +33,32 @@ npm run build && npm start      # producción
 
 | Variable | Uso |
 | --- | --- |
-| `NEXT_PUBLIC_SITE_URL` | URL absoluta del sitio: canonicals, sitemap, OG, JSON-LD, URL de retorno del checkout |
-| `NEXT_PUBLIC_WHATSAPP_NUMBER` | Número internacional sin `+`. Vacío = enlaces de WhatsApp deshabilitados (**pendiente de definir**) |
-| `NEXT_PUBLIC_INSTAGRAM_URL` | Enlace del perfil |
+| `SITE_URL` | URL absoluta del sitio: canonicals, sitemap, OG, JSON-LD, URL de retorno del checkout. En local vale también `NEXT_PUBLIC_SITE_URL` |
+| `WHATSAPP_NUMBER` | Número internacional sin `+`. Vacío = enlaces de WhatsApp deshabilitados (**pendiente de definir**) |
+| `INSTAGRAM_URL`, `FACEBOOK_URL`, `TIKTOK_URL`, `YOUTUBE_URL` | Perfiles de la sección "Encuéntranos en redes" (**pendientes de confirmar**) |
+| `MONGODB_URI` | MongoDB (Atlas en producción, `mongodb://localhost:27018` en local). Vacía = repositorios en memoria, sin persistencia |
+| `MONGODB_DB` | Nombre de la base (por defecto `neonnight`) |
+| `CLOUDINARY_URL` | `cloudinary://key:secret@cloud`. Vacía = fotos en disco local (`.data/uploads`, solo desarrollo) |
+| `ADMIN_PASSWORD` | Contraseña del único administrador |
+| `ADMIN_SECRET` | 32+ caracteres aleatorios: firma la sesión y cifra la llave secreta de Bold |
+
+Todas se leen **en runtime**: la misma imagen sirve para cualquier dominio y entorno. Los nombres `NEXT_PUBLIC_*` antiguos siguen funcionando como respaldo en desarrollo, pero en producción se usan los de esta tabla (ver `deploy/.env.example`).
 
 ## Rutas
 
 | Ruta | Render | Notas |
 | --- | --- | --- |
-| `/` | estática, ISR 1h | Hero con video, grilla 3 col (6 piezas), banda parallax, garantía, "En movimiento", grilla de Instagram con posts |
-| `/coleccion` | server, filtros por `searchParams` (`?categoria=`, `?max=`) | Grilla 4 col. Con filtros → `noindex, follow` |
-| `/reloj/[slug]` | SSG (`generateStaticParams`) + ISR 1h | Hero, sub-nav sticky, descripción, galería, banda, specs, cierre. JSON-LD `Product`, OG image dinámica |
-| `/gracias` | dinámica | Retorno del checkout stub |
-| `/api/checkout` | POST | Recalcula precio y disponibilidad en el servidor |
+| `/` | dinámica | Hero con video, grilla 3 col (6 piezas), banda parallax, garantía, marquee de marcas (sale del catálogo), garantía, testimonios, "En movimiento", métodos de pago, "Encuéntranos en redes" |
+| `/coleccion` | dinámica, filtros por `searchParams` (`?categoria=`, `?max=`) | Grilla 4 col. Chips de categoría desde la base. Con filtros → `noindex, follow` |
+| `/reloj/[slug]` | dinámica | Hero, sub-nav sticky, descripción, galería, banda, specs, cierre. JSON-LD `Product`, OG image dinámica |
+| `/gracias` | dinámica | Retorno del checkout; muestra el estado del pago si Bold está activo |
+| `/api/checkout` | POST | Recalcula precio y disponibilidad en el servidor y abre la sesión de pago |
+| `/api/webhooks/bold` | POST | Notificaciones de Bold con firma verificada |
+| `/api/media/[archivo]` | GET | Fotos subidas en desarrollo (sin Cloudinary) |
+| `/admin/*` | dinámica, protegida | Panel: `/admin/catalogo`, `/admin/pagos`, `/admin/login` |
 | `/sitemap.xml`, `/robots.txt` | generados desde el repositorio | |
+
+Las páginas del catálogo se renderizan por petición porque la base (editable desde el panel) es la fuente de verdad y no está disponible en el build.
 
 ## Arquitectura
 
@@ -54,30 +68,57 @@ src/
                     interfaces de repositorio, reglas puras. Sin dependencias externas.
   application/      Capa 1 — casos de uso (ListWatches, GetWatchBySlug, ResolveCart, Checkout),
                     DTOs y puertos (PaymentGateway, Analytics, WhatsAppLinkBuilder, Clock).
-  infrastructure/   Capa 2 — InMemoryWatchRepository + seed, NoopPaymentGateway,
-                    ConsoleAnalytics, WaMeLinkBuilder, container.ts.
+  infrastructure/   Capa 2 — repositorios Mongo y en memoria + seed, Bold y Noop (pagos),
+                    Cloudinary y disco (fotos), sesión del admin, ConsoleAnalytics,
+                    WaMeLinkBuilder, container.ts.
   presentation/     Capa 3 — components/{primitives,blocks,chrome,seo}, hooks, styles, lib.
-  app/              Rutas del App Router. Única capa que llama a getContainer().
+  app/              Rutas del App Router: (store)/ tienda, admin/ panel, api/. Única capa
+                    que llama a getContainer(). src/middleware.ts protege /admin.
 tests/unit          Vitest        tests/e2e   Playwright
 docs/handoff        Prototipo y README originales      docs/adr   Decisiones
 ```
 
 **Regla de oro:** `presentation` nunca importa de `infrastructure`. `eslint-plugin-boundaries` lo hace cumplir en `npm run lint`. Las rutas piden el caso de uso al contenedor y pasan DTOs a los componentes.
 
-### Sustituir los stubs
+### Adaptadores
 
-1. **CMS:** implementar `WatchRepository` en `src/infrastructure/cms/` y registrarlo en `container.ts` (ver `src/infrastructure/cms/README.md`).
-2. **Pagos:** implementar `PaymentGateway` (Wompi, Mercado Pago…) en `src/infrastructure/payments/`. El caso de uso `Checkout` ya recalcula el total y valida disponibilidad antes de llamarlo. Añadir un `OrderRepository` persistente antes de cobrar.
-3. **Analítica:** implementar `Analytics` con el proveedor elegido. Los eventos ya emitidos: `view_item`, `begin_checkout`. `add_to_cart` y `whatsapp_click` se emiten desde cliente cuando exista el proveedor.
+1. **Catálogo:** MongoDB (`src/infrastructure/mongo/`), con respaldo en memoria si no hay `MONGODB_URI`. Ver `src/infrastructure/cms/README.md`.
+2. **Pagos:** `BoldPaymentGateway` (API de Links de pago). Con Bold inactivo en el panel delega en `NoopPaymentGateway`. Las órdenes se guardan en Mongo.
+3. **Analítica:** sigue siendo un stub. Hay que implementar `Analytics` con el proveedor elegido. Los eventos ya emitidos son `view_item` y `begin_checkout`. `add_to_cart` y `whatsapp_click` se emitirán desde el cliente cuando exista el proveedor.
+
+## Panel de administración (`/admin`)
+
+Un solo administrador entra con `ADMIN_PASSWORD`. La sesión es una cookie firmada que dura 7 días. El panel tiene dos secciones:
+
+- **Catálogo:**
+  - Alta, edición y baja de relojes: identidad, precio, categoría, disponibilidad, condición, destacado, textos y especificaciones.
+  - Fotos de frente, reverso y galería ordenable.
+  - Categorías editables en línea.
+  - Los cambios se publican en la tienda al guardar.
+- **Pagos:**
+  - Configuración de Bold: activar el cobro, elegir ambiente (pruebas o producción) e ingresar la llave de identidad y la llave secreta (se guarda cifrada).
+  - Muestra la URL del webhook para registrarla en Bold.
+
+### Puesta en marcha con servicios reales
+
+1. **MongoDB Atlas:** crear un cluster M0, un usuario de base de datos y permitir la IP del servidor. Copiar la cadena `mongodb+srv://…` en `MONGODB_URI`. La primera conexión siembra el catálogo.
+2. **Cloudinary:** copiar el *API environment variable* (`cloudinary://…`) del dashboard en `CLOUDINARY_URL`.
+3. **Admin:** definir `ADMIN_PASSWORD` y un `ADMIN_SECRET` aleatorio. Para generarlo: `node -e "console.log(require('crypto').randomBytes(32).toString('base64url'))"`.
+4. **Bold:**
+   1. En el panel de Bold, copiar las llaves de identidad y secreta del ambiente.
+   2. En *Webhooks*, registrar `https://<dominio>/api/webhooks/bold` para ventas aprobadas y rechazadas.
+   3. En `/admin/pagos`, guardar las llaves y activar el cobro.
+   4. Probar primero en **Pruebas**.
+   5. Bold exige HTTPS para el retorno del checkout, así que en local se usa un túnel (ngrok o cloudflared).
 
 ## Contenido centralizado
 
-Todo el contenido editorial (copys, menú, footer, secciones de la home, filtros, textos de la bolsa, plantillas de WhatsApp y posts de Instagram) vive en **un solo archivo**: `src/infrastructure/content/site-content.ts`, tipado por `SiteContent` (`src/application/dto/site-content.dto.ts`). Los componentes no contienen textos fijos: reciben el contenido por props desde las rutas, que lo piden al contenedor a través del puerto `SiteContentRepository`.
+Todo el contenido editorial (copys, menú, footer, secciones de la home, filtros, textos de la bolsa, plantillas de WhatsApp y redes sociales) vive en **un solo archivo**: `src/infrastructure/content/site-content.ts`, tipado por `SiteContent` (`src/application/dto/site-content.dto.ts`). Los componentes no contienen textos fijos: reciben el contenido por props desde las rutas, que lo piden al contenedor a través del puerto `SiteContentRepository`.
 
-- Cambiar un copy, añadir un post de Instagram o un enlace del footer = editar ese archivo.
+- Cambiar un copy, una red social o un enlace del footer = editar ese archivo.
 - Las plantillas usan `{clave}` (`{brand}`, `{count}`, `{year}`, `{items}`, `{total}`) y se resuelven con `fill()` de `src/application/lib/template.ts`.
 - Cuando exista CMS, se implementa `SiteContentRepository` sobre él y se registra en `container.ts`; nada más cambia.
-- El catálogo de producto vive aparte, en `src/infrastructure/cms/seed.ts`, con la misma lógica de sustitución.
+- El catálogo de producto no está en este archivo: vive en la base y se edita en `/admin`. El seed inicial está en `src/infrastructure/cms/seed.ts`. Los chips de categoría de `/coleccion` salen de las categorías del panel; en `collection.filters` quedan solo "Todas" y los filtros de precio.
 
 ## Diseño y tokens
 
@@ -91,16 +132,15 @@ El diseño hi-fi fija dos combinaciones que no alcanzan 4.5:1: label blanco sobr
 
 Build actual: JS inicial ≈113 kB (presupuesto 120 kB). Imágenes vía `next/image` con AVIF/WebP y alto reservado con `aspect-ratio`. **Pendiente:** transcodificar `public/assets/hero-day-date.mp4` (12 MB) y `vertical-daytona.mp4` (13 MB) a H.264/AV1 por debajo de 3 MB; los posters (`*-poster.jpg`) ya se generaron con ffmpeg y se sirven en móvil.
 
-## Docker / VPS
+## Contribuir
 
-```bash
-docker build -t neonnight \
-  --build-arg NEXT_PUBLIC_SITE_URL=https://neonnight.co \
-  --build-arg NEXT_PUBLIC_WHATSAPP_NUMBER=57300XXXXXXX .
-docker run -p 3000:3000 neonnight
-```
+Ramas, commits con **gitmoji**, pull requests, CI, versiones y configuración del repositorio: **[`docs/GITHUB.md`](docs/GITHUB.md)**. Resumen en [`CONTRIBUTING.md`](CONTRIBUTING.md); vulnerabilidades en [`SECURITY.md`](SECURITY.md).
 
-La imagen usa `output: "standalone"` y corre como usuario no-root. La caché de ISR vive en el contenedor; para varias réplicas configurar un cache handler compartido.
+## Despliegue
+
+Producción corre aislada en un VPS compartido, con límites de 1 CPU y 512 MB, y se publica con nginx-proxy-manager en `https://neonightonline.com`. La base de datos está en MongoDB Atlas y las fotos en Cloudinary. Cada push a `main` se despliega solo con GitHub Actions.
+
+La guía completa está en **[`docs/DEPLOY.md`](docs/DEPLOY.md)**: infraestructura, primera instalación, despliegue de cada versión, rollback, dominio y operación.
 
 ## Pendientes de contenido (handoff §7)
 
@@ -108,10 +148,21 @@ La imagen usa `output: "standalone"` y corre como usuario no-root. La caché de 
 - Precios orientativos en COP, no confirmados.
 - Textos descriptivos redactados como placeholder informado; revisar con el equipo comercial.
 - Número de WhatsApp.
-- Posts de Instagram: los actuales (`public/assets/ig/`) son recortes de fotos de catálogo de terceros para el mockup; cambiar por posts reales y el enlace del perfil.
+- Perfiles reales de Instagram, Facebook, TikTok y YouTube (hoy son `@neonnight` de ejemplo).
+- **Testimonios:** los 4 actuales (`home.testimonials` en `site-content.ts`) son textos de **ejemplo**. Antes de publicar hay que reemplazarlos por testimonios reales, con autorización escrita de cada cliente. Publicar comentarios inventados como reales es publicidad engañosa (Ley 1480, Estatuto del Consumidor). Por eso no se emiten datos estructurados de reseñas.
+- **Métodos de pago:** confirmar en el panel de Bold qué medios tiene habilitados el comercio y ajustar `home.payments.logos`. En especial **Daviplata**: no hay logo oficial descargable (el sitio está protegido), así que hoy se muestra como texto. Pedir el arte a Bold o Davivienda y guardarlo en `public/assets/logos/payments/`.
 - Dirección del showroom y condiciones legales (garantía, envíos, devoluciones).
 - Video vertical nativo para "En movimiento" (el actual es un recorte horizontal).
+
+## Créditos de imágenes y logos
+
+- **Banda de la home** (`public/assets/band-perfume.jpg`): foto de Puscas Adryan en [Unsplash](https://unsplash.com/photos/77k9-nfxmhs), con Unsplash License (uso comercial sin atribución obligatoria).
+- **Logos de medios de pago** (`public/assets/logos/payments/`): Visa, Mastercard y American Express salen de los trazados de [Simple Icons](https://simpleicons.org) con su color oficial. PSE viene del sitio de ACH Colombia, Nequi y Bancolombia de Wikimedia Commons, y Bold de bold.co. Se usan para indicar que esos medios se aceptan.
+- **Logos de relojeras** (`public/assets/logos/brands/`): Rolex, Omega, Cartier, Tudor y Grand Seiko, de Wikimedia Commons. Ver la nota legal: hay que validar su uso con un abogado de marcas antes de publicar.
+- **Favicon e íconos** (`src/app/favicon.ico`, `icon.png`, `apple-icon.png`): se generan desde `public/assets/isotipo-color.png` con `node scripts/generate-icons.mjs`.
 
 ## Nota legal (handoff §8)
 
 El prototipo nombra "Rolex" y usa material de esa marca como referencia. Las fotos de producto de las 8 referencias (`public/assets/ref0X-*.png`) provienen de un catálogo de terceros y se recortaron únicamente para este mockup: **no tienen licencia para producción**. Antes de publicar hay que usar fotografía y video propios de las piezas en inventario y evitar cualquier tratamiento que sugiera afiliación oficial.
+
+El marquee "Marcas en colección" usa los **logotipos oficiales** de las relojeras. Para un revendedor independiente, nombrar la marca para describir lo que vende suele ser aceptable; usar el logotipo es más delicado. Rolex, en particular, persigue el uso de su marca por vendedores no autorizados. El sitio muestra el aviso "no está afiliado a las marcas mencionadas", pero la decisión de publicar los logos debe validarla un abogado de propiedad intelectual. Si se retira un logo de `home.brands.logos`, esa marca vuelve a mostrarse como texto automáticamente.

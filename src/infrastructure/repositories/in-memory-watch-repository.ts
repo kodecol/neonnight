@@ -1,8 +1,13 @@
-import type { Watch } from "@/domain/entities/watch";
+import type { Watch, WatchCategory, WatchId } from "@/domain/entities/watch";
 import type { WatchFilter, WatchRepository } from "@/domain/repositories/watch-repository";
 
+/** Orden: lo más reciente primero (las altas nuevas van al principio). */
 export class InMemoryWatchRepository implements WatchRepository {
-  constructor(private readonly items: readonly Watch[]) {}
+  private items: Watch[];
+
+  constructor(items: readonly Watch[]) {
+    this.items = [...items];
+  }
 
   async findAll(filter: WatchFilter = {}): Promise<readonly Watch[]> {
     return this.items.filter((w) => {
@@ -17,6 +22,10 @@ export class InMemoryWatchRepository implements WatchRepository {
     return this.items.find((w) => w.slug.value === slug) ?? null;
   }
 
+  async findById(id: string): Promise<Watch | null> {
+    return this.items.find((w) => w.id === id) ?? null;
+  }
+
   async findByIds(ids: readonly string[]): Promise<readonly Watch[]> {
     const set = new Set(ids);
     return this.items.filter((w) => set.has(w.id));
@@ -24,5 +33,19 @@ export class InMemoryWatchRepository implements WatchRepository {
 
   async findFeatured(): Promise<Watch | null> {
     return this.items.find((w) => w.featured) ?? this.items[0] ?? null;
+  }
+
+  async save(watch: Watch): Promise<void> {
+    const i = this.items.findIndex((w) => w.id === watch.id);
+    if (i === -1) this.items.unshift(watch);
+    else this.items[i] = watch;
+  }
+
+  async delete(id: WatchId): Promise<void> {
+    this.items = this.items.filter((w) => w.id !== id);
+  }
+
+  async countByCategory(category: WatchCategory): Promise<number> {
+    return this.items.filter((w) => w.category === category).length;
   }
 }

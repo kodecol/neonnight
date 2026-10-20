@@ -12,6 +12,10 @@ export class InMemoryOrderRepository implements OrderRepository {
     return this.orders.get(id) ?? null;
   }
 
+  async findByPaymentReference(reference: string): Promise<Order | null> {
+    return [...this.orders.values()].find((o) => o.paymentReference === reference) ?? null;
+  }
+
   all(): readonly Order[] {
     return [...this.orders.values()];
   }

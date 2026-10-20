@@ -57,7 +57,10 @@ export function CartDrawer({
       if (!res.ok || !data.redirectUrl) throw new Error(data.error ?? "No se pudo iniciar el checkout.");
       cart.clear();
       cart.close();
-      router.push(data.redirectUrl);
+      // La pasarela (checkout.bold.co) es otro origen: navegación completa.
+      const target = new URL(data.redirectUrl, window.location.href);
+      if (target.origin === window.location.origin) router.push(`${target.pathname}${target.search}`);
+      else window.location.assign(target.toString());
     } catch (e) {
       setError(e instanceof Error ? e.message : "Error inesperado.");
     } finally {

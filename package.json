@@ -12,9 +12,15 @@
     "test:watch": "vitest",
     "e2e": "playwright test",
     "e2e:install": "playwright install chromium",
-    "check": "npm run typecheck && npm run lint && npm run test"
+    "check": "npm run typecheck && npm run lint && npm run test",
+    "db:up": "docker compose up -d mongo",
+    "db:down": "docker compose stop mongo",
+    "prepare": "git config core.hooksPath .githooks 2>/dev/null || true",
+    "commit:check": "node scripts/check-commit-msg.mjs --text"
   },
   "dependencies": {
+    "cloudinary": "^2.11.0",
+    "mongodb": "^7.7.0",
     "next": "15.5.25",
     "react": "19.1.0",
     "react-dom": "19.1.0",

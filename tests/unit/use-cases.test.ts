@@ -9,6 +9,7 @@ import { GetWatchBySlug } from "@/application/use-cases/get-watch-by-slug";
 import { GetFeaturedWatch } from "@/application/use-cases/get-featured-watch";
 import { ResolveCart } from "@/application/use-cases/resolve-cart";
 import { Checkout } from "@/application/use-cases/checkout";
+import { ListBrands } from "@/application/use-cases/list-brands";
 import { WatchNotFoundError, WatchUnavailableError } from "@/domain/errors";
 
 const fixedClock = { now: () => new Date("2026-09-13T00:00:00Z") };
@@ -117,5 +118,12 @@ describe("Checkout", () => {
     await expect(uc.execute({ lines: [{ watchId: "zzz", quantity: 1 }] }, "http://x.test/gracias")).rejects.toBeInstanceOf(WatchNotFoundError);
     await expect(uc.execute({ lines: [] }, "http://x.test/gracias")).rejects.toThrow();
     await expect(uc.execute({ lines: [{ watchId: "w-01", quantity: 2 }] }, "http://x.test/gracias")).rejects.toThrow();
+  });
+});
+
+describe("ListBrands", () => {
+  it("devuelve marcas únicas del catálogo, de la más a la menos representada", async () => {
+    expect(await new ListBrands(new InMemoryWatchRepository(SEED_WATCHES)).execute()).toEqual(["Rolex", "Omega", "Cartier", "Tudor"]);
+    expect(await new ListBrands(new InMemoryWatchRepository([])).execute()).toEqual([]);
   });
 });

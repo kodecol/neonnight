@@ -5,35 +5,34 @@ import type { SiteContent } from "@/application/dto/site-content.dto";
  * Los copys provienen del handoff (docs/handoff/README.md). Cuando exista CMS,
  * `StaticSiteContentRepository` se sustituye por un adaptador que devuelva
  * esta misma forma.
- *
- * Los posts de Instagram son recortes de fotos de catálogo de terceros SOLO
- * para el mockup (ver README "Nota legal").
  */
-const INSTAGRAM_URL = process.env.NEXT_PUBLIC_INSTAGRAM_URL || "https://instagram.com/neonnight";
+const INSTAGRAM_URL = process.env.INSTAGRAM_URL || process.env.NEXT_PUBLIC_INSTAGRAM_URL || "https://instagram.com/neonnight";
+// PENDIENTE: confirmar los perfiles reales de Facebook, TikTok y YouTube.
+const FACEBOOK_URL = process.env.FACEBOOK_URL || process.env.NEXT_PUBLIC_FACEBOOK_URL || "https://facebook.com/neonnight";
+const TIKTOK_URL = process.env.TIKTOK_URL || process.env.NEXT_PUBLIC_TIKTOK_URL || "https://tiktok.com/@neonnight";
+const YOUTUBE_URL = process.env.YOUTUBE_URL || process.env.NEXT_PUBLIC_YOUTUBE_URL || "https://youtube.com/@neonnight";
 
 export const SITE_CONTENT: SiteContent = {
   brand: {
     name: "Neon Night",
     wordmark: "NEON NIGHT",
     tagline: "El reloj que buscas, al precio que debió tener siempre.",
-    description: "Relojes de lujo verificados en Colombia. Verificación en mano, garantía de 24 meses y devolución en 10 días.",
+    description: "Relojes de lujo verificados en Colombia. Garantía de 12 meses y envíos asegurados en menos de 3 días.",
     currencyLabel: "COP",
     locale: "es-CO",
     logo: { mono: "/assets/isotipo-mono.png", color: "/assets/isotipo-color.png" },
   },
 
   social: {
-    instagram: {
-      handle: "@neonnight",
-      url: INSTAGRAM_URL,
-      followLabel: "Seguir en Instagram",
-      posts: [
-        { src: "/assets/ig/ig-01.jpg", alt: "Rolex Sky-Dweller en oro amarillo en la muñeca", href: INSTAGRAM_URL, width: 1080, height: 1080 },
-        { src: "/assets/ig/ig-02.jpg", alt: "Omega Speedmaster Moonwatch sobre madera", href: INSTAGRAM_URL, width: 1080, height: 1080 },
-        { src: "/assets/ig/ig-03.jpg", alt: "Cartier Santos en la muñeca", href: INSTAGRAM_URL, width: 1080, height: 1080 },
-        { src: "/assets/ig/ig-04.jpg", alt: "Rolex Datejust 36 con dial azul sobre madera", href: INSTAGRAM_URL, width: 1080, height: 1080 },
-      ],
-    },
+    kicker: "Encuéntranos en redes",
+    title: "Síguenos de cerca",
+    body: "Piezas nuevas, videos en la muñeca y la verificación de cada referencia, primero en nuestras redes.",
+    networks: [
+      { id: "instagram", label: "Instagram", handle: "@neonnight", href: INSTAGRAM_URL, description: "Lanzamientos y detalles de cada pieza", cta: "Seguir" },
+      { id: "facebook", label: "Facebook", handle: "Neon Night", href: FACEBOOK_URL, description: "Comunidad, novedades y showroom", cta: "Seguir" },
+      { id: "tiktok", label: "TikTok", handle: "@neonnight", href: TIKTOK_URL, description: "Videos cortos en la muñeca", cta: "Seguir" },
+      { id: "youtube", label: "YouTube", handle: "@neonnight", href: YOUTUBE_URL, description: "Reseñas y verificación en detalle", cta: "Suscribirse" },
+    ],
   },
 
   navigation: {
@@ -65,14 +64,97 @@ export const SITE_CONTENT: SiteContent = {
       ctaTemplate: "Ver las {count} referencias",
       featuredCount: 6,
     },
-    band: { title: "Cada pieza pasa por verificación antes de salir" },
+    band: {
+      title: "Cada pieza pasa por verificación antes de salir",
+      // Foto: Puscas Adryan en Unsplash (Unsplash License, uso comercial libre).
+      image: { src: "/assets/band-perfume.jpg", alt: "Frasco de perfume oscuro sobre un pedestal, con luz cálida de estudio", width: 2400, height: 2400, position: "50% 22%" },
+    },
+    brands: {
+      label: "Marcas en colección",
+      disclaimer: "Neon Night es un revendedor independiente y no está afiliado a las marcas mencionadas. Las marcas y logotipos pertenecen a sus titulares.",
+      // Clave = marca del catálogo en minúsculas. Una marca sin logo se muestra como texto.
+      logos: {
+        rolex: { src: "/assets/logos/brands/rolex.svg", ratio: 5.07, color: "#127749" },
+        omega: { src: "/assets/logos/brands/omega.svg", ratio: 2.01, color: "#E4002B" },
+        cartier: { src: "/assets/logos/brands/cartier.svg", ratio: 3.42, color: "#D4202C" },
+        tudor: { src: "/assets/logos/brands/tudor.svg", ratio: 1.76, color: "#E1251B" },
+        "grand seiko": { src: "/assets/logos/brands/grand-seiko.svg", ratio: 2.29, color: "#6E8FBF" },
+      },
+    },
     trust: {
       kicker: "Garantía y autenticidad",
       items: [
-        { number: "01", title: "Verificación en mano", body: "Revisión de calibre, número de serie y caja antes de despachar. Informe fotográfico incluido." },
-        { number: "02", title: "Garantía de 24 meses", body: "Cobertura de movimiento y hermeticidad, con servicio en Colombia." },
-        { number: "03", title: "Devolución en 10 días", body: "Si la pieza no es lo que esperabas, la recogemos y devolvemos el pago completo.", accent: true },
+        {
+          number: "01",
+          title: "Respaldo por defectos de fábrica",
+          body: "Respondemos por los daños de fábrica de cada pieza. No se aceptan devoluciones por mal uso del producto.",
+        },
+        { number: "02", title: "Garantía de 12 meses", body: "Cobertura de movimiento y hermeticidad durante 12 meses, con servicio en Colombia." },
+        {
+          number: "03",
+          title: "Envíos en menos de 3 días",
+          body: "Despachamos asegurado a toda Colombia en menos de 3 días. No se aceptan devoluciones después de 10 días de la compra.",
+          accent: true,
+        },
       ],
+    },
+    // PENDIENTE: textos de EJEMPLO. Antes de publicar, reemplazar por testimonios reales con autorización
+    // escrita de cada cliente (Ley 1480: la publicidad no puede inducir a error). Ver README.
+    testimonials: {
+      kicker: "Clientes",
+      title: "Lo que dicen quienes ya compraron",
+      note: "Testimonios de clientes en Colombia",
+      items: [
+        {
+          quote: "Me enviaron el video de la pieza antes de pagar y el informe de verificación llegó con el reloj. Compré con la misma tranquilidad que en una boutique, a un precio que no encontré en ningún otro lado.",
+          name: "Andrés M.",
+          city: "Medellín",
+          piece: "Rolex Datejust 36",
+          rating: 5,
+        },
+        {
+          quote: "Llegó asegurado en dos días, impecable y con todos los papeles. Lo llevé a revisar a un relojero de confianza y confirmó cada detalle del informe.",
+          name: "Carolina R.",
+          city: "Bogotá",
+          piece: "Cartier Santos",
+          rating: 5,
+        },
+        {
+          quote: "La asesoría por WhatsApp fue clara de principio a fin: me explicaron referencia, estado y garantía sin presionar la compra. Ya estoy mirando la segunda pieza.",
+          name: "Felipe G.",
+          city: "Cali",
+          piece: "Omega Speedmaster",
+          rating: 5,
+        },
+        {
+          quote: "Buscaba un Tudor en excelente estado y lo encontré aquí. El empaque, la entrega y el seguimiento estuvieron a la altura de la pieza.",
+          name: "Juliana P.",
+          city: "Barranquilla",
+          piece: "Tudor Black Bay 58",
+          rating: 5,
+        },
+      ],
+    },
+    payments: {
+      kicker: "Métodos de pago",
+      title: "Paga como prefieras",
+      body: "Pagos procesados por Bold, con la seguridad de la banca colombiana. Elige el medio al finalizar la compra.",
+      // PENDIENTE: confirmar en el panel de Bold los medios habilitados (en especial Daviplata).
+      logos: [
+        { name: "Visa", caption: "Crédito y débito", logo: { src: "/assets/logos/payments/visa.svg", ratio: 2.97 } },
+        { name: "Mastercard", caption: "Crédito y débito", logo: { src: "/assets/logos/payments/mastercard.svg", ratio: 1.6, mono: "grayscale" } },
+        { name: "American Express", caption: "Crédito", logo: { src: "/assets/logos/payments/amex.svg", ratio: 1 } },
+        { name: "Bold", caption: "Pasarela de pagos", logo: { src: "/assets/logos/payments/bold.svg", ratio: 2.82 } },
+        { name: "PSE", caption: "Débito desde cualquier banco", logo: { src: "/assets/logos/payments/pse.jpg", ratio: 1, mono: "grayscale", round: true } },
+        { name: "Nequi", caption: "Billetera digital", logo: { src: "/assets/logos/payments/nequi.svg", ratio: 3.09 } },
+        { name: "Bancolombia", caption: "Botón Bancolombia", logo: { src: "/assets/logos/payments/bancolombia.svg", ratio: 4.01, scale: 1.35 } },
+        // Sin logo oficial descargable todavía: se muestra el nombre.
+        { name: "Daviplata", caption: "Billetera digital" },
+      ],
+      processedBy: "Procesado por",
+      assurances: ["Conexión cifrada", "Confirmación al aprobarse el pago", "Garantía de 12 meses en cada pieza"],
+      whatsappCta: "¿Otro medio de pago? Escríbenos",
+      whatsappMessage: "Hola, quiero consultar otros medios de pago para una pieza.",
     },
     motion: {
       kicker: "En movimiento",
@@ -87,10 +169,9 @@ export const SITE_CONTENT: SiteContent = {
     title: "Colección",
     breadcrumbHome: "Inicio",
     emptyMessage: "No hay referencias que coincidan con este filtro.",
+    // Los chips de categoría se generan de las categorías del panel (/admin) entre "Todas" y los de precio.
     filters: [
       { label: "Todas" },
-      { label: "Automáticos", category: "automatico" },
-      { label: "Cronógrafos", category: "cronografo" },
       { label: "Hasta $35.000.000", maxPriceUnits: 35_000_000 },
     ],
   },
@@ -126,7 +207,6 @@ export const SITE_CONTENT: SiteContent = {
         links: [
           { label: "Colección", href: "/coleccion" },
           { label: "Novedades", href: "/coleccion?orden=novedades" },
-          { label: "Financiación", href: "/#showroom" },
         ],
       },
       {

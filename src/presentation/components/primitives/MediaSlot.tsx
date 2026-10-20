@@ -13,6 +13,7 @@ export function MediaSlot({
   priority = false,
   className,
   label,
+  position,
 }: {
   image: ImageDto | null;
   fit?: "cover" | "contain";
@@ -20,6 +21,8 @@ export function MediaSlot({
   priority?: boolean;
   className?: string;
   label?: string;
+  /** `object-position` del recorte. */
+  position?: string;
 }) {
   return (
     <div className={cn("relative overflow-hidden bg-surface", className)} aria-label={image ? undefined : label} role={image ? undefined : "img"}>
@@ -31,6 +34,7 @@ export function MediaSlot({
           sizes={sizes}
           priority={priority}
           className={fit === "contain" ? "object-contain" : "object-cover"}
+          style={position ? { objectPosition: position } : undefined}
         />
       ) : null}
     </div>

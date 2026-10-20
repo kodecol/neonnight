@@ -1,6 +1,6 @@
 # ADR 0003 — Repositorios en memoria y stubs para CMS, pagos y analítica
 
-**Fecha:** 2026-09-13 · **Estado:** aceptada (temporal)
+**Fecha:** 2026-09-13 · **Estado:** reemplazada en parte por ADR 0004 (los repositorios en memoria siguen como respaldo sin `MONGODB_URI`)
 
 ## Contexto
 

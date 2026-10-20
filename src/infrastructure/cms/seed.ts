@@ -1,4 +1,5 @@
 import { watchId, type Watch, type WatchCategory, type WatchImage } from "@/domain/entities/watch";
+import type { Category } from "@/domain/entities/category";
 import { Money } from "@/domain/value-objects/money";
 import { Slug } from "@/domain/value-objects/slug";
 import { Reference } from "@/domain/value-objects/reference";
@@ -251,3 +252,11 @@ function build(row: SeedRow): Watch {
 }
 
 export const SEED_WATCHES: readonly Watch[] = rows.map(build);
+
+/** Categorías iniciales. En Mongo se insertan una sola vez; luego se administran desde el panel. */
+export const SEED_CATEGORIES: readonly Category[] = [
+  { slug: "automatico", label: "Automáticos", order: 1 },
+  { slug: "cronografo", label: "Cronógrafos", order: 2 },
+  { slug: "gmt", label: "GMT", order: 3 },
+  { slug: "buceo", label: "Buceo", order: 4 },
+];

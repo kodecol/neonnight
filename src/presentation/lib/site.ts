@@ -1,5 +1,7 @@
 export function siteUrl(): URL {
-  const raw = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+  // SITE_URL se lee en runtime (la misma imagen sirve para cualquier dominio);
+  // NEXT_PUBLIC_SITE_URL queda como respaldo para desarrollo local.
+  const raw = process.env.SITE_URL || process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
   return new URL(raw);
 }
 

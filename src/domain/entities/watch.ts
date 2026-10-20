@@ -5,9 +5,12 @@ import type { Reference } from "../value-objects/reference";
 export type WatchId = string & { readonly __brand: "WatchId" };
 export const watchId = (value: string): WatchId => value as WatchId;
 
-export type WatchCondition = "nuevo" | "como-nuevo" | "excelente";
-export type WatchAvailability = "disponible" | "reservado" | "vendido";
-export type WatchCategory = "automatico" | "cronografo" | "gmt" | "buceo";
+export const WATCH_CONDITIONS = ["nuevo", "como-nuevo", "excelente"] as const;
+export type WatchCondition = (typeof WATCH_CONDITIONS)[number];
+export const WATCH_AVAILABILITIES = ["disponible", "reservado", "vendido"] as const;
+export type WatchAvailability = (typeof WATCH_AVAILABILITIES)[number];
+/** Slug de una `Category` administrable (p. ej. "cronografo"). */
+export type WatchCategory = string;
 
 export interface WatchSpecs {
   readonly movement: string;

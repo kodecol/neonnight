@@ -254,3 +254,80 @@
 .nn-loader { animation: nn-out 0.5s linear 1.7s forwards; }
 .nn-loader-bar { animation: nn-bar 1.6s var(--ease-bar) forwards; }
 .nn-loader-mark { animation: nn-mark 1.4s var(--ease-reveal) forwards; }
+
+/* ── Indicador de carga indeterminado (panel) ──────────────────────────── */
+@keyframes nn-busy {
+  from { left: -40%; }
+  to { left: 100%; }
+}
+.nn-busy-bar {
+  width: 40%;
+  animation: nn-busy 1.1s var(--ease-bar) infinite;
+}
+
+/* ── Marquee de marcas ─────────────────────────────────────────────────────
+   Dos copias idénticas de la pista: al desplazar -50% el bucle es continuo.
+   La máscara funde los extremos con el fondo. Pausa al pasar el cursor;
+   estático con prefers-reduced-motion. */
+@keyframes nn-marquee {
+  to { transform: translate3d(-50%, 0, 0); }
+}
+.nn-marquee {
+  -webkit-mask-image: linear-gradient(to right, transparent 0%, #000 18%, #000 82%, transparent 100%);
+  mask-image: linear-gradient(to right, transparent 0%, #000 18%, #000 82%, transparent 100%);
+}
+.nn-marquee-track {
+  display: flex;
+  width: max-content;
+  animation: nn-marquee var(--nn-marquee-duration, 40s) linear infinite;
+  will-change: transform;
+}
+.nn-marquee:hover .nn-marquee-track { animation-play-state: paused; }
+@media (prefers-reduced-motion: reduce) {
+  .nn-marquee-track { animation: none; }
+}
+
+/* ── Testimonios ───────────────────────────────────────────────────────── */
+@keyframes nn-sheen {
+  from { transform: translateX(0) skewX(-12deg); }
+  to { transform: translateX(400%) skewX(-12deg); }
+}
+.nn-sheen { animation: nn-sheen 1.6s var(--ease-reveal) 0.35s both; }
+@keyframes nn-progress {
+  from { width: 0%; }
+  to { width: 100%; }
+}
+.nn-progress { animation: nn-progress linear forwards; }
+@media (prefers-reduced-motion: reduce) {
+  .nn-sheen, .nn-progress { animation: none; }
+}
+
+/* ── Logos de terceros: monocromo en reposo, color al pasar el cursor ─────
+   .nn-logo-host es el contenedor que dispara el cambio (hover o foco). */
+.nn-logo {
+  transition: filter 0.5s var(--ease-reveal), opacity 0.5s var(--ease-reveal), transform 0.5s var(--ease-reveal);
+}
+.nn-logo[data-mono="silhouette"] { filter: brightness(0) invert(1); opacity: 0.72; }
+.nn-logo[data-mono="grayscale"] { filter: grayscale(1) brightness(1.2); opacity: 0.8; }
+.nn-logo-host:hover .nn-logo,
+.nn-logo-host:focus-visible .nn-logo { filter: none; opacity: 1; transform: scale(1.04); }
+
+/* Marquee: el logo se pinta como silueta (máscara) en blanco y toma el color de marca al pasar el cursor. */
+.nn-brand-logo {
+  display: block;
+  height: calc(var(--h) * var(--nn-s, 0.62));
+  width: calc(var(--h) * var(--r) * var(--nn-s, 0.62));
+  background-color: var(--color-ink);
+  -webkit-mask: var(--logo) center / contain no-repeat;
+  mask: var(--logo) center / contain no-repeat;
+  transition: background-color 0.5s var(--ease-reveal), transform 0.5s var(--ease-reveal);
+}
+@media (width >= 768px) { .nn-brand-logo { --nn-s: 0.8; } }
+@media (width >= 1024px) { .nn-brand-logo { --nn-s: 1; } }
+.nn-brand-logo:hover { background-color: var(--brand); transform: scale(1.06); }
+@media (prefers-reduced-motion: reduce) {
+  .nn-logo, .nn-brand-logo { transition: none; }
+}
+
+/* Logo de Bold: degradado de marca al pasar el cursor por su contenedor. */
+.group:hover path[style*="--nn-bold-fill"] { fill: var(--nn-bold-fill); }

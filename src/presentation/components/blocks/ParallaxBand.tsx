@@ -2,11 +2,23 @@ import type { ImageDto } from "@/application/dto/watch.dto";
 import { MediaSlot } from "@/presentation/components/primitives/MediaSlot";
 import { cn } from "@/presentation/lib/cn";
 
-export function ParallaxBand({ image, title, height = "78vh", overlay = true, label }: { image: ImageDto | null; title?: string; height?: "78vh" | "80vh"; overlay?: boolean; label: string }) {
+export function ParallaxBand({
+  image,
+  title,
+  height = "78vh",
+  overlay = true,
+  label,
+}: {
+  image: (ImageDto & { position?: string }) | null;
+  title?: string;
+  height?: "78vh" | "80vh";
+  overlay?: boolean;
+  label: string;
+}) {
   return (
     <section className={cn("relative overflow-hidden bg-surface", height === "78vh" ? "h-[60vh] md:h-[78vh]" : "h-[60vh] md:h-[80vh]")} aria-label={label}>
       <div data-parallax={0.18} className="absolute inset-x-0 top-[-16%] h-[132%]">
-        <MediaSlot image={image} sizes="100vw" className="h-full w-full" label={label} />
+        <MediaSlot image={image} sizes="100vw" className="h-full w-full" label={label} position={image?.position} />
       </div>
       {overlay && <span className="pointer-events-none absolute inset-0 bg-black/40" aria-hidden="true" />}
       {title && (

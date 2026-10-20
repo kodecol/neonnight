@@ -1,13 +1,13 @@
-# Adaptador de CMS (pendiente)
+# Catálogo: seed y persistencia
 
-Aquí vive el cliente del CMS y los mappers a entidades de dominio cuando se
-elija proveedor (Sanity, Payload, Strapi…). Mientras tanto `seed.ts` alimenta
-el `InMemoryWatchRepository` con los 8 productos del prototipo.
+- `seed.ts` define las 8 referencias iniciales y las 4 categorías.
+- **Con `MONGODB_URI`:** el catálogo vive en MongoDB (`../mongo/`). La primera conexión a una base vacía inserta el seed una sola vez (marcador `meta.seed`). Desde ahí la fuente de verdad es la base y se edita en `/admin`.
+- **Sin `MONGODB_URI`:** `InMemoryWatchRepository` e `InMemoryCategoryRepository` sirven el seed en memoria, sin persistencia. Así corren los tests y el e2e.
 
-Para sustituirlo:
+Para cambiar de proveedor (otro CMS o base):
 
-1. Implementar `WatchRepository` (src/domain/repositories) sobre el cliente del CMS.
-2. Mapear el documento del CMS a `Watch` usando `Money.fromUnits`, `Slug.of`, `Reference.of`.
-3. Registrar la nueva clase en `src/infrastructure/container.ts`.
+1. Implementar `WatchRepository` y `CategoryRepository` (`src/domain/repositories`).
+2. Mapear a `Watch` con `Money`, `Slug` y `Reference` (ver `../mongo/watch-mapper.ts`).
+3. Registrar las clases en `src/infrastructure/container.ts`.
 
-Nada fuera de `infrastructure/` debería cambiar. Si algo más cambia, la frontera estaba mal puesta.
+Nada fuera de `infrastructure/` debería cambiar.

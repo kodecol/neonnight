@@ -1,0 +1,13 @@
+# Servicios locales de desarrollo. En producción se usa MongoDB Atlas (MONGODB_URI).
+services:
+  mongo:
+    image: mongo:7
+    container_name: neonnight-mongo
+    restart: unless-stopped
+    ports:
+      - "27018:27017"
+    volumes:
+      - neonnight-mongo:/data/db
+
+volumes:
+  neonnight-mongo:
