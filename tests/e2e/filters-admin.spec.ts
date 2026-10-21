@@ -11,7 +11,11 @@ test("una pieza creada en el panel aparece en sus filtros y su precio entra en e
   await expect(page).toHaveURL(/\/admin\/catalogo$/);
 
   await page.goto("/admin/catalogo/nuevo?linea=relojeria");
-  await page.getByLabel("Marca").fill("Zenith");
+  // La marca se elige de la lista de Marcas; si no existe, se crea al vuelo.
+  const picker = page.getByTestId("brand-picker");
+  await picker.fill("Zenith");
+  await page.getByTestId("brand-create").click();
+  await expect(picker).toHaveValue("Zenith");
   await page.getByLabel("Modelo").fill("Chronomaster Sport");
   await page.getByLabel("Referencia").fill("03.3100.3600");
   await page.getByLabel("Subtítulo").fill("Cronógrafo · 41 mm");
