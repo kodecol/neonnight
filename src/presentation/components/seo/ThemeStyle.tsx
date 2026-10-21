@@ -8,5 +8,5 @@ import { themeCss } from "@/application/lib/theme-css";
  */
 export function ThemeStyle({ appearance }: { appearance: StoreAppearanceInput | null }) {
   if (!appearance) return null;
-  return <style data-theme="neonnight" dangerouslySetInnerHTML={{ __html: themeCss(appearance) }} />;
+  return <style data-theme="tienda" dangerouslySetInnerHTML={{ __html: themeCss(appearance) }} />;
 }

@@ -7,6 +7,7 @@ import { getContainer } from "@/infrastructure/container";
 import { absoluteUrl, siteUrl } from "@/presentation/lib/site";
 import { versioned } from "@/application/use-cases/brand-assets";
 import { brandAssets } from "./_icons/render";
+import { storeSlug } from "@/infrastructure/config/store";
 
 export async function generateMetadata(): Promise<Metadata> {
   const [{ brand }, { version }] = await Promise.all([getContainer().content.get(), brandAssets()]);
@@ -51,7 +52,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const container = getContainer();
   const [site, appearance] = await Promise.all([container.content.get(), new GetActiveAppearance(container.appearance).execute()]);
   return (
-    <html lang={site.brand.locale} className={fontVariables}>
+    <html lang={site.brand.locale} className={fontVariables} data-store={storeSlug()}>
       <head>
         <ThemeStyle appearance={appearance} />
       </head>

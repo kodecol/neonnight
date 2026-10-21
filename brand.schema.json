@@ -1,0 +1,289 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/kodecol/neonnight/blob/main/brand.schema.json",
+  "title": "brand.json de la plantilla jewelry-store",
+  "description": "Marca de una instancia: identidad, colores, tipografía, empresa y redes. Lo aplica `lifecycle.mjs brand:apply`. Además del esquema, se exige contraste WCAG AA y fondo oscuro.",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "slug": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]{1,30}[a-z0-9]$"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 2,
+      "maxLength": 40,
+      "description": "Nombre comercial: títulos, metadatos y textos."
+    },
+    "wordmark": {
+      "description": "Cómo se escribe junto al isotipo. Por defecto, el nombre en mayúsculas.",
+      "type": "string",
+      "minLength": 2,
+      "maxLength": 40
+    },
+    "tagline": {
+      "description": "Frase corta del hero y el pie. Por defecto, una del nicho.",
+      "type": "string",
+      "minLength": 10,
+      "maxLength": 160
+    },
+    "description": {
+      "description": "Descripción para buscadores. Por defecto, una del nicho.",
+      "type": "string",
+      "minLength": 30,
+      "maxLength": 200
+    },
+    "niche": {
+      "type": "string",
+      "enum": [
+        "relojeria",
+        "joyeria",
+        "perfumeria",
+        "ecommerce"
+      ]
+    },
+    "colors": {
+      "type": "object",
+      "properties": {
+        "accent": {
+          "type": "string",
+          "pattern": "^#[0-9a-f]{6}$"
+        },
+        "background": {
+          "type": "string",
+          "pattern": "^#[0-9a-f]{6}$"
+        },
+        "surface": {
+          "type": "string",
+          "pattern": "^#[0-9a-f]{6}$"
+        },
+        "ink": {
+          "type": "string",
+          "pattern": "^#[0-9a-f]{6}$"
+        },
+        "ink2": {
+          "type": "string",
+          "pattern": "^#[0-9a-f]{6}$"
+        },
+        "ink3": {
+          "type": "string",
+          "pattern": "^#[0-9a-f]{6}$"
+        },
+        "divider": {
+          "type": "string",
+          "pattern": "^#[0-9a-f]{6}$"
+        },
+        "border": {
+          "type": "string",
+          "pattern": "^#[0-9a-f]{6}$"
+        }
+      },
+      "required": [
+        "accent",
+        "background"
+      ],
+      "description": "Tema oscuro. Mínimo acento y fondo; el resto se deriva. Se exige contraste WCAG AA."
+    },
+    "font": {
+      "default": "archivo",
+      "description": "Una fuente del catálogo para todo, o una para títulos y otra para el cuerpo.",
+      "anyOf": [
+        {
+          "type": "string",
+          "enum": [
+            "archivo",
+            "inter",
+            "manrope",
+            "dm-sans",
+            "space-grotesk",
+            "montserrat",
+            "playfair-display",
+            "cormorant-garamond"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "body": {
+              "type": "string",
+              "enum": [
+                "archivo",
+                "inter",
+                "manrope",
+                "dm-sans",
+                "space-grotesk",
+                "montserrat",
+                "playfair-display",
+                "cormorant-garamond"
+              ]
+            },
+            "display": {
+              "type": "string",
+              "enum": [
+                "archivo",
+                "inter",
+                "manrope",
+                "dm-sans",
+                "space-grotesk",
+                "montserrat",
+                "playfair-display",
+                "cormorant-garamond"
+              ]
+            }
+          },
+          "required": [
+            "body",
+            "display"
+          ]
+        }
+      ]
+    },
+    "logo_url": {
+      "description": "Logo horizontal para fondo oscuro (SVG, PNG, WebP o AVIF transparente).",
+      "anyOf": [
+        {
+          "type": "string",
+          "maxLength": 500
+        },
+        {
+          "type": "string",
+          "pattern": "^\\/assets\\/[\\w./-]+\\.(png|webp|avif|svg)$"
+        }
+      ]
+    },
+    "isotipo_url": {
+      "description": "Isotipo cuadrado para fondo oscuro: favicon, íconos y barra.",
+      "anyOf": [
+        {
+          "type": "string",
+          "maxLength": 500
+        },
+        {
+          "type": "string",
+          "pattern": "^\\/assets\\/[\\w./-]+\\.(png|webp|avif|svg)$"
+        }
+      ]
+    },
+    "company": {
+      "type": "object",
+      "properties": {
+        "legal_name": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 60,
+          "description": "Nombre del establecimiento o razón social, como figura en la matrícula."
+        },
+        "tax_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 20,
+          "description": "NIT o número de matrícula mercantil."
+        },
+        "legal_form": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 60
+        },
+        "chamber": {
+          "description": "Cámara de Comercio. Por defecto, la de la ciudad.",
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 80
+        },
+        "city": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 60
+        },
+        "region": {
+          "description": "Departamento. Por defecto, la ciudad.",
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 60
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "pattern": "^(?:[A-Za-z0-9_'+\\-]+\\.)*[A-Za-z0-9_'+\\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
+        },
+        "privacy_email": {
+          "type": "string",
+          "format": "email",
+          "pattern": "^(?:[A-Za-z0-9_'+\\-]+\\.)*[A-Za-z0-9_'+\\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
+        },
+        "whatsapp": {
+          "description": "Kode lo pasa como WHATSAPP_NUMBER.",
+          "type": "string",
+          "pattern": "^\\+?\\d{10,15}$"
+        },
+        "address": {
+          "description": "Reservado: hoy no se muestra en el sitio.",
+          "type": "string",
+          "minLength": 5,
+          "maxLength": 160
+        },
+        "hours": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 120
+        },
+        "carrier": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 60
+        },
+        "tracking_url": {
+          "type": "string",
+          "maxLength": 500
+        }
+      },
+      "required": [
+        "legal_name",
+        "tax_id",
+        "city",
+        "email"
+      ]
+    },
+    "social": {
+      "type": "object",
+      "properties": {
+        "instagram": {
+          "type": "string",
+          "maxLength": 500
+        },
+        "facebook": {
+          "type": "string",
+          "maxLength": 500
+        },
+        "tiktok": {
+          "type": "string",
+          "maxLength": 500
+        },
+        "youtube": {
+          "type": "string",
+          "maxLength": 500
+        }
+      }
+    },
+    "locale": {
+      "default": "es-CO",
+      "type": "string",
+      "const": "es-CO"
+    },
+    "currency": {
+      "default": "COP",
+      "type": "string",
+      "const": "COP"
+    }
+  },
+  "required": [
+    "slug",
+    "name",
+    "niche",
+    "colors",
+    "company"
+  ]
+}

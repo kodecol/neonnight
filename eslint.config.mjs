@@ -42,6 +42,8 @@ const eslintConfig = [
         { type: "infrastructure", pattern: "src/infrastructure" },
         { type: "presentation", pattern: "src/presentation" },
         { type: "app", pattern: "src/app" },
+        // CLI del ciclo de vida de la plantilla (lifecycle.mjs): compone como `app`, sin Next.
+        { type: "cli", pattern: "src/cli" },
       ],
     },
     rules: {
@@ -56,6 +58,7 @@ const eslintConfig = [
             { from: { element: { type: "infrastructure" } }, allow: { to: { element: { types: { anyOf: ["domain", "application", "infrastructure"] } } } } },
             { from: { element: { type: "presentation" } }, allow: { to: { element: { types: { anyOf: ["domain", "application", "presentation"] } } } } },
             { from: { element: { type: "app" } }, allow: { to: { element: { types: { anyOf: ["domain", "application", "infrastructure", "presentation", "app"] } } } } },
+            { from: { element: { type: "cli" } }, allow: { to: { element: { types: { anyOf: ["domain", "application", "infrastructure", "cli"] } } } } },
           ],
         },
       ],

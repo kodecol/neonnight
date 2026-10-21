@@ -2,8 +2,9 @@
 import { useEffect, useState } from "react";
 import { Isotype } from "@/presentation/components/primitives/Isotype";
 import type { IdentityAsset } from "@/application/dto/identity.dto";
+import { storeKey } from "@/presentation/lib/store-key";
 
-const SESSION_KEY = "neonnight.loaded";
+const SESSION_KEY = () => storeKey("loaded");
 const TOTAL_MS = 1700 + 500;
 /** Si la página tardó más en hidratarse, ya se ve el contenido: taparlo sería peor. */
 const LATE_MS = 800;
@@ -21,8 +22,8 @@ export function LoadingScreen({ wordmark, isotype }: { wordmark: string; isotype
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     if (performance.now() > LATE_MS) return;
     try {
-      if (window.sessionStorage.getItem(SESSION_KEY)) return;
-      window.sessionStorage.setItem(SESSION_KEY, "1");
+      if (window.sessionStorage.getItem(SESSION_KEY())) return;
+      window.sessionStorage.setItem(SESSION_KEY(), "1");
     } catch {
       /* sin sessionStorage: mostrar igual */
     }

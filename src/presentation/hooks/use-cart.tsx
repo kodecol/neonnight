@@ -2,6 +2,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import type { ProductKind } from "@/domain/entities/product";
 import { track } from "@/presentation/analytics/track";
+import { storeKey } from "@/presentation/lib/store-key";
 
 export interface CartItem {
   productId: string;
@@ -37,9 +38,9 @@ interface CartApi extends CartState {
   toggle: () => void;
 }
 
-const STORAGE_KEY = "neonnight.cart.v2";
+const STORAGE_KEY = () => storeKey("cart.v2");
 /** Bolsa de la v1 (solo relojes, una unidad por pieza): se migra una vez. */
-const LEGACY_KEY = "neonnight.cart.v1";
+const LEGACY_KEY = () => storeKey("cart.v1");
 const CartContext = createContext<CartApi | null>(null);
 
 export const cartKey = (i: Pick<CartItem, "productId" | "variantId">) => `${i.productId}:${i.variantId}`;
@@ -49,12 +50,12 @@ const isItem = (i: unknown): i is CartItem =>
 
 function readStorage(): CartItem[] {
   try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
+    const raw = window.localStorage.getItem(STORAGE_KEY());
     if (raw) {
       const parsed: unknown = JSON.parse(raw);
       return Array.isArray(parsed) ? parsed.filter(isItem) : [];
     }
-    const legacy: unknown = JSON.parse(window.localStorage.getItem(LEGACY_KEY) ?? "[]");
+    const legacy: unknown = JSON.parse(window.localStorage.getItem(LEGACY_KEY()) ?? "[]");
     if (!Array.isArray(legacy)) return [];
     // El servidor resuelve la variante única cuando no viene `variantId`.
     return legacy.flatMap((l: { watchId?: unknown; slug?: unknown; name?: unknown; subtitle?: unknown; priceCents?: unknown }) =>
@@ -82,8 +83,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!state.hydrated) return;
     try {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state.items));
-      window.localStorage.removeItem(LEGACY_KEY);
+      window.localStorage.setItem(STORAGE_KEY(), JSON.stringify(state.items));
+      window.localStorage.removeItem(LEGACY_KEY());
     } catch {
       /* almacenamiento no disponible: la bolsa vive solo en memoria */
     }

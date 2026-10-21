@@ -1,14 +1,16 @@
+import { storeKey } from "@/presentation/lib/store-key";
 /**
  * Consentimiento de cookies (Ley 1581 de 2012): nada de analítica ni
  * publicidad se carga sin una elección expresa. La elección vive en el
  * navegador y caduca a los 12 meses, como dice la política de privacidad.
  */
-export const CONSENT_KEY = "neonnight.consent.v1";
+/** Clave en localStorage (con el slug de la tienda). */
+export const consentKey = () => storeKey("consent.v1");
 export const CONSENT_MAX_AGE_MS = 365 * 24 * 60 * 60 * 1000;
 /** Se emite al guardar una elección (`detail`: Consent). */
-export const CONSENT_EVENT = "neonnight:consent";
+export const CONSENT_EVENT = "tienda:consent";
 /** Pide reabrir el banner (enlace "Preferencias de cookies"). */
-export const OPEN_PREFERENCES_EVENT = "neonnight:consent-open";
+export const OPEN_PREFERENCES_EVENT = "tienda:consent-open";
 
 export interface Consent {
   analytics: boolean;
@@ -35,7 +37,7 @@ export function parseConsent(raw: string | null, now: number = Date.now()): Cons
 
 export function readConsent(): Consent | null {
   try {
-    return parseConsent(window.localStorage.getItem(CONSENT_KEY));
+    return parseConsent(window.localStorage.getItem(consentKey()));
   } catch {
     return null;
   }
@@ -44,7 +46,7 @@ export function readConsent(): Consent | null {
 export function saveConsent(choice: Pick<Consent, "analytics" | "marketing">): Consent {
   const consent: Consent = { ...choice, at: new Date().toISOString() };
   try {
-    window.localStorage.setItem(CONSENT_KEY, JSON.stringify(consent));
+    window.localStorage.setItem(consentKey(), JSON.stringify(consent));
   } catch {
     /* sin almacenamiento: la elección vale solo para esta visita */
   }

@@ -1,0 +1,23 @@
+{
+  "$schema": "../brand.schema.json",
+  "slug": "aurora-joyeria",
+  "name": "Aurora Joyería",
+  "wordmark": "AURORA",
+  "tagline": "Joyas en oro y plata hechas para quedarse contigo.",
+  "niche": "joyeria",
+  "colors": { "accent": "#9a6f12", "background": "#0a0805" },
+  "font": { "display": "cormorant-garamond", "body": "manrope" },
+  "company": {
+    "legal_name": "Aurora Joyería S.A.S.",
+    "tax_id": "901234567-8",
+    "legal_form": "Sociedad por acciones simplificada",
+    "city": "Medellín",
+    "region": "Antioquia",
+    "email": "hola@aurora-joyeria.example",
+    "whatsapp": "573001234567",
+    "address": "Calle 10 # 40-20, El Poblado"
+  },
+  "social": { "instagram": "https://www.instagram.com/aurora.joyeria.demo/" },
+  "locale": "es-CO",
+  "currency": "COP"
+}

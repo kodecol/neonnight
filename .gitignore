@@ -48,3 +48,6 @@ next-env.d.ts
 /playwright-report
 /test-results
 /blob-report
+
+# CLI del ciclo de vida empaquetado (npm run build:lifecycle)
+/dist

@@ -22,7 +22,7 @@ import { InMemoryLineRepository } from "./repositories/in-memory-line-repository
 import { InMemoryOrderRepository } from "./repositories/in-memory-order-repository";
 import { InMemoryCategoryRepository } from "./repositories/in-memory-category-repository";
 import { InMemoryPaymentSettingsRepository } from "./repositories/in-memory-payment-settings-repository";
-import { mongoDb } from "./mongo/client";
+import { mongoDb, mongoDbName } from "./mongo/client";
 import { MongoProductRepository } from "./mongo/mongo-product-repository";
 import { MongoLineRepository } from "./mongo/mongo-line-repository";
 import { MongoOrderRepository } from "./mongo/mongo-order-repository";
@@ -36,7 +36,7 @@ import { MongoHomeSettingsRepository, MongoSiteMediaRepository } from "./mongo/m
 import { InMemoryHomeSettingsRepository, InMemorySiteMediaRepository } from "./repositories/in-memory-site-content-repositories";
 import { InMemoryCompanySettingsRepository, InMemoryLegalPagesRepository } from "./repositories/in-memory-legal-repositories";
 import { MongoCompanySettingsRepository, MongoLegalPagesRepository } from "./mongo/mongo-legal-repositories";
-import { CloudinaryMediaRemover, CloudinaryVideoSigner, DisabledVideoSigner, NoopMediaRemover, SITE_FOLDER } from "./media/cloudinary-site-media";
+import { CloudinaryMediaRemover, CloudinaryVideoSigner, DisabledVideoSigner, NoopMediaRemover, siteFolder } from "./media/cloudinary-site-media";
 import { NoopPaymentGateway } from "./payments/noop-payment-gateway";
 import { BoldPaymentGateway } from "./payments/bold-payment-gateway";
 import { LocalDiskMediaUploader } from "./media/local-disk-uploader";
@@ -76,7 +76,7 @@ export interface Container {
   /** Marcas del catálogo (panel › Marcas) y el rótulo y aviso del marquee. */
   brands: BrandRepository;
   brandsCopy: BrandsCopyRepository;
-  /** Logos de marca: Cloudinary `neonnight/sitio/marcas` o disco local. */
+  /** Logos de marca: Cloudinary `<slug>/sitio/marcas` o disco local. */
   brandUploader: MediaUploader;
   orders: OrderRepository;
   paymentSettings: PaymentSettingsRepository;
@@ -101,7 +101,7 @@ export interface Container {
   checkoutThrottle: LoginThrottle;
   /** WhatsApp con formato legible, para las fichas de las páginas legales. */
   whatsappLabel: string | null;
-  /** Fotos del sitio: Cloudinary `neonnight/sitio` o disco local. */
+  /** Fotos del sitio: Cloudinary `<slug>/sitio` o disco local. */
   siteUploader: MediaUploader;
   videoSigner: VideoUploadSigner;
   mediaRemover: MediaRemover;
@@ -145,7 +145,7 @@ function persistence(): Pick<Container, "products" | "lines" | "categories" | "b
       adminCredentials: new InMemoryAdminCredentialsRepository(),
     };
   }
-  const db = mongoDb(uri, process.env.MONGODB_DB || "neonnight");
+  const db = mongoDb(uri, mongoDbName());
   return {
     products: new MongoProductRepository(db),
     lines: new MongoLineRepository(db),
@@ -174,7 +174,7 @@ export function createContainer(overrides: Partial<Container> = {}): Container {
     categories: base.categories,
     brands: base.brands,
     brandsCopy: base.brandsCopy,
-    brandUploader: overrides.brandUploader ?? (process.env.CLOUDINARY_URL ? new CloudinaryMediaUploader(`${SITE_FOLDER}/marcas`) : new LocalDiskMediaUploader()),
+    brandUploader: overrides.brandUploader ?? (process.env.CLOUDINARY_URL ? new CloudinaryMediaUploader(`${siteFolder()}/marcas`) : new LocalDiskMediaUploader()),
     orders: base.orders,
     paymentSettings: base.paymentSettings,
     siteMedia: base.siteMedia,
@@ -183,13 +183,13 @@ export function createContainer(overrides: Partial<Container> = {}): Container {
     companySettings: base.companySettings,
     identity: base.identity,
     appearance: base.appearance,
-    identityUploader: overrides.identityUploader ?? (process.env.CLOUDINARY_URL ? new CloudinaryMediaUploader(`${SITE_FOLDER}/identidad`) : new LocalDiskMediaUploader()),
+    identityUploader: overrides.identityUploader ?? (process.env.CLOUDINARY_URL ? new CloudinaryMediaUploader(`${siteFolder()}/identidad`) : new LocalDiskMediaUploader()),
     adminCredentials: base.adminCredentials,
     passwordHasher: overrides.passwordHasher ?? new ScryptPasswordHasher(),
     loginThrottles: overrides.loginThrottles ?? createLoginThrottles(),
     checkoutThrottle: overrides.checkoutThrottle ?? new InMemoryLoginThrottle(Number(process.env.CHECKOUT_RATE_LIMIT) || 10, 60_000),
     whatsappLabel: staticContent.whatsapp,
-    siteUploader: overrides.siteUploader ?? (process.env.CLOUDINARY_URL ? new CloudinaryMediaUploader(SITE_FOLDER) : new LocalDiskMediaUploader()),
+    siteUploader: overrides.siteUploader ?? (process.env.CLOUDINARY_URL ? new CloudinaryMediaUploader(siteFolder()) : new LocalDiskMediaUploader()),
     videoSigner: overrides.videoSigner ?? (process.env.CLOUDINARY_URL ? new CloudinaryVideoSigner() : new DisabledVideoSigner()),
     mediaRemover: overrides.mediaRemover ?? (process.env.CLOUDINARY_URL ? new CloudinaryMediaRemover() : new NoopMediaRemover()),
     payments: overrides.payments ?? new BoldPaymentGateway(base.paymentSettings, new NoopPaymentGateway()),

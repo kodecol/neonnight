@@ -1,4 +1,5 @@
-/** Sustituye `{clave}` por valores. Claves sin valor se dejan intactas. */
-export function fill(template: string, values: Record<string, string | number>): string {
-  return template.replace(/\{(\w+)\}/g, (m, k: string) => (k in values ? String(values[k]) : m));
-}
+/**
+ * Identidad de la plantilla para la plataforma Kodecol. `version` sigue a
+ * package.json y a template.manifest.json (un test exige que coincidan).
+ */
+export const TEMPLATE = { name: "jewelry-store", version: "1.0.0" } as const;

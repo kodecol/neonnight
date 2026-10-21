@@ -92,7 +92,7 @@ describe("Páginas institucionales y legales", () => {
 
   it("la política de privacidad lista las cookies que usa el sitio", async () => {
     const privacy = pageText((await repo.page("privacidad"))!);
-    for (const name of ["neonnight.cart.v2", "neonnight.consent.v1", "_ga", "_fbp"]) expect(privacy).toContain(name);
+    for (const name of ["tienda.cart.v2", "tienda.consent.v1", "_ga", "_fbp"]) expect(privacy).toContain(name);
   });
 });
 

@@ -1,8 +1,9 @@
 import { v2 as cloudinary } from "cloudinary";
+import { mediaFolders } from "../config/store";
 import type { DirectUploadTicket, MediaRemover, SiteMediaKind, VideoUploadSigner } from "@/application/ports/site-media";
 
-/** Carpeta de los medios del sitio (fuera del catálogo). */
-export const SITE_FOLDER = "neonnight/sitio";
+/** Carpeta de los medios del sitio (fuera del catálogo): `<slug>/sitio`. */
+export const siteFolder = () => mediaFolders().site;
 
 const configured = () => {
   cloudinary.config({ secure: true });
@@ -23,14 +24,14 @@ export class CloudinaryVideoSigner implements VideoUploadSigner {
     const c = configured();
     if (!c) throw new Error("Cloudinary no está configurado.");
     const timestamp = String(Math.round(Date.now() / 1000));
-    const params = { folder: SITE_FOLDER, timestamp };
+    const params = { folder: siteFolder(), timestamp };
     const signature = cloudinary.utils.api_sign_request(params, c.api_secret!);
     return { url: `https://api.cloudinary.com/v1_1/${c.cloud_name}/video/upload`, fields: { ...params, api_key: c.api_key!, signature } };
   }
 
   owns(src: string): boolean {
     const c = configured();
-    return !!c && src.startsWith(`https://res.cloudinary.com/${c.cloud_name}/video/upload/`) && src.includes(`/${SITE_FOLDER}/`);
+    return !!c && src.startsWith(`https://res.cloudinary.com/${c.cloud_name}/video/upload/`) && src.includes(`/${siteFolder()}/`);
   }
 
   posterOf(src: string): string {
@@ -38,7 +39,7 @@ export class CloudinaryVideoSigner implements VideoUploadSigner {
   }
 }
 
-/** `https://res.cloudinary.com/<nube>/image/upload/v123/neonnight/sitio/x.jpg` → `neonnight/sitio/x`. */
+/** `https://res.cloudinary.com/<nube>/image/upload/v123/<slug>/sitio/x.jpg` → `<slug>/sitio/x`. */
 export function publicIdOf(src: string): string | null {
   const m = /\/(?:image|video)\/upload\/(?:v\d+\/)?(.+)\.\w+$/.exec(src);
   return m ? m[1]! : null;
@@ -48,7 +49,7 @@ export function publicIdOf(src: string): string | null {
 export class CloudinaryMediaRemover implements MediaRemover {
   async remove(src: string, kind: SiteMediaKind): Promise<void> {
     const id = publicIdOf(src);
-    if (!id || !id.startsWith(`${SITE_FOLDER}/`) || !configured()) return;
+    if (!id || !id.startsWith(`${siteFolder()}/`) || !configured()) return;
     await cloudinary.uploader.destroy(id, { resource_type: kind, invalidate: true });
   }
 }

@@ -1,4 +1,5 @@
 import { v2 as cloudinary, type UploadApiResponse } from "cloudinary";
+import { mediaFolders } from "../config/store";
 import type { MediaUpload, MediaUploader, StoredMedia } from "@/application/ports/media-uploader";
 
 /** Formato que Cloudinary debe detectar para cada tipo (ya confirmado por los bytes al subir). */
@@ -8,7 +9,7 @@ const FORMATS: Record<string, string[]> = { "image/jpeg": ["jpg"], "image/png": 
 export class CloudinaryMediaUploader implements MediaUploader {
   readonly kind = "cloudinary" as const;
 
-  constructor(private readonly folder = "neonnight/catalogo/subidas") {
+  constructor(private readonly folder = mediaFolders().catalogUploads) {
     cloudinary.config({ secure: true });
   }
 
