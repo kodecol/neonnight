@@ -9,18 +9,24 @@ import { E2E_ADMIN_PASSWORD } from "../../playwright.config";
 const unique = () => `Prueba ${Math.random().toString(36).slice(2, 8)}${Date.now().toString(36)}`;
 
 async function createOrder(request: APIRequestContext, name = "Laura Gómez"): Promise<{ orderId: string; version: string }> {
-  const terms = await (await request.get("/terminos")).text();
-  const version = /Versión ([\d.]+)/.exec(terms)?.[1] ?? "1.0";
-  const res = await request.post("/api/checkout", {
-    data: {
-      lines: [{ productId: "pf-02", variantId: "70-ml", quantity: 1 }],
-      customer: { name, documentType: "CC", documentNumber: "52123456", email: "laura@example.com", phone: "3109876543", address: "Cra 7 # 72-10", city: "Bogotá", department: "Bogotá D.C." },
-      consent: { accepted: true, termsVersion: version, privacyVersion: version },
-    },
-  });
-  expect(res.status()).toBe(200);
-  const { orderId } = (await res.json()) as { orderId: string };
-  return { orderId, version };
+  // legal-admin.spec publica versiones de los términos en paralelo: si la versión
+  // leída quedó vieja (409 de consentimiento), se vuelve a leer y se reintenta.
+  for (let attempt = 0; ; attempt++) {
+    const terms = await (await request.get("/terminos")).text();
+    const version = /Versión ([\d.]+)/.exec(terms)?.[1] ?? "1.0";
+    const res = await request.post("/api/checkout", {
+      data: {
+        lines: [{ productId: "pf-02", variantId: "70-ml", quantity: 1 }],
+        customer: { name, documentType: "CC", documentNumber: "52123456", email: "laura@example.com", phone: "3109876543", address: "Cra 7 # 72-10", city: "Bogotá", department: "Bogotá D.C." },
+        consent: { accepted: true, termsVersion: version, privacyVersion: version },
+      },
+    });
+    const body = await res.text();
+    if (res.status() === 409 && body.includes('"consent"') && attempt < 4) continue;
+    expect(res.status(), body).toBe(200);
+    const { orderId } = JSON.parse(body) as { orderId: string };
+    return { orderId, version };
+  }
 }
 
 async function login(page: Page) {

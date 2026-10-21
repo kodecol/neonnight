@@ -56,7 +56,7 @@ export function PaymentSettingsForm({
   }
 
   return (
-    <div className="grid gap-x-14 gap-y-12 xl:grid-cols-[minmax(0,1fr)_400px]">
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-x-14 gap-y-12 xl:grid-cols-[minmax(0,1fr)_400px]">
       <div className="min-w-0">
         <StatusPanel view={view} />
 
