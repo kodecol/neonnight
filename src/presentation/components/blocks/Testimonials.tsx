@@ -177,12 +177,13 @@ export function Testimonials({ content }: { content: SiteContent["home"]["testim
   );
 }
 
+/** El degradado mezcla texto y fondo del tema: de fábrica da #181818 → #0c0c0c → #050505. */
 function Card({ t, active }: { t: Testimonial; active: boolean }) {
   const stars = Math.max(0, Math.min(5, Math.round(t.rating)));
   return (
     <figure
       className={cn(
-        "relative m-0 flex h-full flex-col overflow-hidden border bg-[linear-gradient(160deg,#181818_0%,#0c0c0c_52%,#050505_100%)] p-7 transition-colors duration-700 md:p-10",
+        "relative m-0 flex h-full flex-col overflow-hidden border bg-[linear-gradient(160deg,color-mix(in_srgb,var(--color-ink)_9.41%,var(--color-bg))_0%,color-mix(in_srgb,var(--color-ink)_4.71%,var(--color-bg))_52%,color-mix(in_srgb,var(--color-ink)_1.96%,var(--color-bg))_100%)] p-7 transition-colors duration-700 md:p-10",
         active ? "border-border-strong" : "border-divider",
       )}
     >
