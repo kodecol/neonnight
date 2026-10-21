@@ -13,5 +13,5 @@ export const dynamic = "force-dynamic";
 export default async function LoginPage() {
   if (await isAdmin()) redirect("/admin/catalogo");
   const [{ brand }, account] = await Promise.all([getContainer().content.get(), adminAccount().view()]);
-  return <LoginForm wordmark={brand.wordmark} login={loginAction} configured={isAdminConfigured(account.stored)} />;
+  return <LoginForm wordmark={brand.wordmark} isotype={brand.isotype} login={loginAction} configured={isAdminConfigured(account.stored)} />;
 }

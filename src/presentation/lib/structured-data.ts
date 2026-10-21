@@ -41,7 +41,7 @@ export function onlineStore(site: SiteContent, opts: { telephone: string | null 
     name: site.brand.name,
     legalName: site.company.tradeName,
     url: absoluteUrl("/"),
-    logo: absoluteUrl(site.brand.logo.color),
+    logo: absoluteUrl(site.brand.isotype?.src ?? site.brand.logo.color),
     image: absoluteUrl("/og/inicio.jpg"),
     description: site.brand.description,
     foundingDate: String(site.company.foundingYear),

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { SITE_CONTENT } from "@/infrastructure/content/site-content";
 import { StaticSiteContentRepository } from "@/infrastructure/content/static-site-content-repository";
 import { fill } from "@/application/lib/template";
+import { fillStoreName } from "@/application/ports/identity-settings";
 import { WaMeLinkBuilder } from "@/infrastructure/whatsapp/wa-me-link-builder";
 import { SEED_LINES } from "@/infrastructure/cms/seed";
 import { LINE_TEMPLATES } from "@/domain/entities/product-line";
@@ -24,7 +25,7 @@ describe("Contenido centralizado", () => {
     expect(fill(SITE_CONTENT.home.lines.ctaTemplate, { label: "perfumería" })).toBe("Explorar perfumería");
     expect(fill(SITE_CONTENT.collection.resultsTemplate, { count: 12 })).toBe("12 piezas");
     expect(fill(SITE_CONTENT.product.purchase.lowStockTemplate, { count: 2 })).toBe("Quedan 2");
-    expect(fill(SITE_CONTENT.footer.copyrightTemplate, { year: 2026 })).toBe("© 2026 Neon Night");
+    expect(fill(fillStoreName(SITE_CONTENT.footer.copyrightTemplate, SITE_CONTENT.brand.name), { year: 2026 })).toBe("© 2026 Neon Night");
     expect(fill("sin claves {x}", {})).toBe("sin claves {x}");
   });
 

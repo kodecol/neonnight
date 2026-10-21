@@ -53,6 +53,9 @@ import { SEED_BRANDS, SEED_CATEGORIES, SEED_LINES, SEED_PRODUCTS } from "./cms/s
 import { SITE_CONTENT } from "./content/site-content";
 import { StaticSiteContentRepository } from "./content/static-site-content-repository";
 import { ManagedSiteContentRepository } from "./content/managed-site-content-repository";
+import { InMemoryIdentitySettingsRepository } from "./repositories/in-memory-identity-repository";
+import { MongoIdentitySettingsRepository } from "./mongo/mongo-identity-repository";
+import type { IdentitySettingsRepository } from "@/application/ports/identity-settings";
 
 /**
  * Contenedor tipado y explícito. Sin framework de DI.
@@ -80,6 +83,11 @@ export interface Container {
   /** Páginas legales editadas y datos de la empresa (panel › Legales). */
   legalPages: LegalPagesRepository;
   companySettings: CompanySettingsRepository;
+  /** Identidad de la tienda (nombre, wordmark, isotipo, logo): panel › Identidad. */
+  identity: IdentitySettingsRepository;
+  /** Contenido del código, sin nada de lo editado en el panel (la identidad "de fábrica"). */
+  codeContent: SiteContentRepository;
+  identityUploader: MediaUploader;
   /** Contraseña (hash) y versión de sesión del administrador (panel › Cuenta). */
   adminCredentials: AdminCredentialsRepository;
   passwordHasher: PasswordHasher;
@@ -110,7 +118,7 @@ export interface Container {
 const g: { __nnContainer?: Container | null } =
   process.env.NODE_ENV === "production" ? (globalThis as unknown as { __nnContainer?: Container | null }) : {};
 
-function persistence(): Pick<Container, "products" | "lines" | "categories" | "brands" | "brandsCopy" | "orders" | "paymentSettings" | "siteMedia" | "homeSettings" | "legalPages" | "companySettings" | "adminCredentials"> {
+function persistence(): Pick<Container, "products" | "lines" | "categories" | "brands" | "brandsCopy" | "orders" | "paymentSettings" | "siteMedia" | "homeSettings" | "legalPages" | "companySettings" | "identity" | "adminCredentials"> {
   const uri = process.env.MONGODB_URI;
   if (!uri) {
     return {
@@ -125,6 +133,7 @@ function persistence(): Pick<Container, "products" | "lines" | "categories" | "b
       homeSettings: new InMemoryHomeSettingsRepository(),
       legalPages: new InMemoryLegalPagesRepository(),
       companySettings: new InMemoryCompanySettingsRepository(),
+      identity: new InMemoryIdentitySettingsRepository(),
       adminCredentials: new InMemoryAdminCredentialsRepository(),
     };
   }
@@ -141,6 +150,7 @@ function persistence(): Pick<Container, "products" | "lines" | "categories" | "b
     homeSettings: new MongoHomeSettingsRepository(db),
     legalPages: new MongoLegalPagesRepository(db),
     companySettings: new MongoCompanySettingsRepository(db),
+    identity: new MongoIdentitySettingsRepository(db),
     adminCredentials: new MongoAdminCredentialsRepository(db),
   };
 }
@@ -162,6 +172,8 @@ export function createContainer(overrides: Partial<Container> = {}): Container {
     homeSettings: base.homeSettings,
     legalPages: base.legalPages,
     companySettings: base.companySettings,
+    identity: base.identity,
+    identityUploader: overrides.identityUploader ?? (process.env.CLOUDINARY_URL ? new CloudinaryMediaUploader(`${SITE_FOLDER}/identidad`) : new LocalDiskMediaUploader()),
     adminCredentials: base.adminCredentials,
     passwordHasher: overrides.passwordHasher ?? new ScryptPasswordHasher(),
     loginThrottles: overrides.loginThrottles ?? createLoginThrottles(),
@@ -188,7 +200,8 @@ export function createContainer(overrides: Partial<Container> = {}): Container {
         company: base.companySettings,
         codePages: (company, policies) => staticContent.pagesFor(company, policies),
         whatsapp: staticContent.whatsapp,
-      }),
+      }, base.identity),
+    codeContent: staticContent,
     tracking: overrides.tracking ?? trackingIds({ ga: process.env.GA_MEASUREMENT_ID, pixel: process.env.META_PIXEL_ID }),
   };
 }

@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { Isotype } from "@/presentation/components/primitives/Isotype";
+import type { IdentityAsset } from "@/application/dto/identity.dto";
 
 const SESSION_KEY = "neonnight.loaded";
 const TOTAL_MS = 1700 + 500;
@@ -10,7 +11,7 @@ const TOTAL_MS = 1700 + 500;
  * contenido a los rastreadores. Se desmonta del DOM al terminar, no se
  * renderiza bajo prefers-reduced-motion y solo aparece una vez por sesión.
  */
-export function LoadingScreen({ wordmark }: { wordmark: string }) {
+export function LoadingScreen({ wordmark, isotype }: { wordmark: string; isotype?: IdentityAsset | null }) {
   const [show, setShow] = useState(false);
 
   useEffect(() => {
@@ -32,7 +33,7 @@ export function LoadingScreen({ wordmark }: { wordmark: string }) {
     <div className="nn-loader fixed inset-0 z-[9999] flex items-center justify-center bg-bg" aria-hidden="true" data-testid="loading-screen">
       <div className="nn-loader-bar absolute left-0 top-0 h-[3px] bg-ink" />
       <div className="flex flex-col items-center gap-[22px]">
-        <Isotype size={64} className="opacity-90" priority />
+        <Isotype size={64} asset={isotype} className="opacity-90" priority />
         <div className="nn-loader-mark text-label-lg uppercase tracking-[0.34em] text-ink">{wordmark}</div>
       </div>
     </div>

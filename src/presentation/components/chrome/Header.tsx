@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { Isotype } from "@/presentation/components/primitives/Isotype";
+import { Isotype, WideLogo } from "@/presentation/components/primitives/Isotype";
 import { useCart } from "@/presentation/hooks/use-cart";
 import { ROUTES } from "@/presentation/lib/site";
 import { cn } from "@/presentation/lib/cn";
@@ -59,8 +59,14 @@ export function Header({
           aria-label={`${brand.name}, inicio`}
           data-testid="header-logo"
         >
-          <Isotype size={44} priority className="transition-transform duration-500 ease-[var(--ease-reveal)] group-hover:-rotate-6" />
-          <span className="hidden text-[17px] font-semibold uppercase leading-none tracking-[0.32em] lg:inline">{brand.wordmark}</span>
+          {brand.logoWide ? (
+            <WideLogo asset={brand.logoWide} height={30} priority />
+          ) : (
+            <>
+              <Isotype size={44} asset={brand.isotype} priority className="transition-transform duration-500 ease-[var(--ease-reveal)] group-hover:-rotate-6" />
+              <span className="hidden text-[17px] font-semibold uppercase leading-none tracking-[0.32em] lg:inline">{brand.wordmark}</span>
+            </>
+          )}
         </Link>
 
         <nav className="flex items-center gap-5 text-label uppercase md:gap-[34px]" aria-label="Principal">

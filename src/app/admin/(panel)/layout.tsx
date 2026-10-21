@@ -9,7 +9,7 @@ export default async function PanelLayout({ children }: { children: React.ReactN
   await requireAdmin();
   const { brand } = await getContainer().content.get();
   return (
-    <AdminShell wordmark={brand.wordmark} logout={logoutAction}>
+    <AdminShell wordmark={brand.wordmark} isotype={brand.isotype} logout={logoutAction}>
       {children}
     </AdminShell>
   );
