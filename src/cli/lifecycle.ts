@@ -18,13 +18,13 @@ import { ZodError } from "zod";
 import { DomainError } from "@/domain/errors";
 import { ApplyBrandConfig } from "@/application/use-cases/admin/brand-config";
 import { SeedDemoCatalog } from "@/application/use-cases/admin/seed-demo";
-import { TEMPLATE } from "@/application/lib/template";
+import { TEMPLATE } from "@/application/lib/template-info";
 import { createContainer } from "@/infrastructure/container";
 import { mongoDb, mongoDbName } from "@/infrastructure/mongo/client";
 import { runMigrations, SCHEMA_VERSION, schemaVersionOf } from "@/infrastructure/mongo/migrations";
 import { MongoBrandFingerprint } from "@/infrastructure/brand/brand-fingerprint";
 import { resolveBrandAsset } from "@/infrastructure/brand/brand-assets";
-import { DEMO_NICHES, demoPack, type DemoNiche } from "@/infrastructure/cms/demo";
+import { DEMO_NICHES, demoPack, isDemoNiche } from "@/infrastructure/cms/demo";
 
 class UsageError extends Error {}
 
@@ -88,11 +88,11 @@ const commands: Record<string, () => Promise<Record<string, unknown>>> = {
 
   async seed() {
     const niche = arg("niche");
-    if (!niche || !(DEMO_NICHES as readonly string[]).includes(niche)) throw new UsageError(`Uso: seed --niche <${DEMO_NICHES.join("|")}>`);
+    if (!niche || !isDemoNiche(niche)) throw new UsageError(`Uso: seed --niche <${DEMO_NICHES.join("|")}>`);
     requireDb();
     await withDb(runMigrations);
     const c = createContainer();
-    const result = await new SeedDemoCatalog(c).execute(niche, demoPack(niche as DemoNiche), { force: flag("force") });
+    const result = await new SeedDemoCatalog(c).execute(niche, demoPack(niche), { force: flag("force") });
     return { command: "seed", ...result };
   },
 };

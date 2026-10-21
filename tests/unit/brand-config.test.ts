@@ -5,7 +5,7 @@ import { ZodError } from "zod";
 import { BrandConfigSchema, brandAppearance, brandColors, brandCompany } from "@/application/dto/brand-config.dto";
 import { StoreAppearanceSchema, contrastChecks } from "@/application/dto/appearance.dto";
 import { ApplyBrandConfig } from "@/application/use-cases/admin/brand-config";
-import { TEMPLATE } from "@/application/lib/template";
+import { TEMPLATE } from "@/application/lib/template-info";
 import { SCHEMA_VERSION } from "@/infrastructure/mongo/migrations";
 import { createContainer } from "@/infrastructure/container";
 import { InMemoryBrandFingerprint } from "@/infrastructure/brand/brand-fingerprint";
@@ -87,5 +87,23 @@ describe("brand:apply", () => {
     await expect(apply.execute({ ...example, colors: { accent: "#f5d90a", background: "#0a0805" } })).rejects.toBeInstanceOf(ZodError);
     expect(await c.identity.get()).toBeNull();
     expect(await c.appearance.get()).toBeNull();
+  });
+});
+
+describe("Prefijo del número de pedido", () => {
+  it("sale de STORE_ORDER_PREFIX o de las iniciales del slug", async () => {
+    const { orderPrefix } = await import("@/infrastructure/config/store");
+    const { newOrderId } = await import("@/domain/entities/order");
+    const env = { ...process.env };
+    try {
+      process.env.STORE_SLUG = "aurora-joyeria";
+      delete process.env.STORE_ORDER_PREFIX;
+      expect(orderPrefix()).toBe("AJ");
+      process.env.STORE_ORDER_PREFIX = "nn";
+      expect(orderPrefix()).toBe("NN");
+    } finally {
+      process.env = env;
+    }
+    expect(newOrderId(new Date("2026-10-21T12:00:00Z"), "abc12", "AJ")).toBe("AJ-261021-ABC12");
   });
 });

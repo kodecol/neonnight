@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getContainer } from "@/infrastructure/container";
-import { TEMPLATE } from "@/application/lib/template";
+import { TEMPLATE } from "@/application/lib/template-info";
 import { SCHEMA_VERSION } from "@/infrastructure/mongo/migrations";
 
 export const dynamic = "force-dynamic";

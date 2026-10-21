@@ -101,9 +101,10 @@ export const paymentLinkMayBeLive = (o: Order, now: Date): boolean =>
 /** Añade eventos al historial (inmutable). */
 export const withEvents = (o: Order, ...events: OrderEvent[]): Order => ({ ...o, events: [...o.events, ...events] });
 
-/** Referencia legible para el cliente: NN-AAMMDD-XXXXX. */
-export function newOrderId(now: Date, random: string): OrderId {
+/** Referencia legible para el cliente: <PREFIJO>-AAMMDD-XXXXX (prefijo de la tienda, p. ej. "NN"). */
+export function newOrderId(now: Date, random: string, prefix: string): OrderId {
   const d = now.toISOString().slice(2, 10).replace(/-/g, "");
   const suffix = random.replace(/[^a-z0-9]/gi, "").toUpperCase().padStart(5, "0").slice(-5);
-  return orderId(`NN-${d}-${suffix}`);
+  const p = prefix.replace(/[^A-Z]/gi, "").toUpperCase().slice(0, 4) || "P";
+  return orderId(`${p}-${d}-${suffix}`);
 }

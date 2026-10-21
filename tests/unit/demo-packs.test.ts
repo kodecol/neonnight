@@ -182,13 +182,13 @@ describe("Catálogos de demo", () => {
     });
   }
 
-  it("ninguna parte de la app importa los demos todavía (los conecta el comando seed)", () => {
+  it("solo el CLI del ciclo de vida importa los demos (no llegan al bundle de la tienda)", () => {
     const offenders: string[] = [];
     const walk = (dir: string) => {
       for (const name of readdirSync(dir)) {
         const path = join(dir, name);
         if (statSync(path).isDirectory()) {
-          if (path !== join("src", "infrastructure", "cms", "demo")) walk(path);
+          if (path !== join("src", "infrastructure", "cms", "demo") && path !== join("src", "cli")) walk(path);
         } else if (/\.(ts|tsx)$/.test(name) && /cms\/demo["/]/.test(readFileSync(path, "utf8"))) offenders.push(path);
       }
     };

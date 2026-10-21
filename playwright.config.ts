@@ -45,6 +45,7 @@ export default defineConfig({
       ADMIN_PASSWORD: E2E_ADMIN_PASSWORD,
       // Los e2e crean muchos pedidos desde la misma IP.
       CHECKOUT_RATE_LIMIT: "10000",
+      STORE_ORDER_PREFIX: "NN",
       ADMIN_SECRET: "e2e-secret-e2e-secret-e2e-secret-0000",
       GA_MEASUREMENT_ID: E2E_GA_ID,
       META_PIXEL_ID: E2E_PIXEL_ID,

@@ -22,6 +22,8 @@ export interface CheckoutDeps {
   analytics: Analytics;
   clock: Clock;
   ids: IdGenerator;
+  /** Prefijo del número de pedido de la tienda ("NN-261021-…"). */
+  orderPrefix: string;
 }
 
 /** El envío dentro de Colombia no tiene costo (ver /envios y `policies.shipping.free`). */
@@ -133,7 +135,7 @@ export class Checkout {
     const now = this.deps.clock.now();
 
     const order: Order = {
-      id: newOrderId(now, this.deps.ids.next()),
+      id: newOrderId(now, this.deps.ids.next(), this.deps.orderPrefix),
       lines: orderLines,
       total,
       shipping: SHIPPING,

@@ -18,3 +18,4 @@ public/assets/lines
 public/assets/ref*.png
 public/assets/*.mp4
 public/assets/*-poster.jpg
+dist

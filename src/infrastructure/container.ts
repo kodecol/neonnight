@@ -23,6 +23,7 @@ import { InMemoryOrderRepository } from "./repositories/in-memory-order-reposito
 import { InMemoryCategoryRepository } from "./repositories/in-memory-category-repository";
 import { InMemoryPaymentSettingsRepository } from "./repositories/in-memory-payment-settings-repository";
 import { mongoDb, mongoDbName } from "./mongo/client";
+import { orderPrefix } from "./config/store";
 import { MongoProductRepository } from "./mongo/mongo-product-repository";
 import { MongoLineRepository } from "./mongo/mongo-line-repository";
 import { MongoOrderRepository } from "./mongo/mongo-order-repository";
@@ -111,6 +112,8 @@ export interface Container {
   whatsapp: WhatsAppLinkBuilder;
   clock: Clock;
   ids: IdGenerator;
+  /** Prefijo del número de pedido (STORE_ORDER_PREFIX o iniciales del slug). */
+  orderPrefix: string;
   content: SiteContentRepository;
   /** IDs de Google Analytics y del píxel de Meta (runtime, ya validados). */
   tracking: TrackingIds;
@@ -204,6 +207,7 @@ export function createContainer(overrides: Partial<Container> = {}): Container {
       }),
     clock: overrides.clock ?? new SystemClock(),
     ids: overrides.ids ?? new RandomIdGenerator(),
+    orderPrefix: overrides.orderPrefix ?? orderPrefix(),
     content:
       overrides.content ??
       new ManagedSiteContentRepository(staticContent, base.homeSettings, {

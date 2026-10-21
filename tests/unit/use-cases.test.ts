@@ -254,7 +254,7 @@ describe("Checkout", () => {
   const body = (lines: unknown[], extra: Record<string, unknown> = {}) => ({ lines, customer, consent, ...extra });
   const make = (products: readonly Product[] = SEED_PRODUCTS, over: Parameters<typeof createContainer>[0] = {}) => {
     const orders = new InMemoryOrderRepository();
-    const c = createContainer({ products: repo(products), orders, analytics: new NoopAnalytics(), clock: fixedClock, ids: seqIds(), ...over });
+    const c = createContainer({ products: repo(products), orders, analytics: new NoopAnalytics(), clock: fixedClock, ids: seqIds(), orderPrefix: "NN", ...over });
     return { uc: new Checkout(c), orders };
   };
 
@@ -355,7 +355,7 @@ describe("Checkout", () => {
   it("pedidos en el panel: marcar pagado descuenta stock; Bold no se toca a mano", async () => {
     const { uc, orders } = make();
     const products = repo();
-    const { orderId: id } = await new Checkout(createContainer({ products, orders, analytics: new NoopAnalytics(), clock: fixedClock, ids: seqIds() })).execute(
+    const { orderId: id } = await new Checkout(createContainer({ products, orders, analytics: new NoopAnalytics(), clock: fixedClock, ids: seqIds(), orderPrefix: "NN" })).execute(
       body([{ productId: "pf-01", variantId: "100-ml", quantity: 2 }]),
       OPTS,
     );
