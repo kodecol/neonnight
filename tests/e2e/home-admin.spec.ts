@@ -60,16 +60,18 @@ test.describe("Panel › Inicio", () => {
     await firstTitle.fill("Verificado de verdad");
 
     // Testimonios: la plantilla no trae; uno nuevo solo se publica autorizado.
-    await page.getByRole("button", { name: /Añadir testimonio/ }).click();
     const items = page.getByTestId("testimonial");
-    const t = items.last();
-    await t.getByLabel("Testimonio", { exact: true }).fill("Me mostraron la pieza por video antes de pagar y llegó tal cual.");
-    await t.getByLabel("Nombre", { exact: true }).fill("Andrea P.");
-    await t.getByLabel("Ciudad", { exact: true }).fill("Bogotá");
-    await t.getByLabel("Pieza", { exact: true }).fill("Reloj de prueba");
-    await expect(t).toContainText("Falta autorización");
-    await t.getByRole("switch", { name: "Autorizado por el cliente" }).click();
-    await expect(t).toContainText("Publicado");
+    for (const name of ["Andrea P.", "Bruno L."]) {
+      await page.getByRole("button", { name: /Añadir testimonio/ }).click();
+      const t = items.last();
+      await t.getByLabel("Testimonio", { exact: true }).fill("Me mostraron la pieza por video antes de pagar y llegó tal cual.");
+      await t.getByLabel("Nombre", { exact: true }).fill(name);
+      await t.getByLabel("Ciudad", { exact: true }).fill("Bogotá");
+      await t.getByLabel("Pieza", { exact: true }).fill("Reloj de prueba");
+      await expect(t).toContainText("Falta autorización");
+      await t.getByRole("switch", { name: "Autorizado por el cliente" }).click();
+      await expect(t).toContainText("Publicado");
+    }
 
     await page.getByTestId("network-facebook").getByRole("switch").click();
     await page.getByTestId("save-home").click();
@@ -77,6 +79,12 @@ test.describe("Panel › Inicio", () => {
 
     await page.goto("/");
     await expect(page.locator("#autenticidad")).toContainText("Verificado de verdad");
+    // En móvil, los botones para elegir testimonio miden al menos 24 × 24 px (axe target-size).
+    await page.setViewportSize({ width: 390, height: 844 });
+    const sizes = await page.getByRole("group", { name: "Elegir testimonio" }).locator("button").evaluateAll((bs) => bs.map((b) => b.getBoundingClientRect()).map((r) => Math.min(r.width, r.height)));
+    expect(sizes.length).toBeGreaterThan(0);
+    for (const size of sizes) expect(size).toBeGreaterThanOrEqual(24);
+    await page.setViewportSize({ width: 1440, height: 900 });
     await expect(page.getByTestId("social-links").locator("a")).toHaveCount(2);
     await expect(page.getByTestId("site-footer").getByRole("link", { name: "Facebook" })).toHaveCount(0);
     await expect(page.getByTestId("site-footer").getByRole("link", { name: "Instagram" }).first()).toBeVisible();
@@ -84,7 +92,7 @@ test.describe("Panel › Inicio", () => {
     // Deja la home como estaba para el resto de pruebas.
     await page.goto("/admin/inicio");
     await page.getByTestId("trust-editor").getByLabel("Título").first().fill(original);
-    await page.getByTestId("testimonial").last().getByRole("button", { name: /Quitar|Eliminar/ }).click();
+    for (let i = 0; i < 2; i++) await page.getByTestId("testimonial").last().getByRole("button", { name: /Quitar|Eliminar/ }).click();
     await page.getByTestId("network-facebook").getByRole("switch").click();
     await page.getByTestId("save-home").click();
     await expect(page.getByText("Publicado en la home")).toBeVisible();

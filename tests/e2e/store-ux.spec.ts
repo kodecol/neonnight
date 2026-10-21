@@ -46,12 +46,7 @@ test.describe("Tienda: móvil", () => {
     await expect(page.getByTestId("whatsapp-fab")).toBeHidden();
   });
 
-  test("los botones de testimonios miden al menos 24 × 24 px", async ({ page }) => {
-    await page.goto("/");
-    const sizes = await page.getByRole("group", { name: "Elegir testimonio" }).locator("button").evaluateAll((bs) => bs.map((b) => b.getBoundingClientRect()).map((r) => Math.min(r.width, r.height)));
-    expect(sizes.length).toBeGreaterThan(0);
-    for (const s of sizes) expect(s).toBeGreaterThanOrEqual(24);
-  });
+  // El tamaño de los botones de testimonios se prueba en home-admin.spec: la plantilla no trae testimonios de fábrica.
 });
 
 test.describe("Tienda: teléfono angosto (360 px)", () => {
