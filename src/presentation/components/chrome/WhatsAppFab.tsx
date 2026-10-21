@@ -25,6 +25,8 @@ export function WhatsAppProvider({ href, label, children }: { href: string | nul
           className={cn(
             "group fixed bottom-5 right-5 z-[55] flex h-14 items-center border border-border-strong bg-glass-deep text-ink backdrop-blur-md transition-colors duration-300 hover:border-accent md:bottom-7 md:right-7",
             "[html[data-consent-open]_&]:hidden",
+            // Con el panel de filtros abierto taparía sus opciones.
+            "[html:has([data-testid=filter-panel][open])_&]:hidden",
           )}
         >
           <span className="max-w-0 overflow-hidden whitespace-nowrap text-label uppercase transition-[max-width,padding] duration-500 ease-[var(--ease-reveal)] group-hover:max-w-[220px] group-hover:pl-5 group-focus-visible:max-w-[220px] group-focus-visible:pl-5">
