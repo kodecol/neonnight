@@ -7,11 +7,13 @@ import { AdminPageHeader } from "@/presentation/components/admin/AdminShell";
 import { ProductForm } from "@/presentation/components/admin/ProductForm";
 import { ensureBrandAction } from "../../marcas/actions";
 import { saveProductAction, uploadImageAction } from "../actions";
+import { requireAdmin } from "../../../_lib/auth";
 
 export const metadata: Metadata = { title: "Nuevo producto" };
 
 /** Primero se elige la línea (decide la ficha); con `?linea=` se abre el formulario. */
 export default async function NewProductPage({ searchParams }: { searchParams: Promise<{ linea?: string }> }) {
+  await requireAdmin(); // el layout no basta: una petición RSC puede renderizar solo esta página
   const { linea } = await searchParams;
   const { lines, categories, brands } = getContainer();
   const [allLines, cats, brandList] = await Promise.all([lines.list(), categories.list(), brands.list()]);

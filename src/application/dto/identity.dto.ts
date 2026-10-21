@@ -6,7 +6,7 @@ import { z } from "zod";
  * Kodecol: este esquema se convertirá a JSON Schema tal cual.
  * Los datos legales de la empresa NO van aquí: viven en Legales (companySettings).
  */
-const ASSET_SRC = /^(\/assets\/|\/api\/media\/|https:\/\/res\.cloudinary\.com\/)/;
+const ASSET_SRC = /^(\/assets\/|\/api\/media\/|https:\/\/res\.cloudinary\.com\/)(?!.*\.\.)[\w\-./%~]+$/;
 
 export const IdentityAssetSchema = z.object({
   src: z.string().regex(ASSET_SRC, "La imagen debe estar en Cloudinary o en el sitio."),

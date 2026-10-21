@@ -49,6 +49,8 @@ export class BoldPaymentGateway implements PaymentGateway {
       headers: { Authorization: `x-api-key ${s.identityKey}`, "Content-Type": "application/json" },
       body: JSON.stringify(body),
       cache: "no-store",
+      // Si Bold no responde, el checkout avisa en vez de quedarse colgado.
+      signal: AbortSignal.timeout(10_000),
     });
     const json = (await res.json().catch(() => ({}))) as BoldLinkResponse;
     const url = json.payload?.url;

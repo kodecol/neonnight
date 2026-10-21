@@ -5,6 +5,7 @@ import { GetAdminProduct } from "@/application/use-cases/admin/get-admin-product
 import { ProductForm } from "@/presentation/components/admin/ProductForm";
 import { ensureBrandAction } from "../../marcas/actions";
 import { deleteProductAction, saveProductAction, uploadImageAction } from "../actions";
+import { requireAdmin } from "../../../_lib/auth";
 
 type Params = Promise<{ id: string }>;
 
@@ -15,6 +16,7 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
 }
 
 export default async function EditProductPage({ params, searchParams }: { params: Params; searchParams: Promise<{ creado?: string }> }) {
+  await requireAdmin(); // el layout no basta: una petición RSC puede renderizar solo esta página
   const { id } = await params;
   const { creado } = await searchParams;
   const { products, categories, lines, brands } = getContainer();

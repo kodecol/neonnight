@@ -41,8 +41,8 @@ export function LogoPreview({ logo, color, hover, height = 34, name }: { logo: B
         ...box,
         display: "block",
         backgroundColor: hover && color ? color : "var(--color-ink)",
-        WebkitMask: `url(${logo.src}) center / contain no-repeat`,
-        mask: `url(${logo.src}) center / contain no-repeat`,
+        WebkitMask: `url("${encodeURI(logo.src)}") center / contain no-repeat`,
+        mask: `url("${encodeURI(logo.src)}") center / contain no-repeat`,
       }}
     />
   );

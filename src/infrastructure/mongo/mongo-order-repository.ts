@@ -121,6 +121,11 @@ export class MongoOrderRepository implements OrderRepository {
     await (await this.col()).replaceOne({ _id: order.id }, toDoc(order), { upsert: true });
   }
 
+  async transition(next: Order, from: readonly Order["status"][]): Promise<boolean> {
+    const r = await (await this.col()).replaceOne({ _id: next.id, status: { $in: [...from] } }, toDoc(next));
+    return r.modifiedCount === 1;
+  }
+
   async findById(id: OrderId): Promise<Order | null> {
     const d = await (await this.col()).findOne({ _id: id });
     return d ? fromDoc(d) : null;

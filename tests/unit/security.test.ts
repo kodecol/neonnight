@@ -69,7 +69,7 @@ describe("Cuenta del administrador", () => {
   function account(env = "inicial-del-entorno") {
     const credentials = new InMemoryAdminCredentialsRepository();
     const throttles = { perIp: new InMemoryLoginThrottle(5, 15 * 60_000), global: new InMemoryLoginThrottle(50, 15 * 60_000) };
-    const acc = new AdminAccount({ credentials, hasher: new ScryptPasswordHasher(), clock, checkEnvPassword: (p) => checkAdminPassword(p, env), throttles });
+    const acc = new AdminAccount({ credentials, hasher: new ScryptPasswordHasher(), clock, checkEnvPassword: (p) => checkAdminPassword(p, env), throttles, delay: async () => {} });
     return { acc, credentials };
   }
 
@@ -113,6 +113,12 @@ describe("Cuenta del administrador", () => {
     const blocked = await acc.login("inicial-del-entorno", "9.9.9.9");
     expect(blocked.ok === false && blocked.reason === "throttled" && blocked.retryAfter > 0).toBe(true);
     expect((await acc.login("inicial-del-entorno", "8.8.8.8")).ok).toBe(true);
+  });
+
+  it("un ataque repartido entre muchas IPs no deja afuera al administrador", async () => {
+    const { acc } = account();
+    for (let i = 0; i < 60; i++) await acc.login("mal", `10.0.0.${i}`);
+    expect(await acc.login("inicial-del-entorno", "200.1.1.1")).toEqual({ ok: true, version: 0 });
   });
 
   it("la ventana del freno vence", () => {

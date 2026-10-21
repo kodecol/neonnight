@@ -14,6 +14,8 @@ interface Deps {
   /** Contraseña de arranque (ADMIN_PASSWORD): vale mientras no haya hash en la base. */
   checkEnvPassword: (plain: string) => boolean;
   throttles: { perIp: LoginThrottle; global: LoginThrottle };
+  /** Espera ante un ataque repartido (límite global); en tests, inmediata. */
+  delay?: (ms: number) => Promise<void>;
 }
 
 /**
@@ -40,8 +42,11 @@ export class AdminAccount {
   async login(password: string, ip: string): Promise<LoginResult> {
     const { perIp, global } = this.deps.throttles;
     const now = this.deps.clock.now().getTime();
-    const wait = Math.max(perIp.retryAfter(ip, now), global.retryAfter(GLOBAL_KEY, now));
+    // Por IP se bloquea; el límite global solo frena (3 s por intento): si bloqueara,
+    // bastaría con fallar desde varias IPs para dejar afuera al administrador.
+    const wait = perIp.retryAfter(ip, now);
     if (wait > 0) return { ok: false, reason: "throttled", retryAfter: wait };
+    if (global.retryAfter(GLOBAL_KEY, now) > 0) await (this.deps.delay ?? ((ms) => new Promise((r) => setTimeout(r, ms))))(3_000);
 
     const stored = await this.deps.credentials.get();
     if (!password || !(await this.verify(password, stored))) {

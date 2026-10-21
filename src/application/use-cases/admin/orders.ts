@@ -62,10 +62,11 @@ export function parseAdminOrderFilters(sp: Record<string, string | string[] | un
   const hasta = first(sp.hasta);
   const page = Number.parseInt(first(sp.pagina) ?? "", 10);
   return {
-    status: estado && estado in ORDER_STATUS_LABEL ? (estado as OrderStatus) : null,
+    status: estado && Object.hasOwn(ORDER_STATUS_LABEL, estado) ? (estado as OrderStatus) : null,
     trash: first(sp.vista) === "eliminados",
     review: first(sp.revisar) === "1",
-    q: (first(sp.q) ?? "").trim().slice(0, 80),
+    // Sin caracteres de control: Mongo rechaza un $regex con byte nulo (500).
+    q: (first(sp.q) ?? "").replace(/[\u0000-\u001f\u007f]/g, "").trim().slice(0, 80),
     from: isDay(desde) ? desde : null,
     to: isDay(hasta) ? hasta : null,
     page: Number.isFinite(page) && page > 0 ? page : 1,
@@ -211,8 +212,13 @@ export class GetAdminOrder {
   }
 }
 
-async function load(orders: OrderRepository, id: string): Promise<Order> {
-  const o = await orders.findById(orderId(id));
+const IdSchema = z.string().min(1).max(64);
+
+async function load(orders: OrderRepository, id: unknown): Promise<Order> {
+  // Las actions reciben lo que mande el cliente: un objeto llegaría a Mongo como operador.
+  const parsed = IdSchema.safeParse(id);
+  if (!parsed.success) throw new FieldValidationError("id", "El pedido no existe.");
+  const o = await orders.findById(orderId(parsed.data));
   if (!o) throw new FieldValidationError("id", "El pedido no existe.");
   return o;
 }
@@ -226,6 +232,7 @@ export class UpdateOrderStatus {
   constructor(private readonly deps: { orders: OrderRepository; products: ProductRepository; clock: Clock }) {}
 
   async execute(id: string, next: "pagada" | "cancelada"): Promise<{ short: string[] }> {
+    if (next !== "pagada" && next !== "cancelada") throw new FieldValidationError("status", "Estado no válido.");
     const o = await load(this.deps.orders, id);
     if (o.deletedAt) throw new FieldValidationError("status", "El pedido está en Eliminados: restáuralo primero.");
     if (o.status !== "pendiente") throw new FieldValidationError("status", `El pedido ya está ${ORDER_STATUS_LABEL[o.status].toLowerCase()}.`);
@@ -234,7 +241,10 @@ export class UpdateOrderStatus {
       if (o.paymentMethod !== "manual") throw new FieldValidationError("status", "Los pagos con Bold se confirman solos por el webhook.");
       return { short: await markOrderPaid(o, this.deps, "admin", at) };
     }
-    await this.deps.orders.save(withEvents({ ...o, status: "cancelada" }, { at, type: "cancelado", by: "admin" }));
+    // Atómico: si el pago llegó mientras tanto, no se pisa.
+    if (!(await this.deps.orders.transition(withEvents({ ...o, status: "cancelada" }, { at, type: "cancelado", by: "admin" }), ["pendiente"]))) {
+      throw new FieldValidationError("status", "El pedido cambió mientras tanto (¿llegó el pago?). Recarga la página.");
+    }
     return { short: [] };
   }
 }
@@ -281,6 +291,8 @@ export class PurgeOrder {
   async execute(id: string): Promise<void> {
     const o = await load(this.orders, id);
     if (!o.deletedAt) throw new OrderNotInTrashError(o.id);
+    // Un pago tardío debe encontrar el pedido (vuelve de Eliminados y queda para revisar).
+    if (paymentLinkMayBeLive(o, new Date())) throw new FieldValidationError("id", "Su link de Bold puede seguir vigente: purga el pedido pasados 30 minutos desde su creación.");
     await this.orders.remove(o.id);
   }
 }

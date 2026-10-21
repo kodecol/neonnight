@@ -12,7 +12,9 @@ import { orderId, type Order } from "@/domain/entities/order";
 import { productId } from "@/domain/entities/product";
 import { productStatus } from "@/domain/services/availability";
 import { Money } from "@/domain/value-objects/money";
-import { DEFAULT_PAYMENT_SETTINGS } from "@/application/ports/payment-settings";
+import { DEFAULT_PAYMENT_SETTINGS, webhookSecret } from "@/application/ports/payment-settings";
+import { UpdateOrderStatus } from "@/application/use-cases/admin/orders";
+import { REVIEW_PAID_AFTER_CANCEL } from "@/domain/entities/order";
 
 const order = (over: Partial<Order> = {}): Order => ({
   id: orderId("nn-abc12345"),
@@ -95,6 +97,62 @@ describe("ConfirmPayment", () => {
     expect(await uc.execute(event("SALE_APPROVED", "nadie"))).toMatchObject({ handled: false });
     expect(await uc.execute({ basura: true })).toMatchObject({ handled: false });
     expect(await uc.execute(event("SALE_APPROVED", "LNK_TEST"))).toMatchObject({ handled: true, status: "pagada" });
+  });
+});
+
+describe("Webhook de Bold: endurecimiento", () => {
+  const setup = (o = order()) => {
+    const orders = new InMemoryOrderRepository();
+    const products = new InMemoryProductRepository(SEED_PRODUCTS);
+    void orders.save(o);
+    const clock = { now: () => new Date() };
+    return { orders, products, uc: new ConfirmPayment({ orders, products, clock }), admin: new UpdateOrderStatus({ orders, products, clock }) };
+  };
+  const approved = (reference = "nn-abc12345", total = 16_900_000) => ({ type: "SALE_APPROVED", data: { payment_id: "p1", amount: { total }, metadata: { reference } } });
+
+  it("sin Bold activo no se acepta ninguna firma (tampoco la de llave vacía)", () => {
+    expect(webhookSecret(DEFAULT_PAYMENT_SETTINGS)).toBeNull();
+    expect(webhookSecret({ ...DEFAULT_PAYMENT_SETTINGS, mode: "produccion", enabled: true, identityKey: "pk", secretKey: "" })).toBeNull();
+    expect(webhookSecret({ ...DEFAULT_PAYMENT_SETTINGS, enabled: true, identityKey: "pk" })).toBe("");
+    expect(webhookSecret({ ...DEFAULT_PAYMENT_SETTINGS, mode: "produccion", enabled: true, identityKey: "pk", secretKey: "sk" })).toBe("sk");
+  });
+
+  it("un pedido manual no cambia con avisos de Bold", async () => {
+    const { uc, orders, products } = setup(order({ paymentMethod: "manual" }));
+    expect(await uc.execute(approved())).toMatchObject({ handled: false });
+    expect(await uc.execute({ type: "SALE_REJECTED", data: { metadata: { reference: "nn-abc12345" } } })).toMatchObject({ handled: false });
+    expect((await orders.findById(orderId("nn-abc12345")))?.status).toBe("pendiente");
+    expect((await products.findById("w-03"))?.variants[0]?.stock).toBe(1);
+  });
+
+  it("avisos repetidos a la vez descuentan el stock una sola vez", async () => {
+    const line = { productId: productId("pf-01"), variantId: "100-ml", variantLabel: "100 ml", slug: "creed-aventus", name: "Creed Aventus", unitPrice: Money.fromUnits(2_390_000), quantity: 2 };
+    const { uc, products, orders } = setup(order({ lines: [line], total: Money.fromUnits(4_780_000) }));
+    await Promise.all(Array.from({ length: 5 }, () => uc.execute(approved("nn-abc12345", 4_780_000))));
+    expect((await products.findById("pf-01"))?.variants.find((v) => v.id === "100-ml")?.stock).toBe(1);
+    expect((await orders.findById(orderId("nn-abc12345")))?.events.filter((e) => e.type === "pagado")).toHaveLength(1);
+  });
+
+  it("pago tras cancelar: queda pagado y marcado para revisar; el panel no pisa un pago que llegó", async () => {
+    const { uc, orders, admin } = setup();
+    await admin.execute("nn-abc12345", "cancelada");
+    await uc.execute(approved());
+    const o = await orders.findById(orderId("nn-abc12345"));
+    expect(o).toMatchObject({ status: "pagada", review: REVIEW_PAID_AFTER_CANCEL });
+
+    // El panel cargó el pedido pendiente antes de que llegara el pago: su cancelación ya no aplica.
+    const race = setup();
+    const stale = (await race.orders.findById(orderId("nn-abc12345")))!;
+    await race.uc.execute(approved());
+    expect(await race.orders.transition({ ...stale, status: "cancelada" }, ["pendiente"])).toBe(false);
+    expect((await race.orders.findById(orderId("nn-abc12345")))?.status).toBe("pagada");
+  });
+
+  it("sin stock suficiente al pagar: queda marcado para revisar", async () => {
+    const { uc, orders, products } = setup();
+    await products.decrementStock(productId("w-03"), "unica", 1);
+    await uc.execute(approved());
+    expect((await orders.findById(orderId("nn-abc12345")))?.review).toMatch(/Stock insuficiente/);
   });
 });
 

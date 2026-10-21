@@ -4,11 +4,13 @@ import { GetBrandsCopy, ListAdminBrands } from "@/application/use-cases/admin/br
 import { AdminPageHeader } from "@/presentation/components/admin/AdminShell";
 import { BrandManager } from "@/presentation/components/admin/BrandManager";
 import { deleteBrandAction, reorderBrandsAction, saveBrandAction, saveBrandsCopyAction, uploadBrandLogoAction } from "./actions";
+import { requireAdmin } from "../../_lib/auth";
 
 export const metadata: Metadata = { title: "Marcas" };
 export const dynamic = "force-dynamic";
 
 export default async function BrandsPage() {
+  await requireAdmin(); // el layout no basta: una petición RSC puede renderizar solo esta página
   const c = getContainer();
   const [brands, copy, lines, site] = await Promise.all([new ListAdminBrands(c).execute(), new GetBrandsCopy(c.brandsCopy).execute(), c.lines.list(), c.content.get()]);
   return (

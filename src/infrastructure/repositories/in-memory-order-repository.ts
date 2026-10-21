@@ -9,6 +9,13 @@ export class InMemoryOrderRepository implements OrderRepository {
     this.orders.set(order.id, order);
   }
 
+  async transition(next: Order, from: readonly Order["status"][]): Promise<boolean> {
+    const current = this.orders.get(next.id);
+    if (!current || !from.includes(current.status)) return false;
+    this.orders.set(next.id, next);
+    return true;
+  }
+
   async findById(id: OrderId): Promise<Order | null> {
     return this.orders.get(id) ?? null;
   }

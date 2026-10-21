@@ -266,3 +266,23 @@ describe("Pedidos › lista, filtros y CSV", () => {
     expect(trash).not.toContain("NN-1;");
   });
 });
+
+describe("Pedidos: endurecimiento (QA nocturno)", () => {
+  it("filtros: estados heredados del prototipo y caracteres de control no rompen la lista", () => {
+    for (const estado of ["constructor", "__proto__", "toString"]) expect(parseAdminOrderFilters({ estado }).status).toBeNull();
+    expect(parseAdminOrderFilters({ q: "lau\u0000ra\u001f" }).q).toBe("laura");
+  });
+
+  it("las actions validan el id: un objeto (operador de Mongo) no llega al repositorio", async () => {
+    const { deps } = setup(order("nn-1"));
+    await expect(new RestoreOrder(deps).execute({ $regex: "^nn" } as unknown as string)).rejects.toThrow(/no existe/);
+    await expect(new UpdateOrderStatus(deps).execute("nn-1", "cualquier-cosa" as "pagada")).rejects.toThrow(/no válido/);
+  });
+
+  it("no se purga un pedido de Bold cuyo link puede seguir vigente", async () => {
+    const recent = order("nn-bold", { paymentMethod: "bold", paymentReference: "LNK_1", createdAt: new Date(Date.now() - 5 * 60_000), deletedAt: new Date() });
+    const { orders } = setup(recent);
+    await expect(new PurgeOrder(orders).execute("nn-bold")).rejects.toThrow(/vigente/);
+    expect(await get(orders, "nn-bold")).not.toBeNull();
+  });
+});

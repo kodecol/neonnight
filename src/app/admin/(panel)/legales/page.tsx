@@ -6,11 +6,13 @@ import { CompanyForm } from "@/presentation/components/admin/CompanyForm";
 import { LegalPagesTable } from "@/presentation/components/admin/LegalPagesTable";
 import { FormSection } from "@/presentation/components/admin/fields";
 import { saveCompanyAction } from "./actions";
+import { requireAdmin } from "../../_lib/auth";
 
 export const metadata: Metadata = { title: "Legales" };
 export const dynamic = "force-dynamic";
 
 export default async function LegalAdminPage() {
+  await requireAdmin(); // el layout no basta: una petición RSC puede renderizar solo esta página
   const c = getContainer();
   const deps = { legalPages: c.legalPages, companySettings: c.companySettings, content: c.content, whatsappLabel: c.whatsappLabel };
   const [rows, company] = await Promise.all([new ListLegalPages(deps).execute(), new GetCompanySettings(c.content).execute()]);

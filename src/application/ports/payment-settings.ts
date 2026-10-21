@@ -34,9 +34,15 @@ export function paymentModeOf(s: PaymentSettings): "bold" | "manual" | "unavaila
   return s.manual.enabled ? "manual" : "unavailable";
 }
 
-/** Bold firma los webhooks de pruebas con una llave vacía. */
-export function webhookSecret(settings: PaymentSettings): string {
-  return settings.mode === "pruebas" ? "" : settings.secretKey;
+/**
+ * Llave con la que se verifican los webhooks de Bold, o null si hoy no se
+ * acepta ninguno. Bold firma los de pruebas con una llave vacía, así que esa
+ * llave solo vale con Bold activo en pruebas; con Bold apagado (pedidos
+ * manuales) o sin llave secreta en producción, cualquiera podría firmar.
+ */
+export function webhookSecret(settings: PaymentSettings): string | null {
+  if (!isPaymentReady(settings)) return null;
+  return settings.mode === "pruebas" ? "" : settings.secretKey || null;
 }
 
 /** Bold está listo para cobrar: activo y con las llaves que exige el modo. */

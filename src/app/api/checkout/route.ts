@@ -9,7 +9,18 @@ import { ROUTES, absoluteUrl } from "@/presentation/lib/site";
 
 export const dynamic = "force-dynamic";
 
+/** IP del cliente: la pone el proxy inverso (X-Real-IP); el contenedor no se expone directo. */
+const clientIp = (req: Request) => req.headers.get("x-real-ip")?.trim() || req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "desconocida";
+
 export async function POST(req: Request) {
+  // Freno al abuso: cada pedido crea un registro y, con Bold, un link de pago.
+  const throttle = getContainer().checkoutThrottle;
+  const ip = clientIp(req);
+  const now = Date.now();
+  const wait = throttle.retryAfter(ip, now);
+  if (wait > 0) return NextResponse.json({ error: "Demasiados pedidos seguidos. Espera un minuto e intenta de nuevo." }, { status: 429, headers: { "Retry-After": String(wait) } });
+  throttle.fail(ip, now);
+
   let body: unknown;
   try {
     body = await req.json();

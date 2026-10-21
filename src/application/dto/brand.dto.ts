@@ -2,7 +2,8 @@ import { z } from "zod";
 import type { BrandLogoMode } from "@/domain/entities/brand";
 
 /** Logos propios: assets del repo, subidas locales o Cloudinary (también SVG). */
-const LOGO_SRC_RE = /^(\/assets\/|\/api\/media\/|https:\/\/res\.cloudinary\.com\/)/;
+// Solo caracteres de ruta: el src termina dentro de un url() de CSS (sin comillas, paréntesis ni `..`).
+const LOGO_SRC_RE = /^(\/assets\/|\/api\/media\/|https:\/\/res\.cloudinary\.com\/)(?!.*\.\.)[\w\-./%~]+$/;
 
 export const BrandLogoInputSchema = z.object({
   src: z.string().regex(LOGO_SRC_RE, "Origen de logo no permitido."),

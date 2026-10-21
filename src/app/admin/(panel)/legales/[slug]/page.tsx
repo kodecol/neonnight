@@ -7,6 +7,7 @@ import { AdminPageHeader } from "@/presentation/components/admin/AdminShell";
 import { LegalEditor } from "@/presentation/components/admin/LegalEditor";
 import { Button } from "@/presentation/components/primitives/Button";
 import { discardLegalDraftAction, resetLegalPageAction, saveLegalPageAction } from "../actions";
+import { requireAdmin } from "../../../_lib/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -19,6 +20,7 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
 }
 
 export default async function LegalEditPage({ params }: { params: Params }) {
+  await requireAdmin(); // el layout no basta: una petición RSC puede renderizar solo esta página
   const { slug } = await params;
   if (!isSlug(slug)) notFound();
   const c = getContainer();

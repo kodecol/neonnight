@@ -22,7 +22,10 @@ async function createOrder(request: APIRequestContext, name = "Laura Gómez"): P
       },
     });
     const body = await res.text();
-    if (res.status() === 409 && body.includes('"consent"') && attempt < 4) continue;
+    if (res.status() === 409 && body.includes('"consent"') && attempt < 12) {
+      await new Promise((r) => setTimeout(r, 300 + attempt * 200));
+      continue;
+    }
     expect(res.status(), body).toBe(200);
     const { orderId } = JSON.parse(body) as { orderId: string };
     return { orderId, version };
@@ -103,39 +106,40 @@ test.describe("Panel › Pedidos", () => {
     await expect(page.getByTestId("order-events")).toContainText("Restaurado de Eliminados");
   });
 
-  test("si llega el pago de un pedido eliminado, vuelve solo y queda marcado para revisar", async ({ page, request }) => {
+  // El flujo "pago de un pedido eliminado → vuelve y queda para revisar" exige Bold activo
+  // (pedidos de Bold); está cubierto en tests/unit/orders-admin.test.ts y payments.test.ts.
+  test("con Bold apagado, un aviso de pago forjado con la llave vacía se rechaza y el pedido no cambia", async ({ page, request }) => {
     const name = unique();
     const { orderId } = await createOrder(request, name);
 
-    await login(page);
-    await page.goto(`/admin/pedidos/${orderId}`);
-    acceptNextDialog(page);
-    await page.getByTestId("order-delete").click();
-    await expect(page.getByText("Pedido · Pendiente · Eliminado")).toBeVisible();
-    await expect(page.getByTestId("order-trashed")).toBeVisible();
+    for (const type of ["SALE_APPROVED", "SALE_REJECTED"]) {
+      const body = JSON.stringify({ type, data: { payment_id: "e2e", metadata: { reference: orderId } } });
+      const signature = createHmac("sha256", "").update(Buffer.from(body).toString("base64")).digest("hex");
+      const res = await request.post("/api/webhooks/bold", { data: body, headers: { "content-type": "application/json", "x-bold-signature": signature } });
+      expect(res.status()).toBe(401);
+    }
 
-    // /gracias sigue encontrándolo.
     await page.goto(`/gracias?orden=${orderId}`);
     await expect(page.getByTestId("order-pendiente")).toBeVisible();
-
-    // Bold en modo pruebas firma con llave vacía (ver webhookSecret).
-    const body = JSON.stringify({ type: "SALE_APPROVED", data: { payment_id: "e2e", metadata: { reference: orderId } } });
-    const signature = createHmac("sha256", "").update(Buffer.from(body).toString("base64")).digest("hex");
-    const res = await request.post("/api/webhooks/bold", { data: body, headers: { "content-type": "application/json", "x-bold-signature": signature } });
-    expect(res.status()).toBe(200);
-    expect(await res.json()).toMatchObject({ handled: true, orderId, status: "pagada" });
-
+    await login(page);
     await page.goto(`/admin/pedidos?q=${encodeURIComponent(name)}`);
-    await expect(page.getByTestId("orders-review-banner")).toBeVisible();
-    await expect(row(page, orderId).getByTestId("order-review-badge")).toBeVisible();
-    await expect(row(page, orderId)).toContainText("Pagado");
+    await expect(row(page, orderId)).toContainText("Pendiente");
+  });
 
-    await page.getByRole("link", { name: orderId }).click();
-    await expect(page.getByTestId("order-review")).toContainText("Pago recibido de pedido eliminado — revisar");
-    await expect(page.getByTestId("order-events")).toContainText("Pago recibido estando eliminado");
-    await page.getByTestId("order-mark-reviewed").click();
-    await expect(page.getByTestId("order-review")).toHaveCount(0);
-    await expect(page.getByTestId("order-events")).toContainText("Marcado como revisado");
+  test("sin sesión, una navegación RSC con next-action no filtra el panel", async ({ request }) => {
+    const name = unique();
+    const { orderId } = await createOrder(request, name);
+    // Árbol del router "ya en /admin/catalogo": pide solo el segmento de la página.
+    const tree = encodeURIComponent(JSON.stringify(["", { children: ["admin", { children: ["(panel)", { children: ["catalogo", { children: ["__PAGE__", {}, null, null] }, null, null] }, null, null] }, null, null] }, null, null, true]));
+    for (const path of ["/admin/pedidos", `/admin/pedidos/${orderId}`, "/admin/ajustes/pagos"]) {
+      const res = await request.get(path, { headers: { RSC: "1", "next-action": "x", "Next-Router-State-Tree": tree, "Next-Url": "/admin/catalogo" }, maxRedirects: 0 });
+      const body = await res.text();
+      // El id puede aparecer como parámetro de la ruta; los datos del pedido, nunca.
+      expect(body, path).toContain("NEXT_REDIRECT;replace;/admin/login");
+      expect(body, path).not.toContain(name);
+      expect(body, path).not.toContain("laura@example.com");
+      expect(body, path).not.toContain("52123456");
+    }
   });
 
   test("CSV de lo filtrado, con sesión verificada en el propio handler", async ({ page, request }) => {

@@ -106,3 +106,15 @@ describe("Marcas", () => {
     for (const p of SEED_PRODUCTS) expect(SEED_BRANDS.some((b) => brandKey(b.name) === brandKey(p.brand)), p.brand).toBe(true);
   });
 });
+
+describe("Logos: el src no puede salir del url() de CSS", () => {
+  it("rechaza paréntesis, comillas, punto y coma y ..", async () => {
+    const { BrandLogoInputSchema } = await import("@/application/dto/brand.dto");
+    const ok = (src: string) => BrandLogoInputSchema.safeParse({ src, ratio: 2, mode: "silhouette" }).success;
+    expect(ok("/assets/logos/brands/rolex.svg")).toBe(true);
+    expect(ok("https://res.cloudinary.com/demo/image/upload/v1/tienda/sitio/marcas/x.png")).toBe(true);
+    expect(ok("/assets/logos/brands/rolex.svg);background-image:url(https://evil.example/t.png);x:(")).toBe(false);
+    expect(ok('/assets/x.svg"')).toBe(false);
+    expect(ok("/assets/../../etc/passwd")).toBe(false);
+  });
+});

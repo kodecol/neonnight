@@ -11,10 +11,12 @@ import { LineManager } from "@/presentation/components/admin/LineManager";
 import { Button } from "@/presentation/components/primitives/Button";
 import { cn } from "@/presentation/lib/cn";
 import { deleteCategoryAction, deleteLineAction, saveCategoryAction, saveLineAction, uploadImageAction } from "./actions";
+import { requireAdmin } from "../../_lib/auth";
 
 export const metadata: Metadata = { title: "Catálogo" };
 
 export default async function CatalogPage({ searchParams }: { searchParams: Promise<{ tab?: string }> }) {
+  await requireAdmin(); // el layout no basta: una petición RSC puede renderizar solo esta página
   const { tab } = await searchParams;
   const view = tab === "lineas" || tab === "categorias" ? tab : "productos";
   const container = getContainer();

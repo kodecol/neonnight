@@ -17,6 +17,12 @@ export interface OrderQuery {
 export interface OrderRepository {
   /** Inserta o reemplaza por `id`. */
   save(order: Order): Promise<void>;
+  /**
+   * Reemplaza el pedido solo si su estado actual está en `from` (atómico).
+   * false: otro proceso lo cambió antes (webhooks repetidos, panel y webhook a
+   * la vez) y no se tocó nada.
+   */
+  transition(next: Order, from: readonly Order["status"][]): Promise<boolean>;
   /** Encuentra también los eliminados: /gracias y el webhook los necesitan. */
   findById(id: OrderId): Promise<Order | null>;
   findByPaymentReference(reference: string): Promise<Order | null>;

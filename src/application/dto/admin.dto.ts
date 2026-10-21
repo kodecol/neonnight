@@ -12,7 +12,7 @@ import type { PaymentMode } from "../ports/payment-settings";
 import type { StatusDto } from "./product.dto";
 
 /** Solo se aceptan fotos propias: assets del repo, subidas locales o Cloudinary. */
-const IMAGE_SRC_RE = /^(\/assets\/|\/api\/media\/|https:\/\/res\.cloudinary\.com\/)/;
+const IMAGE_SRC_RE = /^(\/assets\/|\/api\/media\/|https:\/\/res\.cloudinary\.com\/)(?!.*\.\.)[\w\-./%~]+$/;
 
 export const AdminImageInputSchema = z.object({
   src: z.string().regex(IMAGE_SRC_RE, "Origen de imagen no permitido."),

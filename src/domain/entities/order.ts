@@ -82,6 +82,8 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 export const PAYMENT_LINK_TTL_MS = 30 * 60 * 1000;
 
 export const REVIEW_PAID_AFTER_DELETE = "Pago recibido de pedido eliminado — revisar";
+export const REVIEW_PAID_AFTER_CANCEL = "Pago recibido de pedido cancelado — revisar";
+export const reviewShortStock = (slugs: readonly string[]) => `Stock insuficiente al confirmar el pago (${slugs.join(", ")}) — revisar`;
 
 /** Solo se eliminan pedidos pendientes (pagados, cancelados y rechazados quedan como registro). */
 export const isDeletable = (o: Order): boolean => o.deletedAt === null && o.status === "pendiente";

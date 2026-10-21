@@ -9,6 +9,7 @@ import { TextInput } from "@/presentation/components/admin/fields";
 import { Button } from "@/presentation/components/primitives/Button";
 import { cn } from "@/presentation/lib/cn";
 import { deleteOrdersAction, purgeOrderAction, restoreOrderAction } from "./actions";
+import { requireAdmin } from "../../_lib/auth";
 
 export const metadata: Metadata = { title: "Pedidos" };
 export const dynamic = "force-dynamic";
@@ -32,6 +33,7 @@ function emptyText(f: AdminOrderFilters): string {
 }
 
 export default async function OrdersPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+  await requireAdmin(); // el layout no basta: una petición RSC puede renderizar solo esta página
   const f = parseAdminOrderFilters(await searchParams);
   const list = await new ListAdminOrders(getContainer()).execute(f);
   // Las pestañas conservan la búsqueda y las fechas; vuelven a la página 1.

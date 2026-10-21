@@ -43,7 +43,7 @@ import { LocalDiskMediaUploader } from "./media/local-disk-uploader";
 import { CloudinaryMediaUploader } from "./media/cloudinary-uploader";
 import { adminSecret } from "./auth/session";
 import { ScryptPasswordHasher } from "./auth/password";
-import { createLoginThrottles } from "./auth/login-throttle";
+import { InMemoryLoginThrottle, createLoginThrottles } from "./auth/login-throttle";
 import { MongoAdminCredentialsRepository } from "./mongo/mongo-admin-credentials-repository";
 import { InMemoryAdminCredentialsRepository } from "./repositories/in-memory-admin-credentials-repository";
 import { ConsoleAnalytics } from "./analytics/console-analytics";
@@ -97,6 +97,8 @@ export interface Container {
   adminCredentials: AdminCredentialsRepository;
   passwordHasher: PasswordHasher;
   loginThrottles: { perIp: LoginThrottle; global: LoginThrottle };
+  /** Pedidos por IP en /api/checkout (CHECKOUT_RATE_LIMIT por minuto, 10 por defecto). */
+  checkoutThrottle: LoginThrottle;
   /** WhatsApp con formato legible, para las fichas de las páginas legales. */
   whatsappLabel: string | null;
   /** Fotos del sitio: Cloudinary `neonnight/sitio` o disco local. */
@@ -185,6 +187,7 @@ export function createContainer(overrides: Partial<Container> = {}): Container {
     adminCredentials: base.adminCredentials,
     passwordHasher: overrides.passwordHasher ?? new ScryptPasswordHasher(),
     loginThrottles: overrides.loginThrottles ?? createLoginThrottles(),
+    checkoutThrottle: overrides.checkoutThrottle ?? new InMemoryLoginThrottle(Number(process.env.CHECKOUT_RATE_LIMIT) || 10, 60_000),
     whatsappLabel: staticContent.whatsapp,
     siteUploader: overrides.siteUploader ?? (process.env.CLOUDINARY_URL ? new CloudinaryMediaUploader(SITE_FOLDER) : new LocalDiskMediaUploader()),
     videoSigner: overrides.videoSigner ?? (process.env.CLOUDINARY_URL ? new CloudinaryVideoSigner() : new DisabledVideoSigner()),

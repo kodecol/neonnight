@@ -7,6 +7,7 @@ import { AdminPageHeader } from "@/presentation/components/admin/AdminShell";
 import { HomeEditor } from "@/presentation/components/admin/HomeEditor";
 import { Button } from "@/presentation/components/primitives/Button";
 import { ROUTES } from "@/presentation/lib/site";
+import { requireAdmin } from "../../_lib/auth";
 import {
   deleteSiteMediaAction,
   discardHomeDraftAction,
@@ -22,6 +23,7 @@ export const metadata: Metadata = { title: "Inicio" };
 export const dynamic = "force-dynamic";
 
 export default async function HomeAdminPage() {
+  await requireAdmin(); // el layout no basta: una petición RSC puede renderizar solo esta página
   const c = getContainer();
   const site = await c.content.get();
   const [settings, media, featured, lines] = await Promise.all([

@@ -35,7 +35,7 @@ export function BrandMarquee({ content }: { content: MarqueeDto }) {
               // eslint-disable-next-line @next/next/no-img-element
               <img src={logo.src} alt="" className="nn-brand-logo-img" style={size} draggable={false} />
             ) : (
-              <span className="nn-brand-logo" style={{ ...size, "--logo": `url(${logo.src})` } as LogoStyle} />
+              <span className="nn-brand-logo" style={{ ...size, "--logo": `url("${encodeURI(logo.src)}")` } as LogoStyle} />
             )
           ) : (
             <span className="whitespace-nowrap text-[32px] font-medium uppercase leading-none tracking-[-0.5px] text-ink md:text-[44px] lg:text-[56px]">{brand.name}</span>
