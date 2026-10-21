@@ -29,7 +29,7 @@ export async function infoMetadata(slug: InfoPageSlug): Promise<Metadata> {
     title: page.title,
     description: page.description,
     alternates: { canonical: url },
-    ...shareMetadata({ title: `${page.title} — ${site.brand.name}`, description: page.description, url, siteName: site.brand.name, locale: site.brand.locale, image: ogImage(OG_PATHS.home, `${page.title} — ${site.brand.name}`) }),
+    ...shareMetadata({ title: `${page.title} — ${site.brand.name}`, description: page.description, url, siteName: site.brand.name, locale: site.brand.locale, image: await ogImage(OG_PATHS.home, `${page.title} — ${site.brand.name}`) }),
   };
 }
 

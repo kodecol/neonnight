@@ -13,7 +13,7 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title: { absolute: title },
     alternates: { canonical: absoluteUrl(ROUTES.home) },
-    ...shareMetadata({ title, description: brand.description, url: absoluteUrl(ROUTES.home), siteName: brand.name, locale: brand.locale, image: ogImage(OG_PATHS.home, `${brand.name} — relojes, joyas y perfumes de las grandes casas`) }),
+    ...shareMetadata({ title, description: brand.description, url: absoluteUrl(ROUTES.home), siteName: brand.name, locale: brand.locale, image: await ogImage(OG_PATHS.home, `${brand.name} — relojes, joyas y perfumes de las grandes casas`) }),
   };
 }
 

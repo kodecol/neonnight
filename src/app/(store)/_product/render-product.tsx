@@ -46,7 +46,7 @@ export async function productMetadata(slug: string): Promise<Metadata> {
     title: product.name,
     description,
     alternates: { canonical: url },
-    ...shareMetadata({ title: `${product.name} — ${brand.name}`, description, url, siteName: brand.name, locale, image: ogImage(OG_PATHS.product(product.slug), product.name) }),
+    ...shareMetadata({ title: `${product.name} — ${brand.name}`, description, url, siteName: brand.name, locale, image: await ogImage(OG_PATHS.product(product.slug), product.name) }),
     // Facebook y Pinterest leen el precio sin cambiar og:type.
     other: { "product:price:amount": String(product.price.units), "product:price:currency": product.price.currency },
   };

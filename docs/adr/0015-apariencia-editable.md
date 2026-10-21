@@ -21,7 +21,7 @@ Los colores vivían como tokens de Tailwind en `globals.css`, con algunos hex fi
 
 ## Fuera de esta fase
 
-Tema claro y favicon y manifest dinámicos (fase 4).
+Tema claro. El favicon y el manifest dinámicos (fase 4) están en el ADR 0016.
 
 ## Consecuencias
 
