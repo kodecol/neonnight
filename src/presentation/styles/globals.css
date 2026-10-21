@@ -180,6 +180,65 @@
   -webkit-backdrop-filter: blur(6px);
 }
 
+/* ── Scroll compartido ───────────────────────────────────────────────────
+   Una sola barra para todo el sitio y el panel: un filo de 2 px, sin flechas
+   ni radio, que se aclara al pasar y se vuelve magenta al arrastrar. Chrome,
+   Edge y Safari usan los pseudo-elementos (control fino del grosor); Firefox,
+   que no los tiene, la versión `thin` con los mismos colores.
+   `scroll-quiet` la esconde hasta que el puntero entra al contenedor, y
+   `scroll-fade-y` difumina los bordes solo cuando hay contenido por ver
+   (con scroll-timeline; donde no existe, no se difumina). */
+@property --nn-fade-top {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+@property --nn-fade-bottom {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+@keyframes nn-scroll-fade {
+  from { --nn-fade-top: 0px; --nn-fade-bottom: 28px; }
+  10%, 90% { --nn-fade-top: 28px; --nn-fade-bottom: 28px; }
+  to { --nn-fade-top: 28px; --nn-fade-bottom: 0px; }
+}
+@utility scroll-quiet {
+  &::-webkit-scrollbar-thumb { background-color: transparent; }
+  &:hover::-webkit-scrollbar-thumb,
+  &:focus-within::-webkit-scrollbar-thumb { background-color: var(--color-ink-3); }
+  &:hover::-webkit-scrollbar-thumb:hover { background-color: var(--color-ink-2); }
+  &::-webkit-scrollbar-thumb:active { background-color: var(--color-accent); }
+  @supports not selector(::-webkit-scrollbar) {
+    scrollbar-color: transparent transparent;
+    &:hover, &:focus-within { scrollbar-color: var(--color-ink-3) transparent; }
+  }
+}
+@utility scroll-fade-y {
+  mask-image: linear-gradient(to bottom, transparent, #000 var(--nn-fade-top), #000 calc(100% - var(--nn-fade-bottom)), transparent);
+  @supports (animation-timeline: scroll()) {
+    animation: nn-scroll-fade linear both;
+    animation-timeline: scroll(self y);
+  }
+}
+@layer base {
+  @supports not selector(::-webkit-scrollbar) {
+    * { scrollbar-width: thin; scrollbar-color: var(--color-ink-3) transparent; }
+  }
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track,
+  ::-webkit-scrollbar-corner { background: transparent; }
+  ::-webkit-scrollbar-button { display: none; }
+  ::-webkit-scrollbar-thumb {
+    background-color: var(--color-ink-3);
+    background-clip: padding-box;
+    border: 3px solid transparent;
+    transition: background-color 200ms;
+  }
+  ::-webkit-scrollbar-thumb:hover { background-color: var(--color-ink-2); border-width: 2px; }
+  ::-webkit-scrollbar-thumb:active { background-color: var(--color-accent); border-width: 2px; }
+}
+
 @layer base {
   html {
     background: var(--color-bg);

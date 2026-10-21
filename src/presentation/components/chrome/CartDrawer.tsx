@@ -63,7 +63,7 @@ export function CartDrawer({
           </button>
         </div>
 
-        <ul className="m-0 flex flex-1 list-none flex-col overflow-auto p-0" data-testid="cart-lines">
+        <ul className="scroll-quiet scroll-fade-y m-0 flex flex-1 list-none flex-col overflow-auto overscroll-contain p-0" data-testid="cart-lines">
           {cart.items.map((line) => {
             const key = cartKey(line);
             return (

@@ -168,7 +168,7 @@ function FilterPanel({ result, base, content }: { result: CatalogResultDto; base
   const count = result.products.length;
   return (
     <div className="absolute inset-x-0 top-full flex max-h-[calc(100dvh-132px)] flex-col border-b border-divider bg-surface-elevated">
-      <div className="overflow-y-auto px-page pb-8 pt-8">
+      <div className="scroll-fade-y overflow-y-auto overscroll-contain px-page pb-8 pt-8">
         <div className="grid grid-cols-1 gap-x-12 gap-y-9 md:grid-cols-2 lg:grid-cols-4">
           {result.price && <PriceBlock result={result} base={base} />}
           {result.facets.map((f) => (

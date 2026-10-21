@@ -34,15 +34,15 @@ export function AdminShell({ wordmark, isotype, logout, children }: { wordmark: 
       {/* Escritorio */}
       <aside className="fixed inset-y-0 left-0 z-40 hidden w-[248px] flex-col border-r border-divider bg-bg lg:flex">
         <span className="h-[2px] w-full bg-accent" aria-hidden="true" />
-        <Link href="/admin/catalogo" className="flex items-center gap-3.5 px-8 pb-10 pt-9">
+        <Link href="/admin/catalogo" className="flex items-center gap-3.5 px-8 pb-9 pt-9">
           <Isotype size={30} asset={isotype} priority />
           <span className="flex flex-col">
             <span className="text-label uppercase tracking-[0.3em] text-ink">{wordmark}</span>
             <span className="mt-1 text-label-sm uppercase text-ink-3">Admin</span>
           </span>
         </Link>
-        <PanelNav pathname={pathname} className="min-h-0 flex-1 overflow-y-auto" />
-        <ShellFooter logout={logout} className="border-t border-divider px-8 py-7" />
+        <PanelNav pathname={pathname} className="scroll-quiet scroll-fade-y min-h-0 flex-1 overflow-y-auto overscroll-contain" />
+        <ShellFooter logout={logout} className="border-t border-divider px-8 py-5" />
       </aside>
 
       {/* Móvil / tablet */}
@@ -70,7 +70,7 @@ export function AdminShell({ wordmark, isotype, logout, children }: { wordmark: 
         </div>
       </header>
       {open && (
-        <div id="admin-menu" className="fixed inset-0 z-30 flex flex-col overflow-y-auto bg-bg pt-24 lg:hidden" data-testid="admin-menu">
+        <div id="admin-menu" className="scroll-quiet fixed inset-0 z-30 flex flex-col overflow-y-auto overscroll-contain bg-bg pt-24 lg:hidden" data-testid="admin-menu">
           <PanelNav pathname={pathname} />
           <ShellFooter logout={logout} className="mt-auto border-t border-divider px-8 py-7" />
         </div>
@@ -115,7 +115,7 @@ function PanelNav({ pathname, className }: { pathname: string; className?: strin
 
 function ShellFooter({ logout, className }: { logout: () => Promise<void>; className?: string }) {
   return (
-    <div className={cn("flex flex-col gap-1", className)}>
+    <div className={cn("flex items-center justify-between gap-4", className)}>
       <Link href="/" target="_blank" rel="noreferrer" className="py-2 text-label uppercase text-ink-2 transition-colors hover:text-ink">
         Ver tienda ↗
       </Link>
