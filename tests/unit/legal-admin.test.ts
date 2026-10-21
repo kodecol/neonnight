@@ -121,6 +121,18 @@ describe("Legales editables desde el panel", () => {
     expect(text(await d.content.page("privacidad"))).toContain(SITE_CONTENT.company.privacyEmail);
   });
 
+  it("con otra razón comercial, ninguna página de fábrica dice Neon Night (marca blanca)", async () => {
+    const d = setup();
+    const form = await new GetCompanySettings(d.content).execute();
+    await new SaveCompanySettings(d).execute({ ...form, tradeName: "CASA AURORA" });
+    for (const slug of ["pagos", "devoluciones", "garantia", "terminos", "nosotros", "envios"] as const) {
+      const page = await d.content.page(slug);
+      const text = JSON.stringify({ description: page!.description, sections: page!.sections });
+      expect(text, slug).not.toMatch(/neon\s*night/i);
+    }
+    expect((await d.content.page("pagos"))!.description).toContain("CASA AURORA nunca ve ni guarda");
+  });
+
   it("la transportadora se edita y llega a la home, a Envíos y a las páginas publicadas", async () => {
     const d = setup();
     const before = await d.content.get();

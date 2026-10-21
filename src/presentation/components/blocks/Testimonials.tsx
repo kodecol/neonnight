@@ -87,7 +87,7 @@ export function Testimonials({ content }: { content: SiteContent["home"]["testim
           <Kicker as="p" className="m-0">
             {content.kicker}
           </Kicker>
-          <h2 id="testimonials-title" className="mb-0 mt-5 text-[22px] uppercase leading-[27px] tracking-[-0.3px] [text-wrap:balance] md:max-w-[22ch] md:text-h2-fluid lg:max-w-none">
+          <h2 id="testimonials-title" className="mb-0 mt-5 font-display text-[22px] uppercase leading-[27px] tracking-[-0.3px] [text-wrap:balance] md:max-w-[22ch] md:text-h2-fluid lg:max-w-none">
             {content.title}
           </h2>
         </div>

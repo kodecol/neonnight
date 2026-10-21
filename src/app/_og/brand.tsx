@@ -2,8 +2,10 @@ import { getContainer } from "@/infrastructure/container";
 import { GetActiveAppearance } from "@/application/use-cases/admin/appearance";
 import { DEFAULT_APPEARANCE } from "@/application/dto/appearance.dto";
 import { hexToRgb } from "@/application/lib/contrast";
+import { readLocalMedia } from "@/infrastructure/media/local-disk-uploader";
+import sharp from "sharp";
 import { readFile } from "node:fs/promises";
-import { join } from "node:path";
+import { join, normalize } from "node:path";
 
 /**
  * Piezas comunes de las imágenes de vista previa (Open Graph): la fuente de
@@ -26,16 +28,37 @@ export function ogFonts() {
 
 let isotype: Promise<string> | null = null;
 
-/** Isotipo blanco y magenta como data URI. */
 /**
- * Isotipo para las vistas previas: el de Identidad (Cloudinary lo entrega en
- * PNG aunque se haya subido en SVG) o, si no hay, el del sitio.
+ * Isotipo para las vistas previas: el de Identidad (de Cloudinary, del disco
+ * local o del sitio, convertido a PNG si es SVG) o, si no hay o no se puede
+ * leer, el del sitio.
  */
-export function ogIsotype(asset?: { src: string } | null): Promise<string> {
+export async function ogIsotype(asset?: { src: string } | null): Promise<string> {
   const remote = ogPhoto(asset?.src, 160, "png");
-  if (remote) return Promise.resolve(remote);
+  if (remote) return remote;
+  const own = asset ? await isotypeBytes(asset.src) : null;
+  if (own) {
+    const png = await sharp(own, { density: 300 }).resize(160, 160, { fit: "inside" }).png().toBuffer().catch(() => null);
+    if (png) return `data:image/png;base64,${png.toString("base64")}`;
+  }
   isotype ??= readFile(join(PUBLIC, "assets/isotipo-dark.png")).then((b) => `data:image/png;base64,${b.toString("base64")}`);
   return isotype;
+}
+
+/** Bytes del isotipo de Identidad (Cloudinary lo entrega en PNG aunque sea SVG); null si no se puede leer. */
+export async function isotypeBytes(src: string): Promise<Buffer | null> {
+  try {
+    const remote = ogPhoto(src, 512, "png");
+    if (remote) {
+      const res = await fetch(remote, { signal: AbortSignal.timeout(5000) });
+      return res.ok ? Buffer.from(await res.arrayBuffer()) : null;
+    }
+    if (src.startsWith("/api/media/")) return (await readLocalMedia(src.slice("/api/media/".length)))?.bytes ?? null;
+    const file = normalize(join(PUBLIC, src));
+    return file.startsWith(join(PUBLIC, "assets")) ? await readFile(file) : null;
+  } catch {
+    return null;
+  }
 }
 
 /** Alto del isotipo para un ancho dado según su proporción (el del sitio es 656 × 677). */

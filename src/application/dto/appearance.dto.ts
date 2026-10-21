@@ -39,7 +39,7 @@ export const ThemeColorsSchema = z.object({
 export type ThemeColors = z.infer<typeof ThemeColorsSchema>;
 
 export const PRESETS = {
-  "neon-night": { label: "Neon Night", colors: { accent: "#ff006e", bg: "#000000", surface: "#0e0e0e", ink: "#ffffff", ink2: "#a1a1a1", ink3: "#515151", divider: "#969696", border: "#969696" } },
+  "neon-night": { label: "De fábrica", colors: { accent: "#ff006e", bg: "#000000", surface: "#0e0e0e", ink: "#ffffff", ink2: "#a1a1a1", ink3: "#515151", divider: "#969696", border: "#969696" } },
   zafiro: { label: "Zafiro", colors: { accent: "#2f5bea", bg: "#05070d", surface: "#0d111c", ink: "#ffffff", ink2: "#a3abbd", ink3: "#4f566a", divider: "#8a93a8", border: "#8a93a8" } },
   esmeralda: { label: "Esmeralda", colors: { accent: "#0b7a54", bg: "#030806", surface: "#0b1310", ink: "#ffffff", ink2: "#a2b3ab", ink3: "#4c5a54", divider: "#8c9c95", border: "#8c9c95" } },
   oro: { label: "Oro", colors: { accent: "#9a6f12", bg: "#0a0805", surface: "#15110b", ink: "#ffffff", ink2: "#b8ad98", ink3: "#5c5547", divider: "#a0947c", border: "#a0947c" } },

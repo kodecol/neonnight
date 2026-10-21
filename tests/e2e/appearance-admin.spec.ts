@@ -33,6 +33,8 @@ test.describe("Ajustes › Apariencia", () => {
     await page.goto("/");
     expect(await accentOf(page)).toBe("rgb(47, 91, 234)");
     expect(await page.locator("#hero-title").evaluate((el) => getComputedStyle(el).fontFamily)).toMatch(/Playfair/i);
+    // Un h2 con estilo de rótulo sigue con la fuente del cuerpo.
+    expect(await page.locator("#brands-label").evaluate((el) => getComputedStyle(el).fontFamily)).not.toMatch(/Playfair/i);
     await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute("content", "#05070d");
 
     await page.goto("/admin/ajustes/apariencia");

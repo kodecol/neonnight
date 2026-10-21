@@ -168,7 +168,7 @@ function Stat({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="bg-bg px-6 py-6">
       <span className="block text-label-sm uppercase text-ink-3">{label}</span>
-      <span className="mt-3 block text-h3 uppercase text-ink">{value}</span>
+      <span className="mt-3 block font-sans text-h3 uppercase text-ink">{value}</span>
     </div>
   );
 }

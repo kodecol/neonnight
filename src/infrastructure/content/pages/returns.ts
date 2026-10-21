@@ -67,7 +67,7 @@ export function returnsPage(ctx: PageContext): InfoPage {
         id: "excepciones",
         title: "Qué no se puede devolver",
         blocks: [
-          { type: "p", text: "La ley excluye del retracto algunos casos (Ley 1480 de 2011, art. 47). En Neon Night son estos:" },
+          { type: "p", text: `La ley excluye del retracto algunos casos (Ley 1480 de 2011, art. 47). En ${company.tradeName} son estos:` },
           {
             type: "list",
             items: [

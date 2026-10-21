@@ -214,7 +214,7 @@ export function AppearanceEditor({
             })}
           </div>
           <p className="m-0 text-small text-ink-2">
-            {draft.preset === "personalizado" ? "Personalizado: partiste de un preset y cambiaste colores." : `Preset ${PRESETS[draft.preset as keyof typeof PRESETS]?.label ?? draft.preset}.`} Toca un color para ajustarlo.
+            {draft.preset === "personalizado" ? "Personalizado: partiste de un preset y cambiaste colores." : `Preset: ${PRESETS[draft.preset as keyof typeof PRESETS]?.label ?? draft.preset}.`} Toca un color para ajustarlo.
           </p>
           <div className="grid grid-cols-[minmax(0,1fr)] gap-6 sm:grid-cols-2 xl:grid-cols-4">
             {COLOR_FIELDS.map((f) => (
@@ -287,7 +287,7 @@ export function AppearanceEditor({
           </p>
           <ul className="m-0 flex list-none flex-col gap-px border border-divider bg-divider p-0">
             <li className="flex items-center justify-between gap-4 bg-bg px-5 py-3.5">
-              <span className="text-small text-ink-2">Apariencia de fábrica (Neon Night, Archivo)</span>
+              <span className="text-small text-ink-2">Apariencia de fábrica (Archivo)</span>
               <button type="button" onClick={() => load(DEFAULT_APPEARANCE, "Apariencia de fábrica")} className="cursor-pointer text-label-sm uppercase text-ink-2 hover:text-ink" data-testid="appearance-factory">
                 Cargar en el editor
               </button>
