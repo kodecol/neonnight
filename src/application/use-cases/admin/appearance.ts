@@ -27,13 +27,24 @@ export class GetAppearanceEditor {
 }
 
 /** Lo que pinta la tienda: lo publicado (o el borrador en la vista previa); null: la del código, sin estilos extra. */
+/**
+ * Lo leído de la base se vuelve a validar antes de llegar al <style> del tema
+ * (defensa en profundidad: si el documento se alterara fuera del panel, rige
+ * globals.css en vez de inyectar valores sin revisar).
+ */
+function valid(a: StoreAppearanceInput | null): StoreAppearanceInput | null {
+  if (!a) return null;
+  const r = StoreAppearanceSchema.safeParse(a);
+  return r.success ? r.data : null;
+}
+
 export class GetActiveAppearance {
   constructor(private readonly appearance: AppearanceSettingsRepository) {}
 
   async execute(opts: { preview?: boolean } = {}): Promise<StoreAppearanceInput | null> {
-    const published = await this.appearance.get().catch(() => null);
+    const published = valid(await this.appearance.get().catch(() => null));
     if (!opts.preview) return published;
-    return (await this.appearance.getDraft().catch(() => null)) ?? published;
+    return valid(await this.appearance.getDraft().catch(() => null)) ?? published;
   }
 }
 

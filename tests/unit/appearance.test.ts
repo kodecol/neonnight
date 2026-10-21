@@ -66,3 +66,14 @@ describe("Apariencia: tema en la tienda", () => {
     await expect(new ApplyAppearance(deps).execute({ ...DEFAULT_APPEARANCE, colors: { ...DEFAULT_APPEARANCE.colors, ink: "#111111" } })).rejects.toBeInstanceOf(ZodError);
   });
 });
+
+describe("Apariencia: lectura defensiva", () => {
+  it("un documento alterado fuera del panel no llega al <style>: rige globals.css", async () => {
+    const { appearance } = setup();
+    const tampered = { ...DEFAULT_APPEARANCE, colors: { ...DEFAULT_APPEARANCE.colors, accent: "red}</style><script>alert(1)</script>" }, updatedAt: new Date() };
+    await appearance.publish(tampered as unknown as StoreAppearance);
+    expect(await new GetActiveAppearance(appearance).execute()).toBeNull();
+    await appearance.publish({ ...DEFAULT_APPEARANCE, updatedAt: new Date() } as StoreAppearance);
+    expect((await new GetActiveAppearance(appearance).execute())?.colors.accent).toBe(DEFAULT_APPEARANCE.colors.accent);
+  });
+});
