@@ -98,6 +98,12 @@ test.describe("Favicon, íconos y manifest", () => {
       [0, 0, 0],
     ]);
 
+    // La vista previa al compartir también usa el isotipo subido (aunque no esté en Cloudinary).
+    const og = await request.get((await page.locator('meta[property="og:image"]').getAttribute("content"))!);
+    const [r = 0, g = 255, b = 255] = [...(await sharp(await og.body()).extract({ left: 101, top: 93, width: 1, height: 1 }).raw().toBuffer())];
+    expect(r).toBeGreaterThan(200);
+    expect(g + b).toBeLessThan(80);
+
     await page.goto("/admin/ajustes/identidad");
     await page.getByTestId("identity-factory").click();
     await page.getByTestId("identity-publish").click();

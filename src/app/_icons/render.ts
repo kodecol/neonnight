@@ -1,11 +1,10 @@
 import sharp from "sharp";
 import { readFile } from "node:fs/promises";
-import { join, normalize } from "node:path";
+import { join } from "node:path";
 import { getContainer } from "@/infrastructure/container";
-import { readLocalMedia } from "@/infrastructure/media/local-disk-uploader";
 import { GetBrandAssets, type BrandAssets } from "@/application/use-cases/brand-assets";
 import { encodeIco } from "@/application/lib/ico";
-import { ogPhoto } from "../_og/brand";
+import { isotypeBytes } from "../_og/brand";
 
 /**
  * Favicon e íconos de la tienda (pestaña, pantalla de inicio, manifest):
@@ -35,22 +34,6 @@ const FACTORY_FILES: Partial<Record<IconFile | "favicon.ico", string>> = {
 const FAVICON_SIZES = [16, 32, 48] as const;
 
 export const brandAssets = () => new GetBrandAssets(getContainer()).execute();
-
-/** Bytes del isotipo de Identidad (Cloudinary lo entrega en PNG aunque sea SVG); null si no se puede leer. */
-async function isotypeBytes(src: string): Promise<Buffer | null> {
-  try {
-    const remote = ogPhoto(src, 512, "png");
-    if (remote) {
-      const res = await fetch(remote, { signal: AbortSignal.timeout(5000) });
-      return res.ok ? Buffer.from(await res.arrayBuffer()) : null;
-    }
-    if (src.startsWith("/api/media/")) return (await readLocalMedia(src.slice("/api/media/".length)))?.bytes ?? null;
-    const file = normalize(join(PUBLIC, src));
-    return file.startsWith(join(PUBLIC, "assets")) ? await readFile(file) : null;
-  } catch {
-    return null;
-  }
-}
 
 async function compose(brand: BrandAssets, size: number, fill: number): Promise<Buffer> {
   const art = (brand.isotype && (await isotypeBytes(brand.isotype.src))) || (await readFile(SITE_ISOTYPE));

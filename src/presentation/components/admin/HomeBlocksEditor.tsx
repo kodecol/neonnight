@@ -141,7 +141,7 @@ export function SocialEditor({ value, onChange, err, defaults }: { value: Social
             </div>
             {n.enabled && (
               <div className="grid gap-5 md:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
-                <TextInput label="Usuario" value={n.handle} onChange={(e) => set(i, { handle: e.target.value })} placeholder="@neonnight01" maxLength={40} error={err(`social.networks.${i}.handle`)} />
+                <TextInput label="Usuario" value={n.handle} onChange={(e) => set(i, { handle: e.target.value })} placeholder="@tutienda" maxLength={40} error={err(`social.networks.${i}.handle`)} />
                 <TextInput label="Enlace del perfil" value={n.href} onChange={(e) => set(i, { href: e.target.value })} placeholder={`https://www.${SOCIAL_NETWORKS[n.id].hosts[0]}/…`} error={err(`social.networks.${i}.href`)} />
                 <TextInput className="md:col-span-2" label="Qué publicas ahí" value={n.description} onChange={(e) => set(i, { description: e.target.value })} maxLength={90} />
               </div>

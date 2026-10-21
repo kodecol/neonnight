@@ -298,7 +298,7 @@ export function ProductForm({
         <aside className="self-start xl:sticky xl:top-10">
           <div className="border border-divider bg-surface-elevated p-7">
             <span className="block text-kicker uppercase text-ink-2">Venta</span>
-            <p className="m-0 mt-5 text-h3 font-medium tabular-nums text-ink" aria-live="polite">
+            <p className="m-0 mt-5 font-sans text-h3 font-medium tabular-nums text-ink" aria-live="polite">
               {minPrice > 0 ? (
                 <>
                   {draft.variants.length > 1 && new Set(prices).size > 1 && <span className="text-ink-2">Desde </span>}

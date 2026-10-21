@@ -409,9 +409,13 @@
 /* Logo de Bold: degradado de marca al pasar el cursor por su contenedor. */
 .group:hover path[style*="--nn-bold-fill"] { fill: var(--nn-bold-fill); }
 
-/* Títulos con la fuente de rótulos (Ajustes › Apariencia; por defecto, la del cuerpo). */
-h1,
-h2,
-h3 {
-  font-family: var(--font-display);
+/* La escala de títulos usa la fuente de títulos (Ajustes › Apariencia; por defecto, la del cuerpo).
+   Va por clase y no por etiqueta: un h2 con estilo de rótulo (text-kicker, text-label-lg) sigue en la
+   del cuerpo. En la capa base, así `font-sans` o `font-display` en el mismo elemento mandan. */
+@layer base {
+  [class*="text-display"],
+  [class*="text-h2"],
+  [class*="text-h3"] {
+    font-family: var(--font-display);
+  }
 }

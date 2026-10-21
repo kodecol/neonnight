@@ -3,12 +3,13 @@ import { LEGAL_EFFECTIVE_DATE, LEGAL_VERSION, type PageContext } from "./context
 import { contactChannels, shippingCostText } from "./shared";
 
 export function paymentsPage(ctx: PageContext): InfoPage {
+  const { company } = ctx;
   return {
     slug: "pagos",
     layout: "legal",
     kicker: "Ayuda",
     title: "Pagos",
-    description: "Paga con tarjeta de crédito o débito, PSE, Nequi o Botón Bancolombia a través de Bold. Neon Night nunca ve ni guarda los datos de tu tarjeta.",
+    description: `Paga con tarjeta de crédito o débito, PSE, Nequi o Botón Bancolombia a través de Bold. ${company.tradeName} nunca ve ni guarda los datos de tu tarjeta.`,
     lead: "Los pagos los procesa Bold, una pasarela colombiana. Eliges el medio al finalizar la compra y nosotros nunca vemos los datos de tu tarjeta.",
     updatedAt: LEGAL_EFFECTIVE_DATE,
     version: LEGAL_VERSION,
@@ -44,7 +45,7 @@ export function paymentsPage(ctx: PageContext): InfoPage {
             type: "list",
             items: [
               "Al finalizar la compra pasas al checkout de [Bold](https://bold.co), que procesa el pago con los estándares de seguridad de la industria de tarjetas.",
-              "**Neon Night no ve ni guarda** los datos de tu tarjeta ni las claves de tu banco.",
+              `**${company.tradeName} no ve ni guarda** los datos de tu tarjeta ni las claves de tu banco.`,
               "Toda la navegación en el sitio va por conexión cifrada (HTTPS).",
               "Nunca te pediremos datos de tarjeta, claves ni códigos por WhatsApp, correo o teléfono. Si alguien lo hace a nombre nuestro, no los compartas y avísanos.",
             ],
