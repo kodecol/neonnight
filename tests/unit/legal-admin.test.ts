@@ -76,6 +76,7 @@ describe("Legales editables desde el panel", () => {
     await expect(save("## A\n\nVer [garantía](/garantia#no-existe)")).rejects.toThrow(/#no-existe/);
     await expect(save("## A\n\nVer [otra](/inventada)")).rejects.toThrow(/\/inventada/);
     await expect(save("## A\n\nVer [x](javascript:alert(1))")).rejects.toThrow(/no permitido/);
+    await expect(save("## A\n\nVer [x](/\\evil.example)")).rejects.toThrow(/no permitido/);
     await expect(new SaveLegalPage(d).execute("envios", { ...content, description: "corta", major: false }, "publish")).rejects.toBeInstanceOf(ZodError);
     await expect(save("## A\n\nVer [garantía](/garantia#que-cubre) y [arriba](#a)")).resolves.toEqual({ version: "1.1" });
   });
@@ -144,6 +145,9 @@ describe("Legales editables desde el panel", () => {
 
     const form = await new GetCompanySettings(d.content).execute();
     await expect(new SaveCompanySettings(d).execute({ ...form, trackingUrl: "http://inseguro.example" })).rejects.toBeInstanceOf(ZodError);
+    // Un salto de línea en un dato de la empresa abriría otra sección en el markdown legal.
+    for (const bad of [{ hours: "Lunes a viernes\n## Sección inyectada" }, { city: "Bogotá\r\n- ítem" }, { ownerName: "Ana\nPérez", ownerTaxId: "1" }, { trackingUrl: "https://www.servientrega.com/\n## x" }])
+      await expect(new SaveCompanySettings(d).execute({ ...form, ...bad }), JSON.stringify(bad)).rejects.toBeInstanceOf(ZodError);
     await new SaveCompanySettings(d).execute({ ...form, carrier: "Servientrega", trackingUrl: "https://www.servientrega.com/" });
 
     const site = await d.content.get();

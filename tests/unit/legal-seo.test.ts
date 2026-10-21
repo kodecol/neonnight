@@ -108,6 +108,9 @@ describe("Texto enriquecido", () => {
     expect(parseRichText("**[Garantía](/garantia)** total")[0]).toEqual({ type: "strong", children: [{ type: "link", text: "Garantía", href: "/garantia" }] });
     expect(parseRichText("[x](javascript:alert(1))")[0]).toMatchObject({ type: "text" });
     expect(parseRichText("[x](//evil.example)")[0]).toMatchObject({ type: "text", text: "x" });
+    // El navegador trata `/\host` como `//host`: externo.
+    expect(parseRichText("[x](/\\evil.example)")[0]).toMatchObject({ type: "text", text: "x" });
+    expect(parseRichText("[x](/garantia#que-cubre)")[0]).toMatchObject({ type: "link", href: "/garantia#que-cubre" });
     expect(parseRichText("[x](http://inseguro.example)")[0]).toMatchObject({ type: "text", text: "x" });
   });
 });

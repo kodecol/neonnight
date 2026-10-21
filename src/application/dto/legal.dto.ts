@@ -15,32 +15,43 @@ export const LegalPageInputSchema = z.object({
 });
 export type LegalPageInput = z.infer<typeof LegalPageInputSchema>;
 
+/**
+ * Los datos de la empresa se insertan en el markdown legal ({correo},
+ * {ciudad}…): un salto de línea abriría ahí otra sección (`## `) o bloque.
+ */
+const ONE_LINE = /^[^\r\n]*$/;
+const ONE_LINE_MSG = "Escríbelo en una sola línea.";
+const line = (min: number, max: number) => text(min, max).regex(ONE_LINE, ONE_LINE_MSG);
+
 const optional = (max: number) =>
   z
     .string()
     .trim()
     .max(max)
+    .regex(ONE_LINE, ONE_LINE_MSG)
     .nullable()
     .transform((v) => (v ? v : null));
 
 export const CompanyInputSchema = z
   .object({
-    tradeName: text(2, 60),
-    legalForm: text(2, 60),
-    registryNumber: text(1, 20),
-    chamber: text(2, 80),
+    tradeName: line(2, 60),
+    legalForm: line(2, 60),
+    registryNumber: line(1, 20),
+    chamber: line(2, 80),
     ownerName: optional(80),
     ownerTaxId: optional(20),
-    city: text(2, 60),
-    region: text(2, 60),
-    email: z.string().trim().email("Correo no válido."),
-    privacyEmail: z.string().trim().email("Correo no válido."),
-    hours: text(2, 120),
-    carrier: text(2, 60),
+    city: line(2, 60),
+    region: line(2, 60),
+    email: z.string().trim().email("Correo no válido.").regex(ONE_LINE, ONE_LINE_MSG),
+    privacyEmail: z.string().trim().email("Correo no válido.").regex(ONE_LINE, ONE_LINE_MSG),
+    hours: line(2, 120),
+    carrier: line(2, 60),
     trackingUrl: z
       .string()
       .trim()
       .max(200)
+      // new URL() descarta los saltos de línea: hay que mirarlos antes.
+      .regex(ONE_LINE, ONE_LINE_MSG)
       .refine((v) => {
         try {
           return new URL(v).protocol === "https:";

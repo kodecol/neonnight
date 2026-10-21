@@ -5,8 +5,8 @@
 export type RichNode = { type: "text"; text: string } | { type: "strong"; children: RichNode[] } | { type: "link"; text: string; href: string };
 
 const TOKEN = /\*\*(.+?)\*\*|\[([^\]]+)\]\(([^)\s]+)\)/g;
-/** Solo rutas internas, anclas, https y mailto. */
-const SAFE_HREF = /^(\/(?!\/)|#|https:\/\/|mailto:)/;
+/** Solo rutas internas, anclas, https y mailto. `//host` y `/\host` son externos para el navegador. */
+const SAFE_HREF = /^(\/(?![\/\\])|#|https:\/\/|mailto:)/;
 
 export function parseRichText(input: string): RichNode[] {
   const out: RichNode[] = [];

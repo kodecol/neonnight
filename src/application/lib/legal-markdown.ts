@@ -255,7 +255,8 @@ export function unknownTokens(text: string): string[] {
 /* ── Enlaces ────────────────────────────────────────────────────────────── */
 
 const LINK = /\[([^\]]+)\]\(([^)\s]+)\)/g;
-const SAFE_HREF = /^(\/(?!\/)|#|https:\/\/|mailto:)/;
+// `/\host` y `//host` son externos para el navegador: tras la barra no puede ir otra barra.
+const SAFE_HREF = /^(\/(?![\/\\])|#|https:\/\/|mailto:)/;
 
 function textsOf(b: InfoBlock): string[] {
   switch (b.type) {
