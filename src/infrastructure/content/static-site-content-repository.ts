@@ -1,4 +1,4 @@
-import type { SiteContent } from "@/application/dto/site-content.dto";
+import type { CompanyInfo, SiteContent, StorePolicies } from "@/application/dto/site-content.dto";
 import type { InfoPage, InfoPageSlug } from "@/application/dto/info-page.dto";
 import type { SiteContentRepository } from "@/application/ports/site-content-repository";
 import { SITE_CONTENT } from "./site-content";
@@ -14,12 +14,24 @@ export function formatWhatsapp(number: string | undefined | null): string | null
 
 export class StaticSiteContentRepository implements SiteContentRepository {
   private readonly pages: Record<InfoPageSlug, InfoPage>;
+  /** WhatsApp con formato legible ("+57 300 …") o null. */
+  readonly whatsapp: string | null;
+  private memo: { key: string; pages: Record<InfoPageSlug, InfoPage> } | null = null;
 
   constructor(
     private readonly content: SiteContent = SITE_CONTENT,
     whatsappNumber: string | null = null,
   ) {
-    this.pages = buildInfoPages({ company: content.company, policies: content.policies, whatsapp: formatWhatsapp(whatsappNumber) });
+    this.whatsapp = formatWhatsapp(whatsappNumber);
+    this.pages = buildInfoPages({ company: content.company, policies: content.policies, whatsapp: this.whatsapp });
+  }
+
+  /** Las páginas de código redactadas con otros datos de empresa o de envío (los editados en el panel). */
+  pagesFor(company: CompanyInfo, policies: StorePolicies = this.content.policies): Record<InfoPageSlug, InfoPage> {
+    const key = JSON.stringify([company, policies]);
+    if (key === JSON.stringify([this.content.company, this.content.policies])) return this.pages;
+    if (this.memo?.key !== key) this.memo = { key, pages: buildInfoPages({ company, policies, whatsapp: this.whatsapp }) };
+    return this.memo.pages;
   }
 
   async get(): Promise<SiteContent> {

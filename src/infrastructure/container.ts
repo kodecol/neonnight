@@ -11,6 +11,8 @@ import type { Clock, IdGenerator } from "@/application/ports/clock";
 import type { SiteContentRepository } from "@/application/ports/site-content-repository";
 import type { MediaRemover, SiteMediaRepository, VideoUploadSigner } from "@/application/ports/site-media";
 import type { HomeSettingsRepository } from "@/application/ports/home-settings";
+import type { LegalPagesRepository } from "@/application/ports/legal-pages";
+import type { CompanySettingsRepository } from "@/application/ports/company-settings";
 import { trackingIds, type TrackingIds } from "@/application/lib/tracking-ids";
 import { InMemoryProductRepository } from "./repositories/in-memory-product-repository";
 import { InMemoryLineRepository } from "./repositories/in-memory-line-repository";
@@ -25,6 +27,8 @@ import { MongoCategoryRepository } from "./mongo/mongo-category-repository";
 import { MongoPaymentSettingsRepository } from "./mongo/mongo-payment-settings-repository";
 import { MongoHomeSettingsRepository, MongoSiteMediaRepository } from "./mongo/mongo-site-content-repositories";
 import { InMemoryHomeSettingsRepository, InMemorySiteMediaRepository } from "./repositories/in-memory-site-content-repositories";
+import { InMemoryCompanySettingsRepository, InMemoryLegalPagesRepository } from "./repositories/in-memory-legal-repositories";
+import { MongoCompanySettingsRepository, MongoLegalPagesRepository } from "./mongo/mongo-legal-repositories";
 import { CloudinaryMediaRemover, CloudinaryVideoSigner, DisabledVideoSigner, NoopMediaRemover, SITE_FOLDER } from "./media/cloudinary-site-media";
 import { NoopPaymentGateway } from "./payments/noop-payment-gateway";
 import { BoldPaymentGateway } from "./payments/bold-payment-gateway";
@@ -57,6 +61,11 @@ export interface Container {
   /** Biblioteca de medios y contenido de la home (sección "Inicio" del panel). */
   siteMedia: SiteMediaRepository;
   homeSettings: HomeSettingsRepository;
+  /** Páginas legales editadas y datos de la empresa (panel › Legales). */
+  legalPages: LegalPagesRepository;
+  companySettings: CompanySettingsRepository;
+  /** WhatsApp con formato legible, para las fichas de las páginas legales. */
+  whatsappLabel: string | null;
   /** Fotos del sitio: Cloudinary `neonnight/sitio` o disco local. */
   siteUploader: MediaUploader;
   videoSigner: VideoUploadSigner;
@@ -68,8 +77,6 @@ export interface Container {
   clock: Clock;
   ids: IdGenerator;
   content: SiteContentRepository;
-  /** Contenido del código, sin lo editado en el panel (la vista previa le aplica el borrador). */
-  baseContent: SiteContentRepository;
   /** IDs de Google Analytics y del píxel de Meta (runtime, ya validados). */
   tracking: TrackingIds;
 }
@@ -83,7 +90,7 @@ export interface Container {
 const g: { __nnContainer?: Container | null } =
   process.env.NODE_ENV === "production" ? (globalThis as unknown as { __nnContainer?: Container | null }) : {};
 
-function persistence(): Pick<Container, "products" | "lines" | "categories" | "orders" | "paymentSettings" | "siteMedia" | "homeSettings"> {
+function persistence(): Pick<Container, "products" | "lines" | "categories" | "orders" | "paymentSettings" | "siteMedia" | "homeSettings" | "legalPages" | "companySettings"> {
   const uri = process.env.MONGODB_URI;
   if (!uri) {
     return {
@@ -94,6 +101,8 @@ function persistence(): Pick<Container, "products" | "lines" | "categories" | "o
       paymentSettings: new InMemoryPaymentSettingsRepository(),
       siteMedia: new InMemorySiteMediaRepository(),
       homeSettings: new InMemoryHomeSettingsRepository(),
+      legalPages: new InMemoryLegalPagesRepository(),
+      companySettings: new InMemoryCompanySettingsRepository(),
     };
   }
   const db = mongoDb(uri, process.env.MONGODB_DB || "neonnight");
@@ -105,6 +114,8 @@ function persistence(): Pick<Container, "products" | "lines" | "categories" | "o
     paymentSettings: new MongoPaymentSettingsRepository(db, adminSecret),
     siteMedia: new MongoSiteMediaRepository(db),
     homeSettings: new MongoHomeSettingsRepository(db),
+    legalPages: new MongoLegalPagesRepository(db),
+    companySettings: new MongoCompanySettingsRepository(db),
   };
 }
 
@@ -120,6 +131,9 @@ export function createContainer(overrides: Partial<Container> = {}): Container {
     paymentSettings: base.paymentSettings,
     siteMedia: base.siteMedia,
     homeSettings: base.homeSettings,
+    legalPages: base.legalPages,
+    companySettings: base.companySettings,
+    whatsappLabel: staticContent.whatsapp,
     siteUploader: overrides.siteUploader ?? (process.env.CLOUDINARY_URL ? new CloudinaryMediaUploader(SITE_FOLDER) : new LocalDiskMediaUploader()),
     videoSigner: overrides.videoSigner ?? (process.env.CLOUDINARY_URL ? new CloudinaryVideoSigner() : new DisabledVideoSigner()),
     mediaRemover: overrides.mediaRemover ?? (process.env.CLOUDINARY_URL ? new CloudinaryMediaRemover() : new NoopMediaRemover()),
@@ -135,8 +149,14 @@ export function createContainer(overrides: Partial<Container> = {}): Container {
       }),
     clock: overrides.clock ?? new SystemClock(),
     ids: overrides.ids ?? new RandomIdGenerator(),
-    baseContent: overrides.baseContent ?? staticContent,
-    content: overrides.content ?? new ManagedSiteContentRepository(staticContent, base.homeSettings),
+    content:
+      overrides.content ??
+      new ManagedSiteContentRepository(staticContent, base.homeSettings, {
+        pages: base.legalPages,
+        company: base.companySettings,
+        codePages: (company, policies) => staticContent.pagesFor(company, policies),
+        whatsapp: staticContent.whatsapp,
+      }),
     tracking: overrides.tracking ?? trackingIds({ ga: process.env.GA_MEASUREMENT_ID, pixel: process.env.META_PIXEL_ID }),
   };
 }

@@ -26,9 +26,9 @@ export default defineConfig({
     },
   },
   projects: [
-    { name: "chromium", testIgnore: /(home|orders)-admin\.spec/, use: { ...devices["Desktop Chrome"], viewport: { width: 1440, height: 900 } } },
-    // Cambia la home compartida: corre al final, cuando ya terminaron las demás.
-    { name: "inicio", testMatch: /(home|orders)-admin\.spec/, dependencies: ["chromium"], use: { ...devices["Desktop Chrome"], viewport: { width: 1440, height: 900 } } },
+    { name: "chromium", testIgnore: /(home|orders|legal)-admin\.spec/, use: { ...devices["Desktop Chrome"], viewport: { width: 1440, height: 900 } } },
+    // Cambia estado compartido (home, pedidos, legales): corre al final, cuando ya terminaron las demás.
+    { name: "inicio", testMatch: /(home|orders|legal)-admin\.spec/, dependencies: ["chromium"], use: { ...devices["Desktop Chrome"], viewport: { width: 1440, height: 900 } } },
   ],
   webServer: {
     command: `npm run build && npm run start -- -p ${PORT}`,

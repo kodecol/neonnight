@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getContainer } from "@/infrastructure/container";
 import { ListLines } from "@/application/use-cases/list-lines";
-import type { InfoPageSlug } from "@/application/dto/info-page.dto";
+import type { InfoPage, InfoPageSlug } from "@/application/dto/info-page.dto";
 import { InfoPageView } from "@/presentation/components/info/InfoPageView";
 import { LineShowcase } from "@/presentation/components/blocks/LineShowcase";
 import { JsonLd } from "@/presentation/components/seo/JsonLd";
@@ -33,39 +33,43 @@ export async function infoMetadata(slug: InfoPageSlug): Promise<Metadata> {
   };
 }
 
-export async function InfoRoute({ slug }: { slug: InfoPageSlug }) {
+/** `preview`: la página ya armada con el borrador del panel (vista previa, sin datos estructurados). */
+export async function InfoRoute({ slug, preview }: { slug: InfoPageSlug; preview?: InfoPage }) {
   const container = getContainer();
   const { content, whatsapp } = container;
-  const [page, site] = await Promise.all([content.page(slug), content.get()]);
+  const [published, site] = await Promise.all([preview ? null : content.page(slug), content.get()]);
+  const page = preview ?? published;
   if (!page) notFound();
   const lines = slug === "nosotros" ? await new ListLines(container).execute() : [];
   const url = absoluteUrl(`/${slug}`);
 
   return (
     <>
-      <JsonLd
-        data={{
-          "@context": "https://schema.org",
-          "@graph": [
-            {
-              "@type": slug === "nosotros" ? "AboutPage" : "WebPage",
-              name: page.title,
-              description: page.description,
-              url,
-              inLanguage: site.brand.locale,
-              dateModified: page.updatedAt,
-              isPartOf: { "@type": "WebSite", name: site.brand.name, url: absoluteUrl("/") },
-            },
-            {
-              "@type": "BreadcrumbList",
-              itemListElement: [
-                { "@type": "ListItem", position: 1, name: site.collection.breadcrumbHome, item: absoluteUrl("/") },
-                { "@type": "ListItem", position: 2, name: site.info.related[slug].label, item: url },
-              ],
-            },
-          ],
-        }}
-      />
+      {!preview && (
+        <JsonLd
+          data={{
+            "@context": "https://schema.org",
+            "@graph": [
+              {
+                "@type": slug === "nosotros" ? "AboutPage" : "WebPage",
+                name: page.title,
+                description: page.description,
+                url,
+                inLanguage: site.brand.locale,
+                dateModified: page.updatedAt,
+                isPartOf: { "@type": "WebSite", name: site.brand.name, url: absoluteUrl("/") },
+              },
+              {
+                "@type": "BreadcrumbList",
+                itemListElement: [
+                  { "@type": "ListItem", position: 1, name: site.collection.breadcrumbHome, item: absoluteUrl("/") },
+                  { "@type": "ListItem", position: 2, name: site.info.related[slug].label, item: url },
+                ],
+              },
+            ],
+          }}
+        />
+      )}
       <InfoPageView
         page={page}
         copy={site.info}

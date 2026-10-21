@@ -5,7 +5,6 @@ import { GetFeaturedProduct } from "@/application/use-cases/get-featured-product
 import { ListLines } from "@/application/use-cases/list-lines";
 import { ListBrands } from "@/application/use-cases/list-brands";
 import { GetHomeContent } from "@/application/use-cases/admin/home";
-import { mergeSiteContent } from "@/application/lib/merge-site-content";
 import type { HomeBlockId } from "@/application/ports/home-settings";
 import { Hero } from "@/presentation/components/blocks/Hero";
 import { LineShowcase } from "@/presentation/components/blocks/LineShowcase";
@@ -30,8 +29,8 @@ import { absoluteUrl } from "@/presentation/lib/site";
  */
 export async function HomeView({ preview = false }: { preview?: boolean }) {
   const container = getContainer();
-  const { products, whatsapp, baseContent } = container;
-  const base = await baseContent.get();
+  const { products, whatsapp, content } = container;
+  const base = await content.get();
   const [selection, total, featured, brands, lines, custom] = await Promise.all([
     // Selección corta y variada: una pieza de cada línea por turno.
     new ListProducts(products).execute({ mixLines: true, limit: base.home.catalog.featuredCount }),
@@ -42,7 +41,8 @@ export async function HomeView({ preview = false }: { preview?: boolean }) {
     // Lo editado en el panel › Inicio; lo vacío usa los textos por defecto.
     new GetHomeContent(container).execute({ kicker: base.home.hero.fallbackKicker, cta: base.home.hero.primaryCta }, { preview }),
   ]);
-  const site = mergeSiteContent(base, custom.settings);
+  // Mismo contenido que el resto del sitio (empresa, envíos…), con los ajustes de Inicio que tocan (borrador en la vista previa).
+  const site = preview ? await content.get({ home: custom.settings }) : base;
   const items = selection.map((p) => ({ product: p }));
 
   const blocks: Record<HomeBlockId, ReactNode> = {
