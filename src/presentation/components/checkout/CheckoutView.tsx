@@ -31,12 +31,21 @@ const EMPTY: Customer = { name: "", documentType: "CC", documentNumber: "", emai
 
 const control = "block w-full border bg-transparent px-4 py-3.5 text-meta text-ink outline-none transition-colors placeholder:text-ink-3 focus:border-ink";
 
-function Field({ label, error, children, className, hint }: { label: string; error?: string; children: ReactNode; className?: string; hint?: string }) {
+/** `id`: base de los ids del error y la ayuda, a los que apunta el `aria-describedby` del control. */
+function Field({ label, error, children, className, hint, id }: { label: string; error?: string; children: ReactNode; className?: string; hint?: string; id?: string }) {
   return (
     <label className={cn("flex flex-col gap-2.5", className)}>
       <span className="text-label uppercase text-ink-2">{label}</span>
       {children}
-      {error ? <span role="alert" className="text-label-sm uppercase text-accent">{error}</span> : hint ? <span className="text-legal text-ink-3">{hint}</span> : null}
+      {error ? (
+        <span id={id && `${id}-error`} className="text-label-sm uppercase text-accent">
+          {error}
+        </span>
+      ) : hint ? (
+        <span id={id && `${id}-hint`} className="text-legal text-ink-3">
+          {hint}
+        </span>
+      ) : null}
     </label>
   );
 }
@@ -70,7 +79,14 @@ export function CheckoutView({
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  // Sube tras un rechazo: el foco va al primer campo marcado (un solo aviso, el resumen).
+  const [focusInvalid, setFocusInvalid] = useState(0);
+  const formRef = useRef<HTMLFormElement>(null);
   const tracked = useRef(false);
+
+  useEffect(() => {
+    if (focusInvalid) formRef.current?.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus();
+  }, [focusInvalid]);
 
   const lines = useMemo(() => cart.items.map((i) => ({ productId: i.productId, variantId: i.variantId || undefined, quantity: i.quantity })), [cart.items]);
   const linesKey = JSON.stringify(lines);
@@ -106,12 +122,19 @@ export function CheckoutView({
     setErrors((e) => withoutKey(e, `customer.${k}`));
   };
   const err = (k: string) => errors[`customer.${k}`];
+  const consentError = errors["consent.accepted"] ?? errors.consent;
+  /** Estado del control para lectores de pantalla: inválido y descrito por su error (o su ayuda). */
+  const describe = (k: keyof Customer, hint = false) => {
+    const e = err(k);
+    return { "aria-invalid": e ? true : undefined, "aria-describedby": e ? `checkout-${k}-error` : hint ? `checkout-${k}-hint` : undefined };
+  };
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!quote?.ready || mode === "unavailable") return;
     if (!accepted) {
       setErrors((x) => ({ ...x, "consent.accepted": "Debes aceptar los términos y la política de privacidad." }));
+      setFocusInvalid((n) => n + 1);
       return;
     }
     setSubmitting(true);
@@ -131,6 +154,7 @@ export function CheckoutView({
       if (!res.ok || !data.redirectUrl) {
         setErrors(data.fieldErrors ?? {});
         setFormError(data.error ?? "No se pudo registrar el pedido.");
+        setFocusInvalid((n) => n + 1);
         return;
       }
       cart.clear();
@@ -155,7 +179,7 @@ export function CheckoutView({
   const cta = mode === "bold" ? "Pagar con Bold" : "Confirmar pedido";
 
   return (
-    <form onSubmit={onSubmit} noValidate className="grid gap-14 lg:grid-cols-[minmax(0,1fr)_420px] lg:gap-20" data-testid="checkout-form">
+    <form ref={formRef} onSubmit={onSubmit} noValidate className="grid gap-14 lg:grid-cols-[minmax(0,1fr)_420px] lg:gap-20" data-testid="checkout-form">
       <div className="flex min-w-0 flex-col gap-14">
         {mode === "unavailable" && (
           <p className="m-0 border-l-2 border-accent bg-surface px-5 py-4 text-small text-ink-2" role="status" data-testid="checkout-unavailable">
@@ -175,8 +199,8 @@ export function CheckoutView({
           <legend className="mb-6 p-0 text-label-lg uppercase text-ink">
             <span className="mr-4 text-ink-3">01</span>Tus datos
           </legend>
-          <Field label="Nombre completo" error={err("name")} className="md:col-span-2">
-            <input className={cn(control, err("name") ? "border-accent" : "border-border")} value={customer.name} onChange={(e) => set("name", e.target.value)} autoComplete="name" required maxLength={80} />
+          <Field label="Nombre completo" error={err("name")} className="md:col-span-2" id="checkout-name">
+            <input {...describe("name")} className={cn(control, err("name") ? "border-accent" : "border-border")} value={customer.name} onChange={(e) => set("name", e.target.value)} autoComplete="name" required maxLength={80} />
           </Field>
           <Field label="Tipo de documento">
             <select className={cn(control, "border-border bg-bg")} value={customer.documentType} onChange={(e) => set("documentType", e.target.value as Customer["documentType"])}>
@@ -187,14 +211,14 @@ export function CheckoutView({
               ))}
             </select>
           </Field>
-          <Field label="Número de documento" error={err("documentNumber")} hint="Para la factura y la entrega.">
-            <input className={cn(control, err("documentNumber") ? "border-accent" : "border-border")} value={customer.documentNumber} onChange={(e) => set("documentNumber", e.target.value)} inputMode={customer.documentType === "PP" ? "text" : "numeric"} maxLength={20} />
+          <Field label="Número de documento" error={err("documentNumber")} hint="Para la factura y la entrega." id="checkout-documentNumber">
+            <input {...describe("documentNumber", true)} className={cn(control, err("documentNumber") ? "border-accent" : "border-border")} value={customer.documentNumber} onChange={(e) => set("documentNumber", e.target.value)} inputMode={customer.documentType === "PP" ? "text" : "numeric"} maxLength={20} />
           </Field>
-          <Field label="Correo" error={err("email")}>
-            <input className={cn(control, err("email") ? "border-accent" : "border-border")} type="email" value={customer.email} onChange={(e) => set("email", e.target.value)} autoComplete="email" maxLength={120} />
+          <Field label="Correo" error={err("email")} id="checkout-email">
+            <input {...describe("email")} className={cn(control, err("email") ? "border-accent" : "border-border")} type="email" value={customer.email} onChange={(e) => set("email", e.target.value)} autoComplete="email" maxLength={120} />
           </Field>
-          <Field label="Celular" error={err("phone")} hint="Te escribimos por WhatsApp para coordinar la entrega.">
-            <input className={cn(control, err("phone") ? "border-accent" : "border-border")} type="tel" value={customer.phone} onChange={(e) => set("phone", e.target.value)} autoComplete="tel-national" placeholder="300 123 4567" maxLength={20} />
+          <Field label="Celular" error={err("phone")} hint="Te escribimos por WhatsApp para coordinar la entrega." id="checkout-phone">
+            <input {...describe("phone", true)} className={cn(control, err("phone") ? "border-accent" : "border-border")} type="tel" value={customer.phone} onChange={(e) => set("phone", e.target.value)} autoComplete="tel-national" placeholder="300 123 4567" maxLength={20} />
           </Field>
         </fieldset>
 
@@ -202,14 +226,14 @@ export function CheckoutView({
           <legend className="mb-6 p-0 text-label-lg uppercase text-ink">
             <span className="mr-4 text-ink-3">02</span>Entrega
           </legend>
-          <Field label="Dirección" error={err("address")} className="md:col-span-2">
-            <input className={cn(control, err("address") ? "border-accent" : "border-border")} value={customer.address} onChange={(e) => set("address", e.target.value)} autoComplete="street-address" placeholder="Calle, número, apartamento o torre" maxLength={120} />
+          <Field label="Dirección" error={err("address")} className="md:col-span-2" id="checkout-address">
+            <input {...describe("address")} className={cn(control, err("address") ? "border-accent" : "border-border")} value={customer.address} onChange={(e) => set("address", e.target.value)} autoComplete="street-address" placeholder="Calle, número, apartamento o torre" maxLength={120} />
           </Field>
-          <Field label="Ciudad o municipio" error={err("city")}>
-            <input className={cn(control, err("city") ? "border-accent" : "border-border")} value={customer.city} onChange={(e) => set("city", e.target.value)} autoComplete="address-level2" maxLength={60} />
+          <Field label="Ciudad o municipio" error={err("city")} id="checkout-city">
+            <input {...describe("city")} className={cn(control, err("city") ? "border-accent" : "border-border")} value={customer.city} onChange={(e) => set("city", e.target.value)} autoComplete="address-level2" maxLength={60} />
           </Field>
-          <Field label="Departamento" error={err("department")}>
-            <select className={cn(control, "bg-bg", err("department") ? "border-accent" : "border-border")} value={customer.department} onChange={(e) => set("department", e.target.value)} autoComplete="address-level1">
+          <Field label="Departamento" error={err("department")} id="checkout-department">
+            <select {...describe("department")} className={cn(control, "bg-bg", err("department") ? "border-accent" : "border-border")} value={customer.department} onChange={(e) => set("department", e.target.value)} autoComplete="address-level1">
               <option value="">Elige el departamento</option>
               {DEPARTMENTS.map((d) => (
                 <option key={d} value={d}>
@@ -254,6 +278,8 @@ export function CheckoutView({
                 setAccepted(e.target.checked);
                 setErrors((x) => withoutKey(x, "consent.accepted"));
               }}
+              aria-invalid={consentError ? true : undefined}
+              aria-describedby={consentError ? "checkout-consent-error" : undefined}
               className="mt-1 h-4 w-4 shrink-0 cursor-pointer accent-accent"
             />
             <span className="text-small text-ink-2 [text-wrap:pretty]">
@@ -268,9 +294,9 @@ export function CheckoutView({
               (versión {legal.privacy.version}), para procesar este pedido. Puedo consultar o pedir que borren mis datos escribiendo a {privacyEmail}.
             </span>
           </label>
-          {(errors["consent.accepted"] || errors.consent) && (
-            <p role="alert" className="m-0 text-label-sm uppercase text-accent">
-              {errors["consent.accepted"] ?? errors.consent}
+          {consentError && (
+            <p id="checkout-consent-error" className="m-0 text-label-sm uppercase text-accent">
+              {consentError}
             </p>
           )}
         </fieldset>

@@ -20,6 +20,10 @@ const mobile = z
   .refine((v) => /^3\d{9}$/.test(v), "Escribe un celular colombiano de 10 dígitos (3XX XXX XXXX).")
   .transform((v) => `+57 ${v.slice(0, 3)} ${v.slice(3, 6)} ${v.slice(6)}`);
 
+/** Tipo y número de documento ya leídos (el resto del formulario puede tener errores). */
+const isDocument = (v: unknown): v is { documentType: (typeof DOCUMENT_TYPES)[number]; documentNumber: string } =>
+  typeof v === "object" && v !== null && (DOCUMENT_TYPES as readonly unknown[]).includes((v as { documentType?: unknown }).documentType) && typeof (v as { documentNumber?: unknown }).documentNumber === "string";
+
 export const CustomerInputSchema = z
   .object({
     name: text(3, 80, "Escribe tu nombre completo."),
@@ -32,10 +36,14 @@ export const CustomerInputSchema = z
     department: z.enum(DEPARTMENTS, { message: "Elige el departamento." }),
     notes: z.string().trim().max(300).default(""),
   })
-  .superRefine((c, ctx) => {
-    const ok = c.documentType === "PP" ? /^[A-Za-z0-9]{5,20}$/.test(c.documentNumber) : /^\d{5,12}(-\d)?$/.test(c.documentNumber);
-    if (!ok) ctx.addIssue({ code: "custom", path: ["documentNumber"], message: c.documentType === "NIT" ? "Escribe el NIT, con o sin dígito de verificación (900123456-7)." : "Revisa el número de documento." });
-  });
+  .superRefine(
+    (c, ctx) => {
+      const ok = c.documentType === "PP" ? /^[A-Za-z0-9]{5,20}$/.test(c.documentNumber) : /^\d{5,12}(-\d)?$/.test(c.documentNumber);
+      if (!ok) ctx.addIssue({ code: "custom", path: ["documentNumber"], message: c.documentType === "NIT" ? "Escribe el NIT, con o sin dígito de verificación (900123456-7)." : "Revisa el número de documento." });
+    },
+    // Se valida aunque otros campos fallen: así el error del documento sale junto con los demás.
+    { when: ({ value }) => isDocument(value) },
+  );
 export type CustomerInput = z.input<typeof CustomerInputSchema>;
 
 export const ConsentInputSchema = z.object({
