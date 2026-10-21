@@ -5,7 +5,7 @@ import { hexToRgb } from "@/application/lib/contrast";
 import { readLocalMedia } from "@/infrastructure/media/local-disk-uploader";
 import sharp from "sharp";
 import { readFile } from "node:fs/promises";
-import { join, normalize } from "node:path";
+import { join, normalize, sep } from "node:path";
 
 /**
  * Piezas comunes de las imágenes de vista previa (Open Graph): la fuente de
@@ -13,6 +13,8 @@ import { join, normalize } from "node:path";
  * el renderizador (no lee WebP ni AVIF).
  */
 const PUBLIC = join(process.cwd(), "public");
+/** Con el separador al final: `public/assets-otra/` no cuenta como `public/assets/`. */
+const ASSETS = join(PUBLIC, "assets") + sep;
 
 let fonts: Promise<Array<{ name: string; data: Buffer; weight: 200 | 500 | 600; style: "normal" }>> | null = null;
 
@@ -55,7 +57,7 @@ export async function isotypeBytes(src: string): Promise<Buffer | null> {
     }
     if (src.startsWith("/api/media/")) return (await readLocalMedia(src.slice("/api/media/".length)))?.bytes ?? null;
     const file = normalize(join(PUBLIC, src));
-    return file.startsWith(join(PUBLIC, "assets")) ? await readFile(file) : null;
+    return file.startsWith(ASSETS) ? await readFile(file) : null;
   } catch {
     return null;
   }

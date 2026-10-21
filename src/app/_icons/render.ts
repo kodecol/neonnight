@@ -35,20 +35,28 @@ const FAVICON_SIZES = [16, 32, 48] as const;
 
 export const brandAssets = () => new GetBrandAssets(getContainer()).execute();
 
+/** El isotipo a la medida del cuadro. Si sharp no puede leer el de Identidad (un video, un archivo dañado), el del sitio. */
+async function glyphOf(brand: BrandAssets, box: number): Promise<Buffer> {
+  const fit = (art: Buffer) =>
+    sharp(art, { density: 300 })
+      .resize(box, box, { fit: "contain", background: { r: 0, g: 0, b: 0, alpha: 0 } })
+      .png()
+      .toBuffer();
+  const own = brand.isotype ? await isotypeBytes(brand.isotype.src) : null;
+  const glyph = own ? await fit(own).catch(() => null) : null;
+  return glyph ?? fit(await readFile(SITE_ISOTYPE));
+}
+
 async function compose(brand: BrandAssets, size: number, fill: number): Promise<Buffer> {
-  const art = (brand.isotype && (await isotypeBytes(brand.isotype.src))) || (await readFile(SITE_ISOTYPE));
-  const box = Math.round(size * fill);
-  const glyph = await sharp(art, { density: 300 })
-    .resize(box, box, { fit: "contain", background: { r: 0, g: 0, b: 0, alpha: 0 } })
-    .png()
-    .toBuffer();
+  const glyph = await glyphOf(brand, Math.round(size * fill));
   return sharp({ create: { width: size, height: size, channels: 4, background: brand.bg } })
     .composite([{ input: glyph, gravity: "center" }])
     .png()
     .toBuffer();
 }
 
-async function render(brand: BrandAssets, file: IconFile | "favicon.ico"): Promise<Buffer> {
+/** Dibuja un ícono (exportada para los tests). */
+export async function renderIcon(brand: BrandAssets, file: IconFile | "favicon.ico"): Promise<Buffer> {
   const factory = brand.factoryIcons ? FACTORY_FILES[file] : undefined;
   if (factory) return readFile(join(FACTORY_DIR, factory));
   if (file === "favicon.ico") {
@@ -69,7 +77,7 @@ export async function iconResponse(file: IconFile | "favicon.ico", requested: st
   if (cache.version !== brand.version) cache = { version: brand.version, files: new Map() };
   let bytes = cache.files.get(file);
   if (!bytes) {
-    bytes = render(brand, file);
+    bytes = renderIcon(brand, file);
     cache.files.set(file, bytes);
     bytes.catch(() => cache.files.delete(file));
   }
