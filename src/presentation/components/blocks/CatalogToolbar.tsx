@@ -29,6 +29,7 @@ export function CatalogToolbar({ result, base, content }: { result: CatalogResul
           {(result.facets.length > 0 || result.price) && (
             <Disclosure
               testId="filter-panel"
+              revealOnOpen
               summary={
                 <span>
                   {content.filterLabel}

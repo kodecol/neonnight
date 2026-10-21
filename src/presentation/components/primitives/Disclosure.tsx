@@ -5,12 +5,15 @@ import { cn } from "@/presentation/lib/cn";
 
 /**
  * `<details>` nativo (funciona sin JS) con mejoras: se cierra con Escape, al
- * hacer clic fuera y, si `closeOnNavigate`, al cambiar la URL.
+ * hacer clic fuera y, si `closeOnNavigate`, al cambiar la URL. Con
+ * `revealOnOpen`, al abrir sube hasta quedar bajo el header (paneles largos
+ * que, abiertos al pie de la pantalla, casi no se verían).
  */
 export function Disclosure({
   summary,
   children,
   closeOnNavigate = false,
+  revealOnOpen = false,
   className,
   summaryClassName,
   testId,
@@ -18,6 +21,7 @@ export function Disclosure({
   summary: ReactNode;
   children: ReactNode;
   closeOnNavigate?: boolean;
+  revealOnOpen?: boolean;
   className?: string;
   summaryClassName?: string;
   testId?: string;
@@ -49,7 +53,16 @@ export function Disclosure({
   }, []);
 
   return (
-    <details ref={ref} className={cn("group/disclosure", className)} data-testid={testId}>
+    <details
+      ref={ref}
+      className={cn("group/disclosure", revealOnOpen && "scroll-mt-header", className)}
+      data-testid={testId}
+      onToggle={(e) => {
+        const el = e.currentTarget;
+        if (!revealOnOpen || !el.open || el.getBoundingClientRect().top < window.innerHeight / 3) return;
+        el.scrollIntoView({ block: "start", behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+      }}
+    >
       <summary className={cn("flex cursor-pointer list-none items-center gap-2.5 select-none [&::-webkit-details-marker]:hidden", summaryClassName)}>
         {summary}
         <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true" className="transition-transform duration-300 group-open/disclosure:rotate-180">
