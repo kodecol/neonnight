@@ -139,7 +139,7 @@ export function Testimonials({ content }: { content: SiteContent["home"]["testim
       </div>
 
       {/* Controles */}
-      <div className="mx-auto mt-10 flex w-full max-w-[620px] items-center gap-3 sm:gap-6">
+      <div className="mx-auto mt-10 flex w-full max-w-[620px] items-center gap-3 md:gap-6">
         <NavButton label="Testimonio anterior" dir="prev" onClick={() => go(active - 1)} />
         {/* Cada botón mide al menos 24 px (WCAG 2.5.8): se tocan entre sí y la línea deja el aire; con muchos, dos filas. */}
         <div className="grid flex-1 grid-cols-[repeat(auto-fit,minmax(24px,1fr))]" role="group" aria-label="Elegir testimonio">
@@ -165,7 +165,7 @@ export function Testimonials({ content }: { content: SiteContent["home"]["testim
             </button>
           ))}
         </div>
-        <span className="hidden w-14 text-right text-label tabular-nums text-ink-2 sm:block" aria-hidden="true">
+        <span className="hidden w-14 text-right text-label tabular-nums text-ink-2 md:block" aria-hidden="true">
           <span className="text-ink">{String(active + 1).padStart(2, "0")}</span>/{String(n).padStart(2, "0")}
         </span>
         <NavButton label="Testimonio siguiente" dir="next" onClick={() => go(active + 1)} />
