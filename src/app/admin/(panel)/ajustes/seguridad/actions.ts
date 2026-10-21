@@ -2,9 +2,9 @@
 import { adminSecret } from "@/infrastructure/auth/session";
 import type { ActionResult } from "@/application/dto/admin.dto";
 import type { AccountView, ChangePasswordInput } from "@/application/dto/account.dto";
-import { requireAdmin } from "../../_lib/auth";
-import { adminAccount, setSessionCookie } from "../../_lib/account";
-import { toActionError } from "../../_lib/result";
+import { requireAdmin } from "../../../_lib/auth";
+import { adminAccount, setSessionCookie } from "../../../_lib/account";
+import { toActionError } from "../../../_lib/result";
 
 /** Tras subir la versión, esta sesión sigue abierta con una cookie nueva; las demás caen. */
 async function reissue(version: number): Promise<AccountView> {

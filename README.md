@@ -43,7 +43,7 @@ npm run build && npm start      # producción
 | `MONGODB_URI` | MongoDB (Atlas en producción, `mongodb://localhost:27018` en local). Vacía = repositorios en memoria, sin persistencia |
 | `MONGODB_DB` | Nombre de la base (por defecto `neonnight`) |
 | `CLOUDINARY_URL` | `cloudinary://key:secret@cloud`. Vacía = fotos en disco local (`.data/uploads`, solo desarrollo) |
-| `ADMIN_PASSWORD` | Contraseña inicial del administrador (luego se cambia en `/admin/cuenta`) |
+| `ADMIN_PASSWORD` | Contraseña inicial del administrador (luego se cambia en `/admin/ajustes/seguridad`) |
 | `ADMIN_SECRET` | 32+ caracteres aleatorios: firma la sesión y cifra la llave secreta de Bold |
 
 Todas se leen **en runtime**: la misma imagen sirve para cualquier dominio y entorno. Los nombres `NEXT_PUBLIC_*` antiguos siguen funcionando como respaldo en desarrollo, pero en producción se usan los de esta tabla (ver `deploy/.env.example`).
@@ -64,7 +64,7 @@ Todas se leen **en runtime**: la misma imagen sirve para cualquier dominio y ent
 | `/api/checkout` | POST | Valida datos y consentimiento, recalcula en el servidor, guarda la orden y abre el pago |
 | `/api/webhooks/bold` | POST | Notificaciones de Bold con firma verificada |
 | `/api/media/[archivo]` | GET | Fotos subidas en desarrollo (sin Cloudinary) |
-| `/admin/*` | dinámica, protegida | Panel: `/admin/catalogo`, `/admin/pagos`, `/admin/login` |
+| `/admin/*` | dinámica, protegida | Panel: `/admin/catalogo`, `/admin/ajustes/…`, `/admin/login` |
 | `/sitemap.xml`, `/robots.txt` | generados desde el repositorio | |
 
 Las páginas del catálogo se renderizan por petición porque la base (editable desde el panel) es la fuente de verdad y no está disponible en el build.
@@ -97,7 +97,9 @@ docs/handoff        Prototipo y README originales      docs/adr   Decisiones
 
 ## Panel de administración (`/admin`)
 
-Un solo administrador. La primera vez entra con `ADMIN_PASSWORD`; al cambiarla en **Cuenta** queda guardada con hash (scrypt) en la base y la del entorno deja de aplicar. La sesión es una cookie firmada y `Secure` que dura 7 días (el panel exige HTTPS; en `http://` el login avisa) y lleva una versión: cambiar la contraseña o "cerrar las demás sesiones" invalida las anteriores. El login admite 5 fallos por IP cada 15 minutos (y 50 en total). Secciones:
+Un solo administrador. La primera vez entra con `ADMIN_PASSWORD`; al cambiarla en **Cuenta** queda guardada con hash (scrypt) en la base y la del entorno deja de aplicar. La sesión es una cookie firmada y `Secure` que dura 7 días (el panel exige HTTPS; en `http://` el login avisa) y lleva una versión: cambiar la contraseña o "cerrar las demás sesiones" invalida las anteriores. El login admite 5 fallos por IP cada 15 minutos (y 50 en total).
+
+El menú agrupa las secciones por intención: **Operación** (Pedidos, Catálogo, Marcas), **Sitio** (Inicio, Legales) y **Configuración**, con un único módulo **Ajustes** en pestañas (Pagos, Seguridad…; el mapa está en `src/presentation/components/admin/admin-nav.ts`). En móvil, el menú abre a pantalla completa. Las rutas viejas `/admin/pagos` y `/admin/cuenta` redirigen. Secciones:
 
 - **Catálogo:**
   - **Líneas** (Relojería, Joyería, Perfumería…): se crean con nombre y plantilla (`reloj`, `joya`, `perfume` o `general`), con portada y frase para la home. La plantilla decide la ficha técnica y los filtros, y no cambia después (ADR 0005).
@@ -109,21 +111,21 @@ Un solo administrador. La primera vez entra con `ADMIN_PASSWORD`; al cambiarla e
 - **Marcas** (`/admin/marcas`): alta, edición y baja de las casas del catálogo, con logo (SVG revisado o PNG, WebP o AVIF con fondo transparente; la proporción se calcula sola), modo en reposo (silueta blanca o escala de grises), color de marca para el hover, líneas y visibilidad en el marquee. El orden de la lista es el del marquee de la home, que solo muestra las marcas visibles con productos. Renombrar una marca actualiza sus productos; no se puede borrar una marca con productos. También se editan el rótulo y el aviso de revendedor independiente del marquee (ADR 0010).
 - **Inicio** (`/admin/inicio`): biblioteca de medios del sitio (fotos por el servidor; videos directo a Cloudinary con firma, hasta 100 MB) y contenido de la home: hero (pieza destacada o foto o video propio con antetítulo, título, texto y botón) banda (foto, frase y encuadre), los tres compromisos de "Garantía y autenticidad", los testimonios (solo se publican los visibles con autorización escrita del cliente) y las redes (activar, usuario y enlace). Además, el orden y la visibilidad de los bloques. Lo vacío o nunca editado usa los textos del código. "Vista previa" guarda un borrador y lo muestra en `/admin/vista-previa` (solo con sesión); "Publicar" lo lleva a la tienda, y las últimas 10 publicaciones se pueden volver a cargar (ADR 0008).
 - **Legales** (`/admin/legales`): las siete páginas institucionales y legales en un markdown sencillo, con fichas para los datos de la empresa (`{correo}`, `{empresa}`, `{transportadora}`…), revisión en vivo, vista previa del borrador, publicación con versión y fecha de vigencia automáticas e historial de 10 versiones. Además, los datos de la empresa (identidad, correos, horario) y la transportadora con su página de rastreo (ADR 0009).
-- **Pagos:**
+- **Ajustes › Pagos** (`/admin/ajustes/pagos`):
   - Configuración de Bold: activar el cobro, elegir ambiente (pruebas o producción) e ingresar la llave de identidad y la llave secreta (se guarda cifrada).
   - Muestra la URL del webhook para registrarla en Bold.
   - **Sin pasarela:** con Bold inactivo, recibir el pedido y coordinar el pago (instrucciones editables que el cliente ve al confirmar) o desactivarlo para que el checkout avise que no hay pagos en línea.
-- **Cuenta** (`/admin/cuenta`): cambiar la contraseña (actual, nueva de 12 caracteres o más y confirmación) y cerrar las sesiones abiertas en otros dispositivos. Si se pierde la contraseña, desde una máquina con acceso a la base: `printf '%s' "$NUEVA" | MONGODB_URI=… npm run admin:reset-password` (o sin `printf` la pide sin eco). Con `-- --usar-entorno` vuelve a regir `ADMIN_PASSWORD`. Ambos cierran todas las sesiones.
+- **Ajustes › Seguridad** (`/admin/ajustes/seguridad`): cambiar la contraseña (actual, nueva de 12 caracteres o más y confirmación) y cerrar las sesiones abiertas en otros dispositivos. Si se pierde la contraseña, desde una máquina con acceso a la base: `printf '%s' "$NUEVA" | MONGODB_URI=… npm run admin:reset-password` (o sin `printf` la pide sin eco). Con `-- --usar-entorno` vuelve a regir `ADMIN_PASSWORD`. Ambos cierran todas las sesiones.
 
 ### Puesta en marcha con servicios reales
 
 1. **MongoDB Atlas:** crear un cluster M0, un usuario de base de datos y permitir la IP del servidor. Copiar la cadena `mongodb+srv://…` en `MONGODB_URI`. La primera conexión siembra el catálogo.
 2. **Cloudinary:** copiar el *API environment variable* (`cloudinary://…`) del dashboard en `CLOUDINARY_URL`.
-3. **Admin:** definir `ADMIN_PASSWORD` (contraseña inicial: cámbiala en `/admin/cuenta` al primer ingreso) y un `ADMIN_SECRET` aleatorio. Para generarlo: `node -e "console.log(require('crypto').randomBytes(32).toString('base64url'))"`.
+3. **Admin:** definir `ADMIN_PASSWORD` (contraseña inicial: cámbiala en `/admin/ajustes/seguridad` al primer ingreso) y un `ADMIN_SECRET` aleatorio. Para generarlo: `node -e "console.log(require('crypto').randomBytes(32).toString('base64url'))"`.
 4. **Bold:**
    1. En el panel de Bold, copiar las llaves de identidad y secreta del ambiente.
    2. En *Webhooks*, registrar `https://<dominio>/api/webhooks/bold` para ventas aprobadas y rechazadas.
-   3. En `/admin/pagos`, guardar las llaves y activar el cobro.
+   3. En `/admin/ajustes/pagos`, guardar las llaves y activar el cobro.
    4. Probar primero en **Pruebas**.
    5. Bold exige HTTPS para el retorno del checkout, así que en local se usa un túnel (ngrok o cloudflared).
 

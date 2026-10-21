@@ -4,15 +4,15 @@ import { E2E_ADMIN_PASSWORD } from "../../playwright.config";
 // Solo casos que no cambian la contraseña ni la versión de sesión: los demás
 // tests del panel corren en paralelo con la misma cuenta. El cambio real y el
 // cierre de sesiones están cubiertos en tests/unit/security.test.ts.
-test.describe("Panel › Cuenta", () => {
+test.describe("Panel › Ajustes › Seguridad", () => {
   test("muestra el origen de la contraseña y valida el cambio en el servidor", async ({ page }) => {
     await page.goto("/admin/login");
     await page.fill("#password", E2E_ADMIN_PASSWORD);
     await page.click("button[type=submit]");
     await expect(page).toHaveURL(/\/admin\/catalogo$/);
 
-    await page.getByRole("link", { name: "Cuenta" }).first().click();
-    await expect(page).toHaveURL(/\/admin\/cuenta$/);
+    await page.goto("/admin/ajustes/seguridad");
+    await expect(page.getByRole("link", { name: "Seguridad" })).toHaveAttribute("aria-current", "page");
     await expect(page.getByTestId("password-origin")).toContainText("ADMIN_PASSWORD");
 
     await page.getByLabel("Contraseña actual", { exact: true }).fill("no-es-la-actual");

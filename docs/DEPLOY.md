@@ -33,7 +33,7 @@
 | Red | Solo la red externa `proxy`, la misma de NPM | No hay red interna porque la app no tiene base de datos local |
 | Base de datos | MongoDB Atlas, cluster M0 gratis, base `neonnight` | **No se usa ninguna base ni caché de otros servicios del VPS.** El primer arranque siembra el catálogo una vez |
 | Fotos y videos | Cloudinary: `neonnight/catalogo/` (medios del catálogo) y `neonnight/catalogo/subidas/` (subidas desde `/admin`) | Plan gratuito. Se entregan desde el CDN de Cloudinary (`f_auto`, `q_auto`, ancho por layout): el VPS no las procesa ni las guarda. Los medios del catálogo **no viajan en la imagen** (`.dockerignore`) |
-| Pagos | Bold: API de Links de pago y webhook `/api/webhooks/bold` | Las llaves se ingresan en `/admin/pagos` y se guardan cifradas en Atlas |
+| Pagos | Bold: API de Links de pago y webhook `/api/webhooks/bold` | Las llaves se ingresan en `/admin/ajustes/pagos` y se guardan cifradas en Atlas |
 | Imágenes | `ghcr.io/<owner>/neonnight-web:<sha>` | En el VPS queda **una sola imagen**: el historial vive en GHCR |
 | CI/CD | GitHub Actions (`.github/workflows/deploy.yml`) | Verifica, construye, despliega y comprueba la versión servida |
 
@@ -95,7 +95,7 @@ La imagen no depende del dominio: todo se lee al arrancar.
 | `MONGODB_URI` | sí | `mongodb+srv://…` de Atlas. Sin ella, la app usa memoria y **pierde los cambios al reiniciar** |
 | `MONGODB_DB` | no | `neonnight` |
 | `CLOUDINARY_URL` | sí, para fotos | `cloudinary://key:secret@cloud` |
-| `ADMIN_PASSWORD` | sí | Contraseña inicial del panel; al cambiarla en `/admin/cuenta` rige la de la base |
+| `ADMIN_PASSWORD` | sí | Contraseña inicial del panel; al cambiarla en `/admin/ajustes/seguridad` rige la de la base |
 | `ADMIN_SECRET` | sí | 32 caracteres o más. Si cambia, hay que volver a ingresar la llave de Bold |
 | `WHATSAPP_NUMBER` | no | `573001234567` |
 | `INSTAGRAM_URL`, `FACEBOOK_URL`, `YOUTUBE_URL` | no | Por defecto ya son los perfiles reales; solo hace falta si cambian |
@@ -149,7 +149,7 @@ Lo que ya está hecho aparece marcado con ✅.
    - `docker ps`: los contenedores de los otros servicios siguen `healthy`;
    - `ss -tlnH`: no hay puertos nuevos en `0.0.0.0`.
 9. **GitHub:** repo privado, secretos del §8.4 y variable `SITE_URL`.
-10. **Bold:** guarda las llaves en `/admin/pagos` y registra el webhook `https://neonightonline.com/api/webhooks/bold`. Prueba primero en **Pruebas**.
+10. **Bold:** guarda las llaves en `/admin/ajustes/pagos` y registra el webhook `https://neonightonline.com/api/webhooks/bold`. Prueba primero en **Pruebas**.
 
 ---
 
@@ -334,7 +334,7 @@ En <https://console.cloudinary.com>, el plan gratuito basta. Ve a **Dashboard �
 
 ### 8.3 Bold
 
-Las llaves de identidad y secreta, primero de pruebas y luego de producción, se ingresan en `/admin/pagos`. **No van en archivos.** El webhook se registra en Bold como `https://neonightonline.com/api/webhooks/bold`.
+Las llaves de identidad y secreta, primero de pruebas y luego de producción, se ingresan en `/admin/ajustes/pagos`. **No van en archivos.** El webhook se registra en Bold como `https://neonightonline.com/api/webhooks/bold`.
 
 ### 8.4 GitHub (CI/CD)
 
@@ -387,5 +387,5 @@ El agente lo lee y lo copia al `.env` del VPS **por stdin**, sin mostrarlo. `SIT
 - [ ] Proxy host y certificado en NPM, con su `id` anotado arriba.
 - [ ] Repo en GitHub con los secretos del §8.4; el primer deploy por CI verifica el SHA.
 - [ ] Rollback probado: `docker pull` en el VPS de una etiqueta anterior de GHCR con un token `read:packages` (§5.3).
-- [ ] Llaves de Bold en `/admin/pagos` y webhook registrado.
+- [ ] Llaves de Bold en `/admin/ajustes/pagos` y webhook registrado.
 - [ ] Los demás servicios del VPS intactos (§4, paso 8).
