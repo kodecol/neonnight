@@ -37,7 +37,7 @@ function setup() {
   };
 }
 
-const file = { bytes: new Uint8Array([1, 2, 3]), contentType: "image/webp", filename: "a.webp", width: 2400, height: 1350 };
+const file = { bytes: new TextEncoder().encode("RIFF\0\0\0\0WEBPVP8 "), contentType: "image/webp", filename: "a.webp", width: 2400, height: 1350 };
 const settings = (over: Partial<HomeSettingsInput["hero"]> = {}, band: Partial<HomeSettingsInput["band"]> = {}): HomeSettingsInput => ({
   hero: { source: "media", mediaId: null, kicker: null, title: "Relojería de autor", text: null, ctaLabel: null, ctaHref: null, ...over },
   band: { mediaId: null, title: null, position: "centro", ...band },

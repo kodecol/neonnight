@@ -246,7 +246,8 @@ describe("SavePaymentSettings", () => {
 
 describe("UploadImage", () => {
   const uploader = { kind: "local" as const, upload: async () => ({ src: "/api/media/a.png", width: 10, height: 10 }) };
-  const file = { bytes: new Uint8Array([1]), contentType: "image/png", filename: "a.png", width: 10, height: 10 };
+  // Firma PNG: el formato se confirma con los bytes.
+  const file = { bytes: new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), contentType: "image/png", filename: "a.png", width: 10, height: 10 };
 
   it("valida tipo, tamaño y dimensiones", async () => {
     const uc = new UploadImage(uploader);

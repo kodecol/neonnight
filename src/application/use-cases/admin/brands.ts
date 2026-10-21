@@ -7,6 +7,7 @@ import type { MediaUploader } from "../../ports/media-uploader";
 import type { BrandsCopyRepository } from "../../ports/brands-copy";
 import { FieldValidationError } from "../../lib/errors";
 import { MAX_SVG_BYTES, inspectSvg, roundRatio } from "../../lib/svg";
+import { formatMismatch } from "../../lib/image-format";
 import { BrandInputSchema, BrandsCopyInputSchema, type BrandDto, type BrandsCopyInput } from "../../dto/brand.dto";
 import { MAX_UPLOAD_BYTES } from "./upload-image";
 
@@ -134,6 +135,10 @@ export class UploadBrandLogo {
 
   async execute(file: { bytes: Uint8Array; contentType: string; filename: string; width: number; height: number }): Promise<{ src: string; ratio: number }> {
     if (file.bytes.byteLength === 0) throw new FieldValidationError("file", "El archivo está vacío.");
+    if (file.contentType !== "image/svg+xml" && !RASTER[file.contentType]) throw new FieldValidationError("file", "Usa SVG, PNG, WebP o AVIF (con fondo transparente).");
+    // El formato sale de los bytes, no del tipo declarado: un SVG renombrado a .png no se salta inspectSvg.
+    const mismatch = formatMismatch(file.contentType, file.bytes);
+    if (mismatch) throw new FieldValidationError("file", mismatch);
     if (file.contentType === "image/svg+xml") {
       if (file.bytes.byteLength > MAX_SVG_BYTES) throw new FieldValidationError("file", "El SVG supera 512 KB.");
       const check = inspectSvg(new TextDecoder().decode(file.bytes));
@@ -141,7 +146,6 @@ export class UploadBrandLogo {
       const stored = await this.uploader.upload({ ...file, width: Math.round(check.ratio * 100), height: 100 });
       return { src: stored.src, ratio: check.ratio };
     }
-    if (!RASTER[file.contentType]) throw new FieldValidationError("file", "Usa SVG, PNG, WebP o AVIF (con fondo transparente).");
     if (file.bytes.byteLength > MAX_UPLOAD_BYTES) throw new FieldValidationError("file", "El logo supera 8 MB.");
     if (!Number.isInteger(file.width) || !Number.isInteger(file.height) || file.width <= 0 || file.height <= 0) {
       throw new FieldValidationError("file", "No se pudieron leer las dimensiones del logo.");

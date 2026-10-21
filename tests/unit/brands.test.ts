@@ -52,7 +52,8 @@ describe("Marcas", () => {
     const uc = new UploadBrandLogo(uploader);
     const enc = (s: string) => new TextEncoder().encode(s);
     await expect(uc.execute({ bytes: enc(svg("<path/>")), contentType: "image/svg+xml", filename: "a.svg", width: 1, height: 1 })).resolves.toMatchObject({ ratio: 4 });
-    await expect(uc.execute({ bytes: new Uint8Array([1]), contentType: "image/png", filename: "a.png", width: 600, height: 200 })).resolves.toMatchObject({ ratio: 3 });
+    const png = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+    await expect(uc.execute({ bytes: png, contentType: "image/png", filename: "a.png", width: 600, height: 200 })).resolves.toMatchObject({ ratio: 3 });
     await expect(uc.execute({ bytes: enc(svg("<script/>")), contentType: "image/svg+xml", filename: "b.svg", width: 1, height: 1 })).rejects.toMatchObject({ field: "file" });
     await expect(uc.execute({ bytes: new Uint8Array([1]), contentType: "image/jpeg", filename: "a.jpg", width: 10, height: 10 })).rejects.toMatchObject({ field: "file" });
     expect(uploaded).toEqual(["image/svg+xml", "image/png"]);
