@@ -2,11 +2,22 @@
 import { useActionState, useEffect, useState } from "react";
 import { Button } from "@/presentation/components/primitives/Button";
 import { Isotype } from "@/presentation/components/primitives/Isotype";
+import type { IdentityAsset } from "@/application/dto/identity.dto";
 import { cn } from "@/presentation/lib/cn";
 
 export type LoginState = { error: string | null };
 
-export function LoginForm({ wordmark, login, configured }: { wordmark: string; login: (prev: LoginState, fd: FormData) => Promise<LoginState>; configured: boolean }) {
+export function LoginForm({
+  wordmark,
+  isotype,
+  login,
+  configured,
+}: {
+  wordmark: string;
+  isotype?: IdentityAsset | null;
+  login: (prev: LoginState, fd: FormData) => Promise<LoginState>;
+  configured: boolean;
+}) {
   const [state, action, pending] = useActionState(login, { error: null });
   // La cookie de sesión es Secure: por http el navegador la descarta y cada clic vuelve aquí.
   const [insecure, setInsecure] = useState(false);
@@ -19,7 +30,7 @@ export function LoginForm({ wordmark, login, configured }: { wordmark: string; l
       <span className="fixed inset-x-0 top-0 h-[2px] bg-accent" aria-hidden="true" />
       <div className="w-full max-w-[380px]">
         <div className="flex flex-col items-center text-center">
-          <Isotype size={48} priority />
+          <Isotype size={48} asset={isotype} priority />
           <span className="mt-7 text-label-lg uppercase tracking-[0.34em] text-ink">{wordmark}</span>
           <span className="mt-2 text-kicker uppercase text-ink-3">Panel de administración</span>
         </div>

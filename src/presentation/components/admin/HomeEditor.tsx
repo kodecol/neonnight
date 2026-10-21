@@ -286,7 +286,7 @@ export function HomeEditor({
                 {err("hero.mediaId") && <p className="m-0 mt-2 text-label-sm uppercase text-accent">{err("hero.mediaId")}</p>}
               </div>
               <div className="grid gap-6 md:grid-cols-2">
-                <TextInput label="Antetítulo" value={draft.hero.kicker ?? ""} onChange={(e) => hero("kicker", e.target.value)} placeholder="Neon Night · Nueva colección" maxLength={60} error={err("hero.kicker")} />
+                <TextInput label="Antetítulo" value={draft.hero.kicker ?? ""} onChange={(e) => hero("kicker", e.target.value)} placeholder="Nueva colección" maxLength={60} error={err("hero.kicker")} />
                 <TextInput label="Título" value={draft.hero.title ?? ""} onChange={(e) => hero("title", e.target.value)} placeholder="Relojería de autor" maxLength={60} error={err("hero.title")} data-testid="hero-title" />
                 <TextArea className="md:col-span-2" rows={3} label="Texto" value={draft.hero.text ?? ""} onChange={(e) => hero("text", e.target.value)} placeholder="Una frase corta bajo el título (opcional)." maxLength={220} error={err("hero.text")} />
                 <TextInput label="Texto del botón" value={draft.hero.ctaLabel ?? ""} onChange={(e) => hero("ctaLabel", e.target.value)} placeholder={defaults.heroCta} maxLength={40} error={err("hero.ctaLabel")} />

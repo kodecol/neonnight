@@ -1,5 +1,6 @@
 import type { ProductKind } from "@/domain/entities/product";
 import type { InfoPageSlug } from "./info-page.dto";
+import type { IdentityAsset } from "./identity.dto";
 
 /**
  * Contenido editorial del sitio. Todo lo que no es catálogo de producto
@@ -139,6 +140,10 @@ export interface SiteContent {
     currencyLabel: string;
     locale: string;
     logo: { mono: string; color: string };
+    /** Isotipo editado en el panel › Identidad (fondo oscuro); null o ausente: el del sitio. */
+    isotype?: IdentityAsset | null;
+    /** Logo horizontal editado; si existe, reemplaza isotipo + wordmark en la barra y el pie. */
+    logoWide?: IdentityAsset | null;
   };
   social: {
     kicker: string;

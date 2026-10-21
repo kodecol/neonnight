@@ -1,5 +1,6 @@
 import { Fragment, type ReactNode } from "react";
 import { getContainer } from "@/infrastructure/container";
+import type { StoreIdentityInput } from "@/application/dto/identity.dto";
 import { ListProducts } from "@/application/use-cases/list-products";
 import { GetFeaturedProduct } from "@/application/use-cases/get-featured-product";
 import { ListLines } from "@/application/use-cases/list-lines";
@@ -27,10 +28,10 @@ import { absoluteUrl } from "@/presentation/lib/site";
  * panel › Inicio (el hero siempre primero). `preview` usa el borrador: lo
  * pinta /admin/vista-previa y nunca la tienda pública.
  */
-export async function HomeView({ preview = false }: { preview?: boolean }) {
+export async function HomeView({ preview = false, identity }: { preview?: boolean; identity?: StoreIdentityInput }) {
   const container = getContainer();
   const { products, whatsapp, content } = container;
-  const base = await content.get();
+  const base = await content.get({ identity });
   const [selection, total, featured, brands, lines, custom] = await Promise.all([
     // Selección corta y variada: una pieza de cada línea por turno.
     new ListProducts(products).execute({ mixLines: true, limit: base.home.catalog.featuredCount }),
@@ -42,7 +43,7 @@ export async function HomeView({ preview = false }: { preview?: boolean }) {
     new GetHomeContent(container).execute({ kicker: base.home.hero.fallbackKicker, cta: base.home.hero.primaryCta }, { preview }),
   ]);
   // Mismo contenido que el resto del sitio (empresa, envíos…), con los ajustes de Inicio que tocan (borrador en la vista previa).
-  const site = preview ? await content.get({ home: custom.settings }) : base;
+  const site = preview ? await content.get({ home: custom.settings, identity }) : base;
   const items = selection.map((p) => ({ product: p }));
 
   const blocks: Record<HomeBlockId, ReactNode> = {

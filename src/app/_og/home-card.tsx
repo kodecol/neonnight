@@ -1,21 +1,22 @@
 import { ImageResponse } from "next/og";
 import { getContainer } from "@/infrastructure/container";
 import { ListLines } from "@/application/use-cases/list-lines";
-import { OG_COLORS as C, ogFonts, ogIsotype, ogPhoto } from "./brand";
+import { OG_COLORS as C, ogFonts, ogIsotype, ogIsotypeHeight, ogPhoto } from "./brand";
 
 /** Tarjeta de vista previa general (lineSlug null) o de una línea. 1200 × 630, PNG. */
 const SIZE = { width: 1200, height: 630 };
 
 export async function homeCard(lineSlug: string | null): Promise<ImageResponse | null> {
   const container = getContainer();
-  const [site, lines, products, fonts, iso] = await Promise.all([container.content.get(), new ListLines(container).execute(), container.products.findAll(), ogFonts(), ogIsotype()]);
+  const [site, lines, products, fonts] = await Promise.all([container.content.get(), new ListLines(container).execute(), container.products.findAll(), ogFonts()]);
+  const iso = await ogIsotype(site.brand.isotype);
   const line = lineSlug ? (lines.find((l) => l.slug === lineSlug) ?? null) : null;
   if (lineSlug && !line) return null;
 
   const brandRow = (
     <div style={{ display: "flex", alignItems: "center", gap: 22 }}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={iso} width={58} height={60} alt="" />
+      <img src={iso} width={58} height={ogIsotypeHeight(58, site.brand.isotype)} alt="" />
       <div style={{ fontSize: 26, fontWeight: 600, letterSpacing: "0.32em" }}>{site.brand.wordmark}</div>
     </div>
   );

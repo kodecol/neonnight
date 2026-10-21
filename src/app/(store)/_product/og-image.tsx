@@ -1,14 +1,16 @@
 import { ImageResponse } from "next/og";
-import { OG_COLORS as C, ogFonts, ogIsotype, ogPhoto } from "../../_og/brand";
+import { getContainer } from "@/infrastructure/container";
+import { OG_COLORS as C, ogFonts, ogIsotype, ogIsotypeHeight, ogPhoto } from "../../_og/brand";
 import { loadProduct } from "./render-product";
 
 export const OG_SIZE = { width: 1200, height: 630 };
 
 /** Tarjeta OG de un producto: marca, nombre, precio y la foto recortada de la pieza. */
 export async function productOgImage(slug: string): Promise<ImageResponse | null> {
-  const [p, fonts, iso] = await Promise.all([loadProduct(slug), ogFonts(), ogIsotype()]);
+  const [p, fonts, site] = await Promise.all([loadProduct(slug), ogFonts(), getContainer().content.get()]);
+  const iso = await ogIsotype(site.brand.isotype);
   if (!p) return null;
-  const name = p?.model ?? "Neon Night";
+  const name = p?.model ?? site.brand.name;
   const brand = p?.brand ?? "";
   const subtitle = p?.subtitle ?? "Relojes, joyas y perfumes verificados";
   const price = p ? `${p.priceFrom ? "Desde " : ""}${p.price.formatted}` : "";
@@ -21,8 +23,8 @@ export async function productOgImage(slug: string): Promise<ImageResponse | null
         <div style={{ display: "flex", flexDirection: "column", justifyContent: "space-between", width: photo ? 660 : 1200, padding: "64px 0 64px 72px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={iso} width={44} height={46} alt="" />
-            <div style={{ fontSize: 22, fontWeight: 600, letterSpacing: "0.32em" }}>NEON NIGHT</div>
+            <img src={iso} width={44} height={ogIsotypeHeight(44, site.brand.isotype)} alt="" />
+            <div style={{ fontSize: 22, fontWeight: 600, letterSpacing: "0.32em" }}>{site.brand.wordmark}</div>
           </div>
           <div style={{ display: "flex", flexDirection: "column" }}>
             {brand && <div style={{ fontSize: 22, fontWeight: 500, letterSpacing: "0.18em", textTransform: "uppercase", color: C.accent }}>{brand}</div>}

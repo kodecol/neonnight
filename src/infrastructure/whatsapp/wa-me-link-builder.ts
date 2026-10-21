@@ -14,7 +14,7 @@ export class WaMeLinkBuilder implements WhatsAppLinkBuilder {
     number: string | undefined | null,
     private readonly templates: { product: string; generic: string; cart: string } = {
       product: "Hola, me interesa {name} (ref. {reference}). {url}",
-      generic: "Hola, quiero asesoría sobre una pieza de Neon Night.",
+      generic: "Hola, quiero asesoría sobre una pieza.",
       cart: "Hola, quiero cerrar por WhatsApp mi bolsa: {items}. Total {total}.",
     },
   ) {

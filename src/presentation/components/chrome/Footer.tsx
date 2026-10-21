@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { LinkItem, SiteContent } from "@/application/dto/site-content.dto";
 import { fill } from "@/application/lib/template";
-import { Isotype } from "@/presentation/components/primitives/Isotype";
+import { Isotype, WideLogo } from "@/presentation/components/primitives/Isotype";
 import { SocialIcon } from "@/presentation/components/primitives/SocialIcon";
 import { CookieSettingsButton } from "./ConsentBanner";
 
@@ -62,8 +62,14 @@ export function Footer({
       <div className="grid gap-14 md:grid-cols-3 lg:grid-cols-[minmax(0,1.4fr)_repeat(3,minmax(0,1fr))]">
         <div className="flex max-w-[360px] flex-col gap-7 md:col-span-3 lg:col-span-1">
           <Link href="/" className="group flex w-fit items-center gap-5" aria-label={`${brand.name}, inicio`}>
-            <Isotype size={64} className="transition-transform duration-500 ease-[var(--ease-reveal)] group-hover:-rotate-6" />
-            <span className="text-[20px] font-semibold uppercase leading-none tracking-[0.32em]">{brand.wordmark}</span>
+            {brand.logoWide ? (
+              <WideLogo asset={brand.logoWide} height={44} />
+            ) : (
+              <>
+                <Isotype size={64} asset={brand.isotype} className="transition-transform duration-500 ease-[var(--ease-reveal)] group-hover:-rotate-6" />
+                <span className="text-[20px] font-semibold uppercase leading-none tracking-[0.32em]">{brand.wordmark}</span>
+              </>
+            )}
           </Link>
           <p className="m-0 text-meta text-ink-2 [text-wrap:pretty]">{brand.tagline}</p>
           <ul className="m-0 flex list-none gap-2 p-0" aria-label="Redes sociales">

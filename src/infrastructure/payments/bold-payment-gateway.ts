@@ -37,7 +37,7 @@ export class BoldPaymentGateway implements PaymentGateway {
       amount_type: "CLOSE",
       amount: { currency: order.total.currency, total_amount: order.total.units, tip_amount: 0, taxes: [] },
       reference: order.id,
-      description: `Neon Night · ${names}`.slice(0, 100),
+      description: `Pedido ${order.id} · ${names}`.slice(0, 100),
       expiration_date: (this.now() + LINK_TTL_MS) * 1_000_000,
       // Bold solo acepta callbacks HTTPS; en local se omite.
       ...(callback.protocol === "https:" ? { callback_url: callback.toString() } : {}),

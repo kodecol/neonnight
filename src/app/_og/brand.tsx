@@ -23,10 +23,19 @@ export function ogFonts() {
 let isotype: Promise<string> | null = null;
 
 /** Isotipo blanco y magenta como data URI. */
-export function ogIsotype(): Promise<string> {
+/**
+ * Isotipo para las vistas previas: el de Identidad (Cloudinary lo entrega en
+ * PNG aunque se haya subido en SVG) o, si no hay, el del sitio.
+ */
+export function ogIsotype(asset?: { src: string } | null): Promise<string> {
+  const remote = ogPhoto(asset?.src, 160, "png");
+  if (remote) return Promise.resolve(remote);
   isotype ??= readFile(join(PUBLIC, "assets/isotipo-dark.png")).then((b) => `data:image/png;base64,${b.toString("base64")}`);
   return isotype;
 }
+
+/** Alto del isotipo para un ancho dado según su proporción (el del sitio es 656 × 677). */
+export const ogIsotypeHeight = (width: number, asset?: { ratio: number } | null) => Math.round(width / (asset?.ratio ?? 656 / 677));
 
 /** URL de una foto apta para el renderizador: solo Cloudinary, convertida a PNG/JPG al ancho pedido. */
 export function ogPhoto(src: string | null | undefined, width: number, format: "png" | "jpg"): string | null {

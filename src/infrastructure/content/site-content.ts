@@ -62,7 +62,7 @@ export const SITE_CONTENT: SiteContent = {
       { id: "instagram", label: "Instagram", handle: "@neonnight01", href: INSTAGRAM_URL, description: "Llegadas nuevas y detalles de cada pieza", cta: "Seguir" },
       { id: "facebook", label: "Facebook", handle: "neonnightonline", href: FACEBOOK_URL, description: "Novedades y lo que pasa detrás de cámaras", cta: "Seguir" },
       { id: "youtube", label: "YouTube", handle: "NeonNightsChannel", href: YOUTUBE_URL, description: "Reseñas y verificaciones paso a paso", cta: "Suscribirse" },
-      ...(TIKTOK_URL ? [{ id: "tiktok" as const, label: "TikTok", handle: "Neon Night", href: TIKTOK_URL, description: "Videos cortos de las piezas en uso", cta: "Seguir" }] : []),
+      ...(TIKTOK_URL ? [{ id: "tiktok" as const, label: "TikTok", handle: "{tienda}", href: TIKTOK_URL, description: "Videos cortos de las piezas en uso", cta: "Seguir" }] : []),
     ],
   },
 
@@ -84,7 +84,7 @@ export const SITE_CONTENT: SiteContent = {
   home: {
     hero: {
       kickerTemplate: "{brand} · Recién llegado",
-      fallbackKicker: "Neon Night",
+      fallbackKicker: "{tienda}",
       fallbackTitle: "Piezas verificadas",
       primaryCta: "Ver la pieza",
       secondaryCta: "Explorar la colección",
@@ -108,7 +108,7 @@ export const SITE_CONTENT: SiteContent = {
     },
     brands: {
       label: "Las casas que trabajamos",
-      disclaimer: "Neon Night es un revendedor independiente y no está afiliado a las marcas mencionadas. Las marcas y logotipos pertenecen a sus titulares.",
+      disclaimer: "{tienda} es un revendedor independiente y no está afiliado a las marcas mencionadas. Las marcas y logotipos pertenecen a sus titulares.",
       // Las marcas y sus logos se administran en el panel › Marcas (colección `brands`).
     },
     trust: {
@@ -292,7 +292,7 @@ export const SITE_CONTENT: SiteContent = {
         ],
       },
       {
-        title: "Neon Night",
+        title: "{tienda}",
         links: [
           { label: "Nosotros", href: "/nosotros" },
           { label: "WhatsApp", href: "whatsapp" },
@@ -308,7 +308,7 @@ export const SITE_CONTENT: SiteContent = {
     authority: { label: "Superintendencia de Industria y Comercio", href: "https://www.sic.gov.co", external: true },
     registryTemplate: "{tradeName} · Matrícula mercantil {number} de la {chamber}",
     cookieSettings: "Preferencias de cookies",
-    copyrightTemplate: "© {year} Neon Night",
+    copyrightTemplate: "© {year} {tienda}",
   },
 
   info: {
@@ -347,6 +347,6 @@ export const SITE_CONTENT: SiteContent = {
 
   whatsapp: {
     productMessageTemplate: "Hola, me interesa {name} (ref. {reference}). {url}",
-    genericMessage: "Hola, quiero asesoría sobre una pieza de Neon Night.",
+    genericMessage: "Hola, quiero asesoría sobre una pieza.",
   },
 };

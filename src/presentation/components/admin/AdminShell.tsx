@@ -3,6 +3,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 import { Isotype } from "@/presentation/components/primitives/Isotype";
+import type { IdentityAsset } from "@/application/dto/identity.dto";
 import { useBodyLock } from "@/presentation/hooks/use-body-lock";
 import { cn } from "@/presentation/lib/cn";
 import { NAV_GROUPS, isActivePath } from "./admin-nav";
@@ -12,7 +13,7 @@ import { NAV_GROUPS, isActivePath } from "./admin-nav";
  * (ver admin-nav.ts), y en móvil una barra superior con un menú a pantalla
  * completa con los mismos grupos. `logout` es una server action de la ruta.
  */
-export function AdminShell({ wordmark, logout, children }: { wordmark: string; logout: () => Promise<void>; children: ReactNode }) {
+export function AdminShell({ wordmark, isotype, logout, children }: { wordmark: string; isotype?: IdentityAsset | null; logout: () => Promise<void>; children: ReactNode }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   useBodyLock(open);
@@ -34,7 +35,7 @@ export function AdminShell({ wordmark, logout, children }: { wordmark: string; l
       <aside className="fixed inset-y-0 left-0 z-40 hidden w-[248px] flex-col border-r border-divider bg-bg lg:flex">
         <span className="h-[2px] w-full bg-accent" aria-hidden="true" />
         <Link href="/admin/catalogo" className="flex items-center gap-3.5 px-8 pb-10 pt-9">
-          <Isotype size={30} priority />
+          <Isotype size={30} asset={isotype} priority />
           <span className="flex flex-col">
             <span className="text-label uppercase tracking-[0.3em] text-ink">{wordmark}</span>
             <span className="mt-1 text-label-sm uppercase text-ink-3">Admin</span>
@@ -49,7 +50,7 @@ export function AdminShell({ wordmark, logout, children }: { wordmark: string; l
         <span className="block h-[2px] w-full bg-accent" aria-hidden="true" />
         <div className="flex items-center justify-between gap-4 px-5 py-4">
           <Link href="/admin/catalogo" className="flex items-center gap-3" aria-label="Inicio del panel">
-            <Isotype size={24} />
+            <Isotype size={24} asset={isotype} />
             <span className="text-label-sm uppercase tracking-[0.3em]">Admin</span>
           </Link>
           <button
