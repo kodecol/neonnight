@@ -1,14 +1,14 @@
 "use client";
-import { useEffect, useRef } from "react";
+import { useRef } from "react";
 import Link from "next/link";
 import { cartKey, useCart } from "@/presentation/hooks/use-cart";
 import { RichText } from "@/presentation/components/primitives/RichText";
 import { useBodyLock } from "@/presentation/hooks/use-body-lock";
+import { useDialogFocus } from "@/presentation/hooks/use-dialog-focus";
 import { formatCop } from "@/presentation/lib/format-money";
 import { Button } from "@/presentation/components/primitives/Button";
 import { QuantityStepper } from "@/presentation/components/primitives/QuantityStepper";
 import { ROUTES } from "@/presentation/lib/site";
-import { cn } from "@/presentation/lib/cn";
 import type { SiteContent } from "@/application/dto/site-content.dto";
 import { fill } from "@/application/lib/template";
 
@@ -29,9 +29,8 @@ export function CartDrawer({
   const panelRef = useRef<HTMLElement>(null);
   useBodyLock(cart.isOpen);
 
-  useEffect(() => {
-    if (cart.isOpen) panelRef.current?.querySelector<HTMLElement>("button, a")?.focus();
-  }, [cart.isOpen]);
+  // Escape ya lo atiende useCart.
+  useDialogFocus(cart.isOpen, panelRef);
 
   if (!cart.isOpen) return null;
 
@@ -94,15 +93,16 @@ export function CartDrawer({
           <span data-testid="cart-total">{formatCop(cart.totalCents)}</span>
         </div>
 
-        <Button
-          href={ROUTES.checkout}
-          onClick={cart.close}
-          aria-disabled={cart.items.length === 0}
-          className={cn("w-full justify-start px-6 py-5 text-label-lg", cart.items.length === 0 && "pointer-events-none opacity-45")}
-          data-testid="checkout-button"
-        >
-          {content.checkout}
-        </Button>
+        {cart.items.length > 0 ? (
+          <Button href={ROUTES.checkout} onClick={cart.close} className="w-full justify-start px-6 py-5 text-label-lg" data-testid="checkout-button">
+            {content.checkout}
+          </Button>
+        ) : (
+          // Bolsa vacía: un botón deshabilitado de verdad (un enlace con aria-disabled navega con Enter).
+          <Button disabled className="w-full justify-start px-6 py-5 text-label-lg" data-testid="checkout-button">
+            {content.checkout}
+          </Button>
+        )}
         <p
           className="mb-0 mt-3.5 text-legal text-ink-3 [text-wrap:pretty]"
           data-testid="cart-legal"

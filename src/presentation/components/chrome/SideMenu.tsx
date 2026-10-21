@@ -1,7 +1,8 @@
 "use client";
 import Link from "next/link";
-import { useEffect, useRef } from "react";
+import { useRef } from "react";
 import { useBodyLock } from "@/presentation/hooks/use-body-lock";
+import { useDialogFocus } from "@/presentation/hooks/use-dialog-focus";
 import type { SiteContent } from "@/application/dto/site-content.dto";
 
 export function SideMenu({
@@ -20,30 +21,7 @@ export function SideMenu({
   const panelRef = useRef<HTMLElement>(null);
   useBodyLock(open);
 
-  useEffect(() => {
-    if (!open) return;
-    const first = panelRef.current?.querySelector<HTMLElement>("a, button");
-    first?.focus();
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-      if (e.key === "Tab" && panelRef.current) {
-        const focusables = panelRef.current.querySelectorAll<HTMLElement>("a[href], button:not([disabled])");
-        const list = Array.from(focusables);
-        const firstEl = list[0];
-        const lastEl = list[list.length - 1];
-        if (!firstEl || !lastEl) return;
-        if (e.shiftKey && document.activeElement === firstEl) {
-          e.preventDefault();
-          lastEl.focus();
-        } else if (!e.shiftKey && document.activeElement === lastEl) {
-          e.preventDefault();
-          firstEl.focus();
-        }
-      }
-    };
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [open, onClose]);
+  useDialogFocus(open, panelRef, onClose);
 
   if (!open) return null;
 
