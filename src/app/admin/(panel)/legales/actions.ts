@@ -44,7 +44,7 @@ export async function resetLegalPageAction(slug: string): Promise<ActionResult> 
   await requireAdmin();
   if (!isSlug(slug)) return { ok: false, error: "Esa página no existe." };
   try {
-    await new ResetLegalPage(getContainer().legalPages).execute(slug);
+    await new ResetLegalPage(deps()).execute(slug);
     publish();
     return { ok: true, data: undefined };
   } catch (e) {

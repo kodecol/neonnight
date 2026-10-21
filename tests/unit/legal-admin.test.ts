@@ -95,11 +95,30 @@ describe("Legales editables desde el panel", () => {
     expect(editor.hasDraft).toBe(false);
     expect(editor.content.lead).toBe(`Entradilla número ${LEGAL_HISTORY_LIMIT + 2} de prueba.`);
 
-    await new ResetLegalPage(d.legalPages).execute("pagos");
+    // Volver a fábrica publica el texto del código como versión nueva, vigente hoy: la versión no baja.
+    expect(await new ResetLegalPage(d).execute("pagos")).toEqual({ version: `1.${LEGAL_HISTORY_LIMIT + 3}` });
     const page = (await d.content.page("pagos"))!;
-    expect(page.version).toBe("1.0");
+    expect(page).toMatchObject({ version: `1.${LEGAL_HISTORY_LIMIT + 3}`, updatedAt: "2026-10-21", lead: content.lead });
+    editor = await new GetLegalEditor(d).execute("pagos");
+    expect(editor.content).toEqual(content);
+    expect(editor.history[0]?.version).toBe(`1.${LEGAL_HISTORY_LIMIT + 2}`);
     // La siguiente publicación sigue numerando después de lo ya publicado.
-    expect((await new GetLegalEditor(d).execute("pagos")).next.minor).toBe(`1.${LEGAL_HISTORY_LIMIT + 3}`);
+    expect(editor.next.minor).toBe(`1.${LEGAL_HISTORY_LIMIT + 4}`);
+  });
+
+  it("volver a fábrica tras una versión mayor no baja a la 1.0", async () => {
+    const d = setup();
+    const { content } = await new GetLegalEditor(d).execute("terminos");
+    await new SaveLegalPage(d).execute("terminos", { ...content, lead: "Entradilla de la versión mayor.", major: true }, "publish");
+    expect((await d.content.page("terminos"))!.version).toBe("2.0");
+    await new ResetLegalPage(d).execute("terminos");
+    const page = (await d.content.page("terminos"))!;
+    expect(page).toMatchObject({ version: "2.1", updatedAt: "2026-10-21", lead: (await new StaticSiteContentRepository(SITE_CONTENT, "573001234567").page("terminos"))!.lead });
+    expect((await new GetLegalEditor(d).execute("terminos")).history.map((h) => h.version)).toEqual(["2.0"]);
+    // Sin nada publicado, solo descarta el borrador.
+    await new SaveLegalPage(d).execute("envios", { ...(await new GetLegalEditor(d).execute("envios")).content, major: false }, "draft");
+    expect(await new ResetLegalPage(d).execute("envios")).toEqual({ version: null });
+    expect((await new ListLegalPages(d).execute()).find((r) => r.slug === "envios")).toMatchObject({ status: "fabrica", version: "1.0" });
   });
 
   it("los datos de la empresa se editan y llegan al sitio y a las páginas (de fábrica y publicadas)", async () => {

@@ -168,12 +168,27 @@ export class DiscardLegalDraft {
   }
 }
 
-/** Vuelve al texto de fábrica (lo publicado queda en el historial). */
+/**
+ * Vuelve al texto de fábrica publicándolo como una versión nueva (sube la
+ * menor, vigente desde hoy): la versión que ve la tienda nunca baja y lo
+ * publicado antes queda en el historial. Si nunca se publicó, solo descarta
+ * el borrador (la tienda ya muestra el texto de fábrica).
+ */
 export class ResetLegalPage {
-  constructor(private readonly legalPages: LegalPagesRepository) {}
+  constructor(private readonly deps: LegalDeps & { clock: Clock }) {}
 
-  execute(slug: InfoPageSlug): Promise<void> {
-    return this.legalPages.reset(slug);
+  async execute(slug: InfoPageSlug): Promise<{ version: string | null }> {
+    if (!(INFO_PAGE_SLUGS as readonly string[]).includes(slug)) throw new FieldValidationError("slug", "Esa página no existe.");
+    const record = await this.deps.legalPages.get(slug);
+    // Lo publicado pasa al historial y la tienda vuelve a la página del código: de ahí sale el texto de fábrica.
+    await this.deps.legalPages.reset(slug);
+    if (!record.published) return { version: null };
+    const [factory, { values }] = await Promise.all([this.deps.content.page(slug), context(this.deps)]);
+    if (!factory) throw new FieldValidationError("slug", "Esa página no existe.");
+    const base = maxVersion([factory.version, record.published.version, ...record.history.map((h) => h.version)]);
+    const published: LegalPublished = { ...seedFrom(factory, values), version: nextVersion(base, false), publishedAt: this.deps.clock.now() };
+    await this.deps.legalPages.publish(slug, published);
+    return { version: published.version };
   }
 }
 

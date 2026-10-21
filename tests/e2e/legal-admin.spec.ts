@@ -50,21 +50,21 @@ test.describe("Panel › Legales", () => {
     await expect(page.locator("#prueba-e2e")).toContainText("@");
     await expect(page.locator("time")).toContainText("Versión 1.1");
 
-    // Volver al texto de fábrica y luego recuperar la 1.1 desde el historial.
+    // Volver al texto de fábrica (se publica como 1.2: la versión no baja) y luego recuperar la 1.1 desde el historial.
     await page.goto("/admin/legales/terminos");
     page.once("dialog", (d) => void d.accept());
     await page.getByTestId("legal-reset").click();
     await page.waitForLoadState("networkidle");
     await page.goto("/terminos");
     await expect(page.getByText(ADDED)).toHaveCount(0);
-    await expect(page.locator("time")).toContainText("Versión 1.0");
+    await expect(page.locator("time")).toContainText("Versión 1.2");
 
     await page.goto("/admin/legales/terminos");
     await page.getByTestId("legal-versions").getByRole("button", { name: "Cargar en el editor" }).first().click();
     await expect(page.getByTestId("legal-body")).toHaveValue(new RegExp(ADDED));
-    await expect(page.getByTestId("legal-publish")).toHaveText("Publicar v1.2");
+    await expect(page.getByTestId("legal-publish")).toHaveText("Publicar v1.3");
     await page.getByTestId("legal-publish").click();
-    await expect(page.getByText("Publicada la versión 1.2")).toBeVisible();
+    await expect(page.getByText("Publicada la versión 1.3")).toBeVisible();
     await page.goto("/terminos");
     await expect(page.getByText(ADDED)).toBeVisible();
 

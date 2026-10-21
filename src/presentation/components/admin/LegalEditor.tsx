@@ -220,7 +220,7 @@ export function LegalEditor({
               {initial.current.source === "publicado" && (
                 <button
                   type="button"
-                  onClick={() => confirmThen("¿Volver al texto de fábrica? Lo publicado queda en el historial.", actions.reset)}
+                  onClick={() => confirmThen(`¿Volver al texto de fábrica? Se publica como la versión ${initial.next.minor} y lo publicado queda en el historial.`, actions.reset)}
                   className="w-fit cursor-pointer text-label-sm uppercase text-ink-3 hover:text-accent"
                   data-testid="legal-reset"
                 >
