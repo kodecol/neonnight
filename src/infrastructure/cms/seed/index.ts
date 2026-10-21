@@ -1,3 +1,4 @@
+import type { Brand } from "@/domain/entities/brand";
 import type { Category } from "@/domain/entities/category";
 import type { Product } from "@/domain/entities/product";
 import type { ProductLine } from "@/domain/entities/product-line";
@@ -6,6 +7,7 @@ import { NEW_WATCHES } from "./new-watches";
 import { SEED_JEWELRY } from "./jewelry";
 import { SEED_PERFUMES } from "./perfumes";
 import { SEED_WATCHES } from "./watches";
+import { brandsFromProducts } from "./brands";
 
 export { SEED_VERSION, type Seeded } from "./build";
 
@@ -78,3 +80,7 @@ function interleave<T>(groups: ReadonlyArray<readonly T[]>): T[] {
 export const SEED_LINES: readonly ProductLine[] = SEEDED_LINES.map((s) => s.item);
 export const SEED_CATEGORIES: readonly Category[] = SEEDED_CATEGORIES.map((s) => s.item);
 export const SEED_PRODUCTS: readonly Product[] = SEEDED_PRODUCTS.map((s) => s.item);
+
+/** Marcas (v3): salen de los productos del seed, con los logos que trae el sitio. */
+export const SEEDED_BRANDS: ReadonlyArray<Seeded<Brand>> = brandsFromProducts(SEED_PRODUCTS).map((item) => ({ since: 3, item }));
+export const SEED_BRANDS: readonly Brand[] = SEEDED_BRANDS.map((s) => s.item);

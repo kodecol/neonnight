@@ -109,14 +109,7 @@ export const SITE_CONTENT: SiteContent = {
     brands: {
       label: "Las casas que trabajamos",
       disclaimer: "Neon Night es un revendedor independiente y no está afiliado a las marcas mencionadas. Las marcas y logotipos pertenecen a sus titulares.",
-      // Clave = marca del catálogo en minúsculas. Una marca sin logo se muestra como texto.
-      logos: {
-        rolex: { src: "/assets/logos/brands/rolex.svg", ratio: 5.07, color: "#127749" },
-        omega: { src: "/assets/logos/brands/omega.svg", ratio: 2.01, color: "#E4002B" },
-        cartier: { src: "/assets/logos/brands/cartier.svg", ratio: 3.42, color: "#D4202C" },
-        tudor: { src: "/assets/logos/brands/tudor.svg", ratio: 1.76, color: "#E1251B" },
-        "grand seiko": { src: "/assets/logos/brands/grand-seiko.svg", ratio: 2.29, color: "#6E8FBF" },
-      },
+      // Las marcas y sus logos se administran en el panel › Marcas (colección `brands`).
     },
     trust: {
       kicker: "Garantía y autenticidad",

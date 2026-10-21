@@ -325,8 +325,21 @@
 @media (width >= 768px) { .nn-brand-logo { --nn-s: 0.8; } }
 @media (width >= 1024px) { .nn-brand-logo { --nn-s: 1; } }
 .nn-brand-logo:hover { background-color: var(--brand); transform: scale(1.06); }
+/* Logos en escala de grises (modo "grayscale"): mismo tamaño que la silueta, a color al pasar el cursor. */
+.nn-brand-logo-img {
+  display: block;
+  height: calc(var(--h) * var(--nn-s, 0.62));
+  width: calc(var(--h) * var(--r) * var(--nn-s, 0.62));
+  object-fit: contain;
+  filter: grayscale(1) brightness(1.15) contrast(1.05);
+  opacity: 0.9;
+  transition: filter 0.5s var(--ease-reveal), opacity 0.5s var(--ease-reveal), transform 0.5s var(--ease-reveal);
+}
+@media (width >= 768px) { .nn-brand-logo-img { --nn-s: 0.8; } }
+@media (width >= 1024px) { .nn-brand-logo-img { --nn-s: 1; } }
+.nn-brand-logo-img:hover { filter: none; opacity: 1; transform: scale(1.06); }
 @media (prefers-reduced-motion: reduce) {
-  .nn-logo, .nn-brand-logo { transition: none; }
+  .nn-logo, .nn-brand-logo, .nn-brand-logo-img { transition: none; }
 }
 
 /* Logo de Bold: degradado de marca al pasar el cursor por su contenedor. */

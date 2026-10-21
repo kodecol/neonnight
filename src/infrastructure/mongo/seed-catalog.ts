@@ -1,5 +1,6 @@
 import type { AnyBulkWriteOperation, Db, Document } from "mongodb";
-import { SEED_VERSION, SEEDED_CATEGORIES, SEEDED_LINES, SEEDED_PRODUCTS } from "../cms/seed";
+import { SEED_VERSION, SEEDED_BRANDS, SEEDED_CATEGORIES, SEEDED_LINES, SEEDED_PRODUCTS } from "../cms/seed";
+import { toBrandDoc, type BrandDoc } from "./mongo-brand-repository";
 import { toProductDoc, type ProductDoc } from "./product-mapper";
 import { toLineDoc, type LineDoc } from "./mongo-line-repository";
 import type { CategoryDoc } from "./mongo-category-repository";
@@ -32,9 +33,11 @@ export async function seedCatalog(db: Db): Promise<void> {
   const base = Date.now();
   // createdAt decreciente: el orden "más reciente primero" respeta el orden del seed.
   const products = pick(SEEDED_PRODUCTS).map((p, i) => toProductDoc(p, new Date(base - i * 60_000)));
+  const brands = pick(SEEDED_BRANDS).map(toBrandDoc);
 
   if (lines.length) await db.collection<LineDoc>("lines").bulkWrite(insertOnly(lines));
   if (categories.length) await db.collection<CategoryDoc>("categories").bulkWrite(insertOnly(categories));
   if (products.length) await db.collection<ProductDoc>("products").bulkWrite(insertOnly(products));
+  if (brands.length) await db.collection<BrandDoc>("brands").bulkWrite(insertOnly(brands));
   await meta.updateOne({ _id: "seed" }, { $set: { version: SEED_VERSION }, $setOnInsert: { at: new Date() } }, { upsert: true });
 }

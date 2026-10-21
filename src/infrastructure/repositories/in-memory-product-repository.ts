@@ -1,5 +1,6 @@
 import type { Product, ProductId } from "@/domain/entities/product";
 import type { ProductFilter, ProductRepository } from "@/domain/repositories/product-repository";
+import { brandKey } from "@/domain/entities/brand";
 
 /** Orden: lo más reciente primero (las altas nuevas van al principio). */
 export class InMemoryProductRepository implements ProductRepository {
@@ -46,6 +47,18 @@ export class InMemoryProductRepository implements ProductRepository {
 
   async countByLine(line: string): Promise<number> {
     return this.items.filter((p) => p.line === line).length;
+  }
+
+  async countByBrand(name: string): Promise<number> {
+    const key = brandKey(name);
+    return this.items.filter((p) => brandKey(p.brand) === key).length;
+  }
+
+  async renameBrand(from: string, to: string): Promise<number> {
+    const key = brandKey(from);
+    let n = 0;
+    this.items = this.items.map((p) => (brandKey(p.brand) === key ? (n++, { ...p, brand: to, updatedAt: new Date() }) : p));
+    return n;
   }
 
   async decrementStock(id: ProductId, variantId: string, quantity: number): Promise<boolean> {

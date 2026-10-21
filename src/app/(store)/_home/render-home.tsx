@@ -3,7 +3,7 @@ import { getContainer } from "@/infrastructure/container";
 import { ListProducts } from "@/application/use-cases/list-products";
 import { GetFeaturedProduct } from "@/application/use-cases/get-featured-product";
 import { ListLines } from "@/application/use-cases/list-lines";
-import { ListBrands } from "@/application/use-cases/list-brands";
+import { ListMarqueeBrands } from "@/application/use-cases/list-brands";
 import { GetHomeContent } from "@/application/use-cases/admin/home";
 import type { HomeBlockId } from "@/application/ports/home-settings";
 import { Hero } from "@/presentation/components/blocks/Hero";
@@ -36,7 +36,7 @@ export async function HomeView({ preview = false }: { preview?: boolean }) {
     new ListProducts(products).execute({ mixLines: true, limit: base.home.catalog.featuredCount }),
     products.findAll().then((all) => all.length),
     new GetFeaturedProduct(products).execute(),
-    new ListBrands(products).execute(),
+    new ListMarqueeBrands(container).execute({ label: base.home.brands.label, disclaimer: base.home.brands.disclaimer }),
     new ListLines(container).execute(),
     // Lo editado en el panel › Inicio; lo vacío usa los textos por defecto.
     new GetHomeContent(container).execute({ kicker: base.home.hero.fallbackKicker, cta: base.home.hero.primaryCta }, { preview }),
@@ -46,7 +46,7 @@ export async function HomeView({ preview = false }: { preview?: boolean }) {
   const items = selection.map((p) => ({ product: p }));
 
   const blocks: Record<HomeBlockId, ReactNode> = {
-    marcas: <BrandMarquee brands={brands} content={site.home.brands} />,
+    marcas: <BrandMarquee content={brands} />,
     lineas: <LineShowcase lines={lines} content={site.home.lines} />,
     seleccion: (
       <>

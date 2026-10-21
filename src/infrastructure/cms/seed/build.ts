@@ -9,7 +9,7 @@ import { withLibrary } from "@/domain/services/media-library";
  * una base ya sembrada solo recibe lo nuevo y nunca se pisa ni se borra lo
  * editado en el panel.
  */
-export const SEED_VERSION = 2;
+export const SEED_VERSION = 3;
 
 export interface Seeded<T> {
   readonly since: number;

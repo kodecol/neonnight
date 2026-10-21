@@ -19,7 +19,10 @@ import { GetAdminOrder, ListAdminOrders, UpdateOrderStatus } from "@/application
 import { InMemoryPaymentSettingsRepository } from "@/infrastructure/repositories/in-memory-payment-settings-repository";
 import { DEFAULT_PAYMENT_SETTINGS } from "@/application/ports/payment-settings";
 import { orderId } from "@/domain/entities/order";
-import { ListBrands } from "@/application/use-cases/list-brands";
+import { ListMarqueeBrands } from "@/application/use-cases/list-brands";
+import { InMemoryBrandRepository } from "@/infrastructure/repositories/in-memory-brand-repository";
+import { InMemoryBrandsCopyRepository } from "@/infrastructure/repositories/in-memory-brands-copy-repository";
+import { SEED_BRANDS } from "@/infrastructure/cms/seed";
 import { ListLines } from "@/application/use-cases/list-lines";
 import { LineNotFoundError, PaymentsUnavailableError, ProductNotFoundError, ProductUnavailableError } from "@/domain/errors";
 import type { Product } from "@/domain/entities/product";
@@ -355,11 +358,19 @@ describe("Checkout", () => {
   });
 });
 
-describe("ListBrands", () => {
-  it("devuelve marcas únicas del catálogo, de la más a la menos representada", async () => {
-    const brands = await new ListBrands(repo()).execute();
-    expect(brands.slice(0, 2)).toEqual(["Cartier", "Rolex"]);
-    expect(brands).toContain("Maison Francis Kurkdjian");
-    expect(await new ListBrands(repo([])).execute()).toEqual([]);
+describe("ListMarqueeBrands", () => {
+  const copy = { label: "Las casas", disclaimer: "Aviso" };
+  it("marcas visibles con productos, en el orden del panel; de entrada la más representada primero", async () => {
+    const marquee = await new ListMarqueeBrands({ brands: new InMemoryBrandRepository(SEED_BRANDS), products: repo(), brandsCopy: new InMemoryBrandsCopyRepository() }).execute(copy);
+    expect(marquee.brands.slice(0, 2).map((b) => b.name)).toEqual(["Cartier", "Rolex"]);
+    expect(marquee.brands.find((b) => b.name === "Rolex")?.logo).toMatchObject({ ratio: 5.07, mode: "silhouette" });
+    expect(marquee.brands.find((b) => b.name === "Maison Francis Kurkdjian")?.logo).toBeNull();
+    expect(marquee).toMatchObject(copy);
+
+    const hidden = SEED_BRANDS.map((b) => (b.name === "Rolex" ? { ...b, visible: false } : b));
+    const none = await new ListMarqueeBrands({ brands: new InMemoryBrandRepository(hidden), products: repo([]), brandsCopy: new InMemoryBrandsCopyRepository({ label: "Editado", disclaimer: null }) }).execute(copy);
+    expect(none.brands).toEqual([]);
+    expect(none.label).toBe("Editado");
+    expect(none.disclaimer).toBe("Aviso");
   });
 });

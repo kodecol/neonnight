@@ -242,6 +242,19 @@ Las fotos, portadas y videos del seed están en el repo (`public/assets/…`) so
 
 Repite el paso 2 cada vez que una versión suba `SEED_VERSION` con medios nuevos.
 
+### 5.6 Marcas (colección `brands`)
+
+Desde la versión con el panel › Marcas, la marca de cada producto sale de la colección `brands` y el formulario de producto exige una marca existente. Antes de desplegarla en una base que ya tiene productos:
+
+1. Respaldo (`mongodump`, §5.4).
+2. Con `MONGODB_URI`, `MONGODB_DB` y `CLOUDINARY_URL` de producción **en el entorno**:
+   ```bash
+   node scripts/migrate-brands.mjs --dry-run   # qué marcas crearía (una por nombre, sin tildes ni mayúsculas)
+   node scripts/migrate-brands.mjs             # las crea y sube los 5 logos SVG a neonnight/sitio/marcas
+   ```
+   Es idempotente: no toca las marcas que ya existen. Si Cloudinary no entrega un SVG (cuentas con SVG restringido), la marca queda con su ruta `/assets/logos/brands/…`, que va dentro de la imagen.
+3. Despliega. Al arrancar, el seed v3 solo inserta las marcas del seed que falten (no duplica las de la migración).
+
 ---
 
 ## 6. Operación

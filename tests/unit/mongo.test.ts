@@ -4,10 +4,11 @@ import { seedCatalog } from "@/infrastructure/mongo/seed-catalog";
 import { migrateToProducts } from "@/infrastructure/mongo/migrate";
 import { MongoProductRepository } from "@/infrastructure/mongo/mongo-product-repository";
 import { MongoCategoryRepository } from "@/infrastructure/mongo/mongo-category-repository";
+import { MongoBrandRepository } from "@/infrastructure/mongo/mongo-brand-repository";
 import { MongoLineRepository } from "@/infrastructure/mongo/mongo-line-repository";
 import { MongoOrderRepository } from "@/infrastructure/mongo/mongo-order-repository";
 import { MongoPaymentSettingsRepository } from "@/infrastructure/mongo/mongo-payment-settings-repository";
-import { SEED_PRODUCTS } from "@/infrastructure/cms/seed";
+import { SEED_BRANDS, SEED_PRODUCTS } from "@/infrastructure/cms/seed";
 import { ListProducts } from "@/application/use-cases/list-products";
 import { SaveProduct } from "@/application/use-cases/admin/save-product";
 import { GetAdminProduct } from "@/application/use-cases/admin/get-admin-product";
@@ -53,7 +54,7 @@ describe.skipIf(!uri)("Repositorios Mongo", () => {
 
   it("guarda ediciones conservando el orden de alta y descuenta stock de forma atómica", async () => {
     const products = new MongoProductRepository(provider);
-    const deps = { products, categories: new MongoCategoryRepository(provider), lines: new MongoLineRepository(provider), clock: { now: () => new Date() }, ids: { next: () => "x" } };
+    const deps = { products, categories: new MongoCategoryRepository(provider), lines: new MongoLineRepository(provider), brands: new MongoBrandRepository(provider), clock: { now: () => new Date() }, ids: { next: () => "x" } };
     const form = (await new GetAdminProduct(products).execute("w-05"))!;
     await new SaveProduct(deps).execute({ ...form, variants: [{ ...form.variants[0]!, priceUnits: 1 }] });
     expect((await products.findById("w-05"))?.variants[0]?.price.units).toBe(1);
@@ -63,6 +64,18 @@ describe.skipIf(!uri)("Repositorios Mongo", () => {
     expect(await products.decrementStock(productId("pf-01"), "100-ml", 2)).toBe(true);
     expect(await products.decrementStock(productId("pf-01"), "100-ml", 2)).toBe(false); // quedaba 1
     expect((await products.findById("pf-01"))?.variants.map((v) => v.stock)).toEqual([4, 0]);
+  });
+
+  it("siembra las marcas (v3) y renombra en cascada los productos", async () => {
+    const brands = new MongoBrandRepository(provider);
+    const products = new MongoProductRepository(provider);
+    const list = await brands.list();
+    expect(list.map((b) => b.slug)).toEqual(SEED_BRANDS.map((b) => b.slug));
+    expect(list.find((b) => b.slug === "rolex")?.logo).toMatchObject({ ratio: 5.07, mode: "silhouette" });
+    expect(await products.countByBrand("  ROLEX ")).toBe(5);
+    expect(await products.renameBrand("rolex", "Rolex SA")).toBe(5);
+    expect(await products.countByBrand("Rolex SA")).toBe(5);
+    expect(await products.renameBrand("Rolex SA", "Rolex")).toBe(5);
   });
 
   it("órdenes y settings cifrados", async () => {

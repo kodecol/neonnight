@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { getContainer } from "@/infrastructure/container";
 import { GetAdminProduct } from "@/application/use-cases/admin/get-admin-product";
 import { ProductForm } from "@/presentation/components/admin/ProductForm";
+import { ensureBrandAction } from "../../marcas/actions";
 import { deleteProductAction, saveProductAction, uploadImageAction } from "../actions";
 
 type Params = Promise<{ id: string }>;
@@ -16,8 +17,8 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
 export default async function EditProductPage({ params, searchParams }: { params: Params; searchParams: Promise<{ creado?: string }> }) {
   const { id } = await params;
   const { creado } = await searchParams;
-  const { products, categories, lines } = getContainer();
-  const [product, cats, allLines, entity] = await Promise.all([new GetAdminProduct(products).execute(id), categories.list(), lines.list(), products.findById(id)]);
+  const { products, categories, lines, brands } = getContainer();
+  const [product, cats, allLines, entity, brandList] = await Promise.all([new GetAdminProduct(products).execute(id), categories.list(), lines.list(), products.findById(id), brands.list()]);
   if (!product) notFound();
   const line = allLines.find((l) => l.slug === product.line);
   if (!line) notFound();
@@ -30,6 +31,8 @@ export default async function EditProductPage({ params, searchParams }: { params
       save={saveProductAction}
       remove={deleteProductAction}
       upload={uploadImageAction}
+      brands={brandList.map((b) => b.name)}
+      createBrand={ensureBrandAction}
       updatedAt={entity?.updatedAt.toISOString()}
       justCreated={creado === "1"}
     />

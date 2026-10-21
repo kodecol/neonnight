@@ -2,6 +2,8 @@ import type { ProductRepository } from "@/domain/repositories/product-repository
 import type { LineRepository } from "@/domain/repositories/line-repository";
 import type { OrderRepository } from "@/domain/repositories/order-repository";
 import type { CategoryRepository } from "@/domain/repositories/category-repository";
+import type { BrandRepository } from "@/domain/repositories/brand-repository";
+import type { BrandsCopyRepository } from "@/application/ports/brands-copy";
 import type { PaymentGateway } from "@/application/ports/payment-gateway";
 import type { PaymentSettingsRepository } from "@/application/ports/payment-settings";
 import type { MediaUploader } from "@/application/ports/media-uploader";
@@ -24,6 +26,10 @@ import { MongoProductRepository } from "./mongo/mongo-product-repository";
 import { MongoLineRepository } from "./mongo/mongo-line-repository";
 import { MongoOrderRepository } from "./mongo/mongo-order-repository";
 import { MongoCategoryRepository } from "./mongo/mongo-category-repository";
+import { MongoBrandRepository } from "./mongo/mongo-brand-repository";
+import { MongoBrandsCopyRepository } from "./mongo/mongo-brands-copy-repository";
+import { InMemoryBrandRepository } from "./repositories/in-memory-brand-repository";
+import { InMemoryBrandsCopyRepository } from "./repositories/in-memory-brands-copy-repository";
 import { MongoPaymentSettingsRepository } from "./mongo/mongo-payment-settings-repository";
 import { MongoHomeSettingsRepository, MongoSiteMediaRepository } from "./mongo/mongo-site-content-repositories";
 import { InMemoryHomeSettingsRepository, InMemorySiteMediaRepository } from "./repositories/in-memory-site-content-repositories";
@@ -38,7 +44,7 @@ import { adminSecret } from "./auth/session";
 import { ConsoleAnalytics } from "./analytics/console-analytics";
 import { WaMeLinkBuilder } from "./whatsapp/wa-me-link-builder";
 import { RandomIdGenerator, SystemClock } from "./system";
-import { SEED_CATEGORIES, SEED_LINES, SEED_PRODUCTS } from "./cms/seed";
+import { SEED_BRANDS, SEED_CATEGORIES, SEED_LINES, SEED_PRODUCTS } from "./cms/seed";
 import { SITE_CONTENT } from "./content/site-content";
 import { StaticSiteContentRepository } from "./content/static-site-content-repository";
 import { ManagedSiteContentRepository } from "./content/managed-site-content-repository";
@@ -56,6 +62,11 @@ export interface Container {
   products: ProductRepository;
   lines: LineRepository;
   categories: CategoryRepository;
+  /** Marcas del catálogo (panel › Marcas) y el rótulo y aviso del marquee. */
+  brands: BrandRepository;
+  brandsCopy: BrandsCopyRepository;
+  /** Logos de marca: Cloudinary `neonnight/sitio/marcas` o disco local. */
+  brandUploader: MediaUploader;
   orders: OrderRepository;
   paymentSettings: PaymentSettingsRepository;
   /** Biblioteca de medios y contenido de la home (sección "Inicio" del panel). */
@@ -90,13 +101,15 @@ export interface Container {
 const g: { __nnContainer?: Container | null } =
   process.env.NODE_ENV === "production" ? (globalThis as unknown as { __nnContainer?: Container | null }) : {};
 
-function persistence(): Pick<Container, "products" | "lines" | "categories" | "orders" | "paymentSettings" | "siteMedia" | "homeSettings" | "legalPages" | "companySettings"> {
+function persistence(): Pick<Container, "products" | "lines" | "categories" | "brands" | "brandsCopy" | "orders" | "paymentSettings" | "siteMedia" | "homeSettings" | "legalPages" | "companySettings"> {
   const uri = process.env.MONGODB_URI;
   if (!uri) {
     return {
       products: new InMemoryProductRepository(SEED_PRODUCTS),
       lines: new InMemoryLineRepository(SEED_LINES),
       categories: new InMemoryCategoryRepository(SEED_CATEGORIES),
+      brands: new InMemoryBrandRepository(SEED_BRANDS),
+      brandsCopy: new InMemoryBrandsCopyRepository(),
       orders: new InMemoryOrderRepository(),
       paymentSettings: new InMemoryPaymentSettingsRepository(),
       siteMedia: new InMemorySiteMediaRepository(),
@@ -110,6 +123,8 @@ function persistence(): Pick<Container, "products" | "lines" | "categories" | "o
     products: new MongoProductRepository(db),
     lines: new MongoLineRepository(db),
     categories: new MongoCategoryRepository(db),
+    brands: new MongoBrandRepository(db),
+    brandsCopy: new MongoBrandsCopyRepository(db),
     orders: new MongoOrderRepository(db),
     paymentSettings: new MongoPaymentSettingsRepository(db, adminSecret),
     siteMedia: new MongoSiteMediaRepository(db),
@@ -127,6 +142,9 @@ export function createContainer(overrides: Partial<Container> = {}): Container {
     products: base.products,
     lines: base.lines,
     categories: base.categories,
+    brands: base.brands,
+    brandsCopy: base.brandsCopy,
+    brandUploader: overrides.brandUploader ?? (process.env.CLOUDINARY_URL ? new CloudinaryMediaUploader(`${SITE_FOLDER}/marcas`) : new LocalDiskMediaUploader()),
     orders: base.orders,
     paymentSettings: base.paymentSettings,
     siteMedia: base.siteMedia,

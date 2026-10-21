@@ -60,3 +60,9 @@ export class PaymentsUnavailableError extends DomainError {
     super("Por ahora no recibimos pagos en línea. Escríbenos por WhatsApp y cerramos la compra contigo.");
   }
 }
+
+export class BrandInUseError extends DomainError {
+  constructor(public readonly brand: string, public readonly count: number) {
+    super(`La marca "${brand}" tiene ${count} producto(s). Asígnales otra marca antes de borrarla.`);
+  }
+}

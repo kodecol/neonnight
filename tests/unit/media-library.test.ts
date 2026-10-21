@@ -2,7 +2,11 @@ import { describe, expect, it } from "vitest";
 import { InMemoryProductRepository } from "@/infrastructure/repositories/in-memory-product-repository";
 import { InMemoryCategoryRepository } from "@/infrastructure/repositories/in-memory-category-repository";
 import { InMemoryLineRepository } from "@/infrastructure/repositories/in-memory-line-repository";
-import { SEED_CATEGORIES, SEED_LINES, SEED_PRODUCTS } from "@/infrastructure/cms/seed";
+import { SEED_BRANDS, SEED_CATEGORIES, SEED_LINES, SEED_PRODUCTS } from "@/infrastructure/cms/seed";
+import { InMemoryBrandRepository } from "@/infrastructure/repositories/in-memory-brand-repository";
+
+/** Marcas de las piezas de prueba que no están en el seed. */
+const EXTRA_BRANDS = ["IWC", "Maison Margiela"].map((name, i) => ({ slug: name.toLowerCase().replace(/\s+/g, "-"), name, lines: [], logo: null, color: null, visible: true, order: 100 + i, description: null }));
 import { SaveProduct } from "@/application/use-cases/admin/save-product";
 import { GetAdminProduct } from "@/application/use-cases/admin/get-admin-product";
 import { libraryOf, withLibrary } from "@/domain/services/media-library";
@@ -19,6 +23,7 @@ function setup() {
     products: new InMemoryProductRepository(SEED_PRODUCTS),
     categories: new InMemoryCategoryRepository(SEED_CATEGORIES),
     lines: new InMemoryLineRepository(SEED_LINES),
+    brands: new InMemoryBrandRepository([...SEED_BRANDS, ...EXTRA_BRANDS]),
     clock: { now: () => new Date("2026-10-20T12:00:00Z") },
     ids: { next: () => `id${++n}` },
   };

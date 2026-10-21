@@ -4,7 +4,11 @@ import { InMemoryProductRepository } from "@/infrastructure/repositories/in-memo
 import { InMemoryCategoryRepository } from "@/infrastructure/repositories/in-memory-category-repository";
 import { InMemoryLineRepository } from "@/infrastructure/repositories/in-memory-line-repository";
 import { InMemoryPaymentSettingsRepository } from "@/infrastructure/repositories/in-memory-payment-settings-repository";
-import { SEED_CATEGORIES, SEED_LINES, SEED_PRODUCTS } from "@/infrastructure/cms/seed";
+import { SEED_BRANDS, SEED_CATEGORIES, SEED_LINES, SEED_PRODUCTS } from "@/infrastructure/cms/seed";
+import { InMemoryBrandRepository } from "@/infrastructure/repositories/in-memory-brand-repository";
+
+/** Marcas de las piezas de prueba que no están en el seed. */
+const EXTRA_BRANDS = ["IWC", "Maison Margiela"].map((name, i) => ({ slug: name.toLowerCase().replace(/\s+/g, "-"), name, lines: [], logo: null, color: null, visible: true, order: 100 + i, description: null }));
 import { SaveProduct } from "@/application/use-cases/admin/save-product";
 import { DeleteProduct } from "@/application/use-cases/admin/delete-product";
 import { GetAdminProduct, emptyAdminProductForm } from "@/application/use-cases/admin/get-admin-product";
@@ -28,6 +32,7 @@ function setup() {
     products: new InMemoryProductRepository(SEED_PRODUCTS),
     categories: new InMemoryCategoryRepository(SEED_CATEGORIES),
     lines: new InMemoryLineRepository(SEED_LINES),
+    brands: new InMemoryBrandRepository([...SEED_BRANDS, ...EXTRA_BRANDS]),
     clock,
     ids: ids(),
   };

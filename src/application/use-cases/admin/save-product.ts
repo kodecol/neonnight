@@ -1,6 +1,8 @@
 import type { ProductRepository } from "@/domain/repositories/product-repository";
 import type { CategoryRepository } from "@/domain/repositories/category-repository";
 import type { LineRepository } from "@/domain/repositories/line-repository";
+import type { BrandRepository } from "@/domain/repositories/brand-repository";
+import { brandKey } from "@/domain/entities/brand";
 import { productDisplayName, productId, type Product, type ProductImage, type ProductMedia, type ProductVariant } from "@/domain/entities/product";
 import { Money } from "@/domain/value-objects/money";
 import { Slug } from "@/domain/value-objects/slug";
@@ -14,6 +16,7 @@ export interface SaveProductDeps {
   products: ProductRepository;
   categories: CategoryRepository;
   lines: LineRepository;
+  brands: BrandRepository;
   clock: Clock;
   ids: IdGenerator;
 }
@@ -37,7 +40,10 @@ export class SaveProduct {
     const prev = input.id ? await products.findById(input.id) : null;
     if (input.id && !prev) throw new FieldValidationError("id", "El producto ya no existe.");
 
-    const [allLines, cats] = await Promise.all([lines.list(), categories.list()]);
+    const [allLines, cats, allBrands] = await Promise.all([lines.list(), categories.list(), this.deps.brands.list()]);
+    // La marca sale del panel › Marcas: se guarda con su nombre tal como está allí.
+    const brand = allBrands.find((b) => brandKey(b.name) === brandKey(input.brand));
+    if (!brand) throw new FieldValidationError("brand", `La marca "${input.brand}" no existe: créala primero.`);
     const line = allLines.find((l) => l.slug === input.line);
     if (!line) throw new FieldValidationError("line", "Línea inexistente.");
     if (input.specs.kind !== line.template) throw new FieldValidationError("specs", `La ficha no corresponde a la línea ${line.label}.`);
@@ -65,7 +71,7 @@ export class SaveProduct {
       stock: v.stock,
     }));
 
-    const name = productDisplayName(input);
+    const name = productDisplayName({ brand: brand.name, model: input.model });
     // Sin texto alternativo, se describe según su uso principal.
     const { roles } = input.media;
     const defaultAlt = (src: string, i: number) =>
@@ -82,7 +88,7 @@ export class SaveProduct {
       slug: Slug.of(input.slug),
       line: line.slug,
       category: input.category,
-      brand: input.brand,
+      brand: brand.name,
       model: input.model,
       reference: Reference.of(input.reference),
       condition: input.condition,

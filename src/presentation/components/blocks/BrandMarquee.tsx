@@ -1,5 +1,5 @@
 import type { CSSProperties } from "react";
-import type { SiteContent } from "@/application/dto/site-content.dto";
+import type { MarqueeBrandDto, MarqueeDto } from "@/application/dto/brand.dto";
 
 /** Mínimo de marcas por pista para que el bucle cubra pantallas anchas aunque haya pocas. */
 const MIN_ITEMS = 8;
@@ -7,32 +7,38 @@ const SECONDS_PER_ITEM = 4.5;
 /** Área visual común (px² a escala de escritorio): iguala el peso óptico de logos anchos y compactos. */
 const LOGO_AREA = 8200;
 
-type LogoStyle = CSSProperties & { "--logo": string; "--h": string; "--r": string; "--brand": string };
+type LogoStyle = CSSProperties & { "--logo"?: string; "--h": string; "--r": string; "--brand": string };
 
 /**
  * Banda de marcas en desplazamiento continuo con logos oficiales en blanco;
  * al pasar el cursor el marquee se detiene y el logo toma su color de marca.
  * Los extremos se funden con el fondo. La pista es decorativa: los lectores
- * de pantalla reciben la lista de marcas una sola vez.
+ * de pantalla reciben la lista de marcas una sola vez. Las marcas, su orden y
+ * sus logos salen del panel › Marcas; sin logo, se muestra el nombre.
  */
-export function BrandMarquee({ brands, content }: { brands: string[]; content: SiteContent["home"]["brands"] }) {
+export function BrandMarquee({ content }: { content: MarqueeDto }) {
+  const brands = content.brands;
   if (brands.length === 0) return null;
   const reps = Math.max(1, Math.ceil(MIN_ITEMS / brands.length));
   const items = Array.from({ length: reps }, () => brands).flat();
   const style = { "--nn-marquee-duration": `${items.length * SECONDS_PER_ITEM}s` } as CSSProperties;
 
-  const item = (brand: string, key: string) => {
-    const logo = content.logos[brand.toLowerCase()];
+  const item = (brand: MarqueeBrandDto, key: string) => {
+    const logo = brand.logo;
+    const size = logo ? ({ "--h": `${Math.sqrt(LOGO_AREA / logo.ratio).toFixed(1)}px`, "--r": String(logo.ratio), "--brand": brand.color ?? "var(--color-ink)" } as LogoStyle) : null;
     return (
       <span key={key} className="flex items-center">
         <span className="flex h-[72px] items-center px-10 md:h-[96px] md:px-14 lg:h-[120px] lg:px-20">
-          {logo ? (
-            <span
-              className="nn-brand-logo"
-              style={{ "--logo": `url(${logo.src})`, "--h": `${Math.sqrt(LOGO_AREA / logo.ratio).toFixed(1)}px`, "--r": String(logo.ratio), "--brand": logo.color } as LogoStyle}
-            />
+          {logo && size ? (
+            logo.mode === "grayscale" ? (
+              // Logos de varios tonos o con fondo: la imagen en grises, a color al pasar el cursor.
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={logo.src} alt="" className="nn-brand-logo-img" style={size} draggable={false} />
+            ) : (
+              <span className="nn-brand-logo" style={{ ...size, "--logo": `url(${logo.src})` } as LogoStyle} />
+            )
           ) : (
-            <span className="whitespace-nowrap text-[32px] font-medium uppercase leading-none tracking-[-0.5px] text-ink md:text-[44px] lg:text-[56px]">{brand}</span>
+            <span className="whitespace-nowrap text-[32px] font-medium uppercase leading-none tracking-[-0.5px] text-ink md:text-[44px] lg:text-[56px]">{brand.name}</span>
           )}
         </span>
         <span className="h-1 w-1 shrink-0 bg-ink-3" />
@@ -48,7 +54,7 @@ export function BrandMarquee({ brands, content }: { brands: string[]; content: S
         </h2>
         <ul className="sr-only">
           {brands.map((b) => (
-            <li key={b}>{b}</li>
+            <li key={b.name}>{b.name}</li>
           ))}
         </ul>
       </div>

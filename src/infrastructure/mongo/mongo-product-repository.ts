@@ -2,6 +2,7 @@ import type { Filter } from "mongodb";
 import type { Product, ProductId } from "@/domain/entities/product";
 import type { ProductFilter, ProductRepository } from "@/domain/repositories/product-repository";
 import type { DbProvider } from "./client";
+import { brandKey } from "@/domain/entities/brand";
 import { fromProductDoc, toProductDoc, type ProductDoc } from "./product-mapper";
 
 export class MongoProductRepository implements ProductRepository {
@@ -59,6 +60,24 @@ export class MongoProductRepository implements ProductRepository {
 
   async countByLine(line: string): Promise<number> {
     return (await this.col()).countDocuments({ line });
+  }
+
+  /** Ids de los productos de una marca. Se compara en memoria con `brandKey` (sin tildes ni mayúsculas): el catálogo es pequeño. */
+  private async idsOfBrand(name: string): Promise<string[]> {
+    const key = brandKey(name);
+    const docs = await (await this.col()).find({}, { projection: { _id: 1, brand: 1 } }).toArray();
+    return docs.filter((d) => brandKey(d.brand) === key).map((d) => d._id);
+  }
+
+  async countByBrand(name: string): Promise<number> {
+    return (await this.idsOfBrand(name)).length;
+  }
+
+  async renameBrand(from: string, to: string): Promise<number> {
+    const ids = await this.idsOfBrand(from);
+    if (ids.length === 0) return 0;
+    const res = await (await this.col()).updateMany({ _id: { $in: ids } }, { $set: { brand: to, updatedAt: new Date() } });
+    return res.modifiedCount;
   }
 
   async decrementStock(id: ProductId, variantId: string, quantity: number): Promise<boolean> {

@@ -11,6 +11,8 @@ import { cn } from "@/presentation/lib/cn";
 import { FormSection, Select, TextArea, TextInput, Toggle } from "./fields";
 import type { UploadAction } from "./ImageField";
 import { MediaLibrary, type RoleCopy } from "./MediaLibrary";
+import { BrandPicker } from "./BrandPicker";
+import type { BrandDto } from "@/application/dto/brand.dto";
 import type { MediaDraft } from "@/presentation/lib/media-draft";
 import { AdminPageHeader } from "./AdminShell";
 import { SpecsFields, specsToDraft, specsToInput, type SpecsDraft } from "./SpecsFields";
@@ -114,6 +116,8 @@ export function ProductForm({
   save,
   remove,
   upload,
+  brands,
+  createBrand,
   updatedAt,
   justCreated = false,
 }: {
@@ -124,6 +128,9 @@ export function ProductForm({
   save: (input: AdminProductInput) => Promise<ActionResult<{ id: string; slug: string }>>;
   remove?: (id: string) => Promise<ActionResult>;
   upload: UploadAction;
+  /** Marcas del panel › Marcas (nombres) y cómo crear una al vuelo. */
+  brands: readonly string[];
+  createBrand: (name: string) => Promise<ActionResult<BrandDto>>;
   updatedAt?: string;
   /** Recién creado: la ruta se reemplaza y el formulario se vuelve a montar ya guardado. */
   justCreated?: boolean;
@@ -131,6 +138,7 @@ export function ProductForm({
   const router = useRouter();
   const [id, setId] = useState(initial.id);
   const [draft, setDraft] = useState<Draft>(() => toDraft(initial));
+  const [brandNames, setBrandNames] = useState<string[]>(() => [...brands]);
   const [saved, setSaved] = useState(() => JSON.stringify(toDraft(initial)));
   const [slugTouched, setSlugTouched] = useState(Boolean(initial.id));
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -221,7 +229,15 @@ export function ProductForm({
         <div className="min-w-0">
           <FormSection n="01" title="Identidad">
             <div className="grid gap-6 md:grid-cols-2">
-              <TextInput label="Marca" value={draft.brand} onChange={(e) => set("brand", e.target.value)} error={err("brand")} placeholder={template === "perfume" ? "Creed" : template === "joya" ? "Cartier" : "Rolex"} />
+              <BrandPicker
+                value={draft.brand}
+                onChange={(v) => set("brand", v)}
+                brands={brandNames}
+                onCreated={(n) => setBrandNames((list) => (list.includes(n) ? list : [...list, n].sort((a, b) => a.localeCompare(b, "es"))))}
+                create={createBrand}
+                error={err("brand")}
+                placeholder={template === "perfume" ? "Creed" : template === "joya" ? "Cartier" : "Rolex"}
+              />
               <TextInput label="Modelo" value={draft.model} onChange={(e) => set("model", e.target.value)} error={err("model")} placeholder={template === "perfume" ? "Aventus" : template === "joya" ? "Brazalete LOVE" : "Sky-Dweller"} />
               <TextInput
                 label="Referencia"

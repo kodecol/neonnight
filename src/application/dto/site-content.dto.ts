@@ -66,12 +66,6 @@ export interface LogoAsset {
   scale?: number;
 }
 
-export interface BrandLogo {
-  src: string;
-  ratio: number;
-  /** Color de marca al pasar el cursor (el logo se pinta como silueta). */
-  color: string;
-}
 
 export interface PaymentLogo {
   name: string;
@@ -171,7 +165,8 @@ export interface SiteContent {
     lines: { kicker: string; title: string; ctaTemplate: string; countTemplate: string };
     band: { title: string; image: ImageAsset };
     /** Las marcas del marquee salen del catálogo; aquí textos y logos por marca (clave en minúsculas). */
-    brands: { label: string; disclaimer: string; logos: Record<string, BrandLogo> };
+    /** Rótulo y aviso del marquee (las marcas salen de la colección `brands`). */
+    brands: { label: string; disclaimer: string };
     trust: { kicker: string; items: TrustItem[] };
     testimonials: { kicker: string; title: string; note: string; items: Testimonial[] };
     payments: { kicker: string; title: string; body: string; /** Texto junto al logo de Bold. */ processedBy: string; logos: PaymentLogo[]; assurances: string[]; whatsappCta: string; whatsappMessage: string };

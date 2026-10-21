@@ -3,9 +3,10 @@ import path from "node:path";
 import { randomUUID } from "node:crypto";
 import type { MediaUpload, MediaUploader, StoredMedia } from "@/application/ports/media-uploader";
 
-const EXT: Record<string, string> = { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp", "image/avif": "avif" };
-const TYPE: Record<string, string> = { jpg: "image/jpeg", png: "image/png", webp: "image/webp", avif: "image/avif" };
-const NAME_RE = /^[a-f0-9-]{36}\.(jpg|png|webp|avif)$/;
+// SVG solo para logos de marca, ya revisados al subir (ver application/lib/svg.ts).
+const EXT: Record<string, string> = { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp", "image/avif": "avif", "image/svg+xml": "svg" };
+const TYPE: Record<string, string> = { jpg: "image/jpeg", png: "image/png", webp: "image/webp", avif: "image/avif", svg: "image/svg+xml" };
+const NAME_RE = /^[a-f0-9-]{36}\.(jpg|png|webp|avif|svg)$/;
 
 export const LOCAL_MEDIA_ROUTE = "/api/media";
 

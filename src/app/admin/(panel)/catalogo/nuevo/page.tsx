@@ -5,6 +5,7 @@ import { emptyAdminProductForm } from "@/application/use-cases/admin/get-admin-p
 import { TEMPLATE_LABEL } from "@/application/dto/admin.dto";
 import { AdminPageHeader } from "@/presentation/components/admin/AdminShell";
 import { ProductForm } from "@/presentation/components/admin/ProductForm";
+import { ensureBrandAction } from "../../marcas/actions";
 import { saveProductAction, uploadImageAction } from "../actions";
 
 export const metadata: Metadata = { title: "Nuevo producto" };
@@ -12,8 +13,8 @@ export const metadata: Metadata = { title: "Nuevo producto" };
 /** Primero se elige la línea (decide la ficha); con `?linea=` se abre el formulario. */
 export default async function NewProductPage({ searchParams }: { searchParams: Promise<{ linea?: string }> }) {
   const { linea } = await searchParams;
-  const { lines, categories } = getContainer();
-  const [allLines, cats] = await Promise.all([lines.list(), categories.list()]);
+  const { lines, categories, brands } = getContainer();
+  const [allLines, cats, brandList] = await Promise.all([lines.list(), categories.list(), brands.list()]);
   const line = allLines.find((l) => l.slug === linea);
 
   if (!line) {
@@ -49,6 +50,8 @@ export default async function NewProductPage({ searchParams }: { searchParams: P
       categories={own}
       save={saveProductAction}
       upload={uploadImageAction}
+      brands={brandList.map((b) => b.name)}
+      createBrand={ensureBrandAction}
     />
   );
 }
