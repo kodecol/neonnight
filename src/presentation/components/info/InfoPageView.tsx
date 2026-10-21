@@ -62,14 +62,14 @@ export function InfoPageView({
           <aside className="hidden lg:block">
             <TableOfContents items={page.sections.map((s) => ({ id: s.id, title: s.title }))} label={copy.tocLabel} />
           </aside>
-          <article className="flex max-w-[78ch] flex-col">
+          <article className="flex min-w-0 max-w-[78ch] flex-col">
             {page.sections.map((s, i) => (
               <section key={s.id} id={s.id} aria-labelledby={`${s.id}-title`} className="scroll-mt-[calc(var(--spacing-header)+24px)] border-t border-divider py-12 first:border-t-0 first:pt-0">
                 <h2 id={`${s.id}-title`} className="mb-7 mt-0 flex items-baseline gap-4 text-h3 uppercase">
                   <span className="text-label tabular-nums text-accent">{String(i + 1).padStart(2, "0")}</span>
                   {s.title}
                 </h2>
-                <InfoBlocks blocks={s.blocks} />
+                <InfoBlocks blocks={s.blocks} label={s.title} />
               </section>
             ))}
           </article>
@@ -82,7 +82,7 @@ export function InfoPageView({
                 {s.title}
               </h2>
               <div className={s.blocks.some((b) => b.type === "steps") ? "lg:col-span-2" : undefined}>
-                <InfoBlocks blocks={s.blocks} editorial />
+                <InfoBlocks blocks={s.blocks} editorial label={s.title} />
               </div>
             </section>
           ))}
@@ -104,7 +104,7 @@ export function InfoPageView({
                 {copy.help.whatsapp}
               </Button>
             )}
-            <Button href={`mailto:${contactEmail}`} variant="secondary">
+            <Button href={`mailto:${contactEmail}`} variant="secondary" className="max-w-full [overflow-wrap:anywhere]">
               {contactEmail}
             </Button>
           </div>

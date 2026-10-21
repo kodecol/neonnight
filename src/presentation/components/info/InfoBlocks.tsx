@@ -3,17 +3,20 @@ import { RichText } from "@/presentation/components/primitives/RichText";
 import { cn } from "@/presentation/lib/cn";
 
 /** Bloques de contenido de las páginas institucionales (ver `InfoBlock`). */
-export function InfoBlocks({ blocks, editorial = false }: { blocks: InfoBlock[]; editorial?: boolean }) {
+/** `label`: el título de la sección, que nombra sus tablas (cada región con un nombre distinto). */
+export function InfoBlocks({ blocks, editorial = false, label }: { blocks: InfoBlock[]; editorial?: boolean; label: string }) {
+  const tables = blocks.filter((b) => b.type === "table").length;
+  const tableLabel = (i: number) => (tables > 1 ? `${label} (tabla ${blocks.slice(0, i + 1).filter((b) => b.type === "table").length})` : label);
   return (
     <div className="flex flex-col gap-6">
       {blocks.map((b, i) => (
-        <Block key={i} block={b} editorial={editorial} />
+        <Block key={i} block={b} editorial={editorial} tableLabel={tableLabel(i)} />
       ))}
     </div>
   );
 }
 
-function Block({ block, editorial }: { block: InfoBlock; editorial: boolean }) {
+function Block({ block, editorial, tableLabel }: { block: InfoBlock; editorial: boolean; tableLabel: string }) {
   switch (block.type) {
     case "p":
       return (
@@ -56,7 +59,7 @@ function Block({ block, editorial }: { block: InfoBlock; editorial: boolean }) {
       );
     case "table":
       return (
-        <div className="overflow-x-auto border border-divider" role="region" aria-label="Tabla" tabIndex={0}>
+        <div className="overflow-x-auto border border-divider" role="region" aria-label={tableLabel} tabIndex={0}>
           <table className="w-full min-w-[520px] border-collapse text-left">
             <thead>
               <tr>
