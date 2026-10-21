@@ -15,6 +15,9 @@
   --color-ink-2: #a1a1a1;
   --color-ink-3: #515151;
   --color-accent: #ff006e;
+  /* Hover y presionado del acento (Ajustes › Apariencia los deriva del acento elegido). */
+  --color-accent-hover: #e6005f;
+  --color-accent-active: #cc0055;
   --color-divider: hsla(0, 0%, 59%, 0.3);
   --color-border: hsla(0, 0%, 59%, 0.4);
   --color-border-strong: hsla(0, 0%, 59%, 0.5);
@@ -26,6 +29,8 @@
 
   /* Tipografía */
   --font-sans: var(--font-archivo), system-ui, sans-serif;
+  /* Títulos (h1–h3); por defecto la misma del cuerpo. */
+  --font-display: var(--font-archivo), system-ui, sans-serif;
   --text-display: 88px;
   --text-display--line-height: 88px;
   --text-display--letter-spacing: -2px;
@@ -403,3 +408,10 @@
 
 /* Logo de Bold: degradado de marca al pasar el cursor por su contenedor. */
 .group:hover path[style*="--nn-bold-fill"] { fill: var(--nn-bold-fill); }
+
+/* Títulos con la fuente de rótulos (Ajustes › Apariencia; por defecto, la del cuerpo). */
+h1,
+h2,
+h3 {
+  font-family: var(--font-display);
+}

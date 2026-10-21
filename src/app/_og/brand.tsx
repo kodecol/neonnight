@@ -1,3 +1,7 @@
+import { getContainer } from "@/infrastructure/container";
+import { GetActiveAppearance } from "@/application/use-cases/admin/appearance";
+import { DEFAULT_APPEARANCE } from "@/application/dto/appearance.dto";
+import { hexToRgb } from "@/application/lib/contrast";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 
@@ -43,4 +47,20 @@ export function ogPhoto(src: string | null | undefined, width: number, format: "
   return src.replace(/\/image\/upload\//, `/image/upload/f_${format},q_auto,c_limit,w_${width}/`);
 }
 
-export const OG_COLORS = { bg: "#000000", ink: "#FFFFFF", ink2: "#A1A1A1", ink3: "#515151", accent: "#FF006E", divider: "rgba(150,150,150,0.3)" } as const;
+export interface OgColors {
+  bg: string;
+  surface: string;
+  ink: string;
+  ink2: string;
+  ink3: string;
+  accent: string;
+  divider: string;
+}
+
+/** Colores de las vistas previas: los del tema publicado (Ajustes › Apariencia) o los de fábrica. */
+export async function ogColors(): Promise<OgColors> {
+  const a = await new GetActiveAppearance(getContainer().appearance).execute();
+  const c = (a ?? DEFAULT_APPEARANCE).colors;
+  const [r, g, b] = hexToRgb(c.divider);
+  return { bg: c.bg, surface: c.surface, ink: c.ink, ink2: c.ink2, ink3: c.ink3, accent: c.accent, divider: `rgba(${r},${g},${b},0.3)` };
+}

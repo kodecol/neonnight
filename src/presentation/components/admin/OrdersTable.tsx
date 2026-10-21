@@ -8,7 +8,7 @@ import { Button } from "@/presentation/components/primitives/Button";
 import { cn } from "@/presentation/lib/cn";
 import { deleteOrdersQuestion, purgeOrderQuestion } from "@/presentation/lib/order-confirm";
 
-const checkbox = "h-4 w-4 cursor-pointer accent-[#ff006e] disabled:cursor-not-allowed disabled:opacity-30";
+const checkbox = "h-4 w-4 cursor-pointer accent-accent disabled:cursor-not-allowed disabled:opacity-30";
 
 /**
  * Tabla de pedidos. En la lista normal, casillas para eliminar varios a la vez

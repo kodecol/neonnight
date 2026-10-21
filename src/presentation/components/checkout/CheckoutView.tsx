@@ -254,7 +254,7 @@ export function CheckoutView({
                 setAccepted(e.target.checked);
                 setErrors((x) => withoutKey(x, "consent.accepted"));
               }}
-              className="mt-1 h-4 w-4 shrink-0 cursor-pointer accent-[#ff006e]"
+              className="mt-1 h-4 w-4 shrink-0 cursor-pointer accent-accent"
             />
             <span className="text-small text-ink-2 [text-wrap:pretty]">
               Acepto los{" "}

@@ -16,13 +16,13 @@ export function ProductHero({ product }: { product: ProductDetailDto }) {
         </div>
       ) : (
         // Sin foto de ambiente: el recorte del producto sobre un halo de luz, como en estudio.
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_55%_at_50%_42%,rgba(255,255,255,.07),transparent_70%)]">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_55%_at_50%_42%,color-mix(in_srgb,var(--color-ink)_7%,transparent),transparent_70%)]">
           <div data-parallax={0.08} className="absolute inset-x-0 bottom-[22%] top-[12%] md:bottom-[18%] md:top-[10%]">
             <MediaSlot image={product.front} sizes="(min-width:768px) 70vw, 100vw" priority fit="contain" bare className="h-full w-full" label={`${product.name} hero`} />
           </div>
         </div>
       )}
-      <span className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_top,rgba(0,0,0,.85),rgba(0,0,0,.15)_60%)]" aria-hidden="true" />
+      <span className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_top,color-mix(in_srgb,var(--color-bg)_85%,transparent),color-mix(in_srgb,var(--color-bg)_15%,transparent)_60%)]" aria-hidden="true" />
       <div className="pointer-events-none absolute inset-0 flex flex-col justify-end px-page pb-16 lg:pb-24">
         <span className="flex items-center gap-4 text-kicker uppercase">
           {product.subtitle}

@@ -26,7 +26,7 @@ export function Hero({ featured, custom, content, tagline }: { featured: Product
           <MediaSlot image={hero?.kind === "image" ? hero.image : null} sizes="100vw" priority className="h-full w-full" label="Hero" />
         </div>
       )}
-      <span className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_top,rgba(0,0,0,.85)_0%,rgba(0,0,0,.15)_55%,rgba(0,0,0,.5)_100%)]" aria-hidden="true" />
+      <span className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_top,color-mix(in_srgb,var(--color-bg)_85%,transparent)_0%,color-mix(in_srgb,var(--color-bg)_15%,transparent)_55%,color-mix(in_srgb,var(--color-bg)_50%,transparent)_100%)]" aria-hidden="true" />
       <div className="pointer-events-none absolute inset-0 flex flex-col justify-end px-page pb-12 md:pb-16 lg:pb-[88px]">
         <span className="text-kicker uppercase text-ink">{kicker}</span>
         <h1 id="hero-title" className="my-0 mb-3 mt-3.5 text-display-fluid uppercase">

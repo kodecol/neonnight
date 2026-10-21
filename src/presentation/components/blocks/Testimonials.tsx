@@ -187,16 +187,16 @@ function Card({ t, active }: { t: Testimonial; active: boolean }) {
       <span
         aria-hidden="true"
         className={cn(
-          "pointer-events-none absolute -right-24 -top-24 h-72 w-72 bg-[radial-gradient(closest-side,rgba(255,0,110,0.28),transparent)] transition-opacity duration-1000",
+          "pointer-events-none absolute -right-24 -top-24 h-72 w-72 bg-[radial-gradient(closest-side,color-mix(in_srgb,var(--color-accent)_28%,transparent),transparent)] transition-opacity duration-1000",
           active ? "opacity-100" : "opacity-0",
         )}
       />
       {/* Línea de acento */}
-      <span aria-hidden="true" className="absolute inset-x-0 top-0 h-[2px] bg-[linear-gradient(90deg,var(--color-accent),rgba(255,0,110,0)_75%)]" />
+      <span aria-hidden="true" className="absolute inset-x-0 top-0 h-[2px] bg-[linear-gradient(90deg,var(--color-accent),color-mix(in_srgb,var(--color-accent)_0%,transparent)_75%)]" />
       {/* Reflejo que cruza la tarjeta al volverse activa */}
       {active && (
         <span aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
-          <span className="nn-sheen absolute inset-y-0 -left-1/2 w-1/2 bg-[linear-gradient(105deg,transparent,rgba(255,255,255,0.07),transparent)]" />
+          <span className="nn-sheen absolute inset-y-0 -left-1/2 w-1/2 bg-[linear-gradient(105deg,transparent,color-mix(in_srgb,var(--color-ink)_7%,transparent),transparent)]" />
         </span>
       )}
       {/* Comilla de marca de agua */}
@@ -220,7 +220,7 @@ function Card({ t, active }: { t: Testimonial; active: boolean }) {
       </blockquote>
 
       <figcaption className="relative mt-8 flex items-center gap-4 border-t border-divider pt-6">
-        <span className="bg-[linear-gradient(135deg,var(--color-accent),rgba(255,0,110,0.1))] p-px" aria-hidden="true">
+        <span className="bg-[linear-gradient(135deg,var(--color-accent),color-mix(in_srgb,var(--color-accent)_10%,transparent))] p-px" aria-hidden="true">
           <span className="flex h-12 w-12 items-center justify-center bg-bg text-label text-ink">{initials(t.name)}</span>
         </span>
         <span>

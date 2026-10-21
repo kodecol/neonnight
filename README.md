@@ -109,6 +109,7 @@ El menú agrupa las secciones por intención: **Operación** (Pedidos, Catálogo
   - Categorías agrupadas por línea, editables en línea.
   - Los cambios se publican en la tienda al guardar.
 - **Identidad** (`/admin/ajustes/identidad`): nombre, wordmark, frase, descripción para buscadores, isotipo y logo horizontal de la tienda, con vista previa, publicación y versiones. Los textos del código escriben `{tienda}` donde va el nombre. El esquema (`StoreIdentitySchema`) es el contrato del futuro `brand.config.json` (ADR 0013).
+- **Apariencia** (Ajustes › Apariencia): colores del tema oscuro (presets o personalizados, con contraste WCAG AA validado) y fuentes de títulos y cuerpo de un catálogo cerrado de Google Fonts, con vista previa, publicación y versiones (ADR 0015).
 - **Pedidos** (`/admin/pedidos`):
   - **Lista** con filtros por estado y rango de fechas (hora de Bogotá), búsqueda por pedido, nombre, correo o celular, 25 por página y **Descargar CSV** de lo filtrado (punto y coma, para Excel en español). Todo viaja en la URL (`?estado=&q=&desde=&hasta=&pagina=`).
   - **Detalle** con piezas, comprador, entrega, la versión de términos y privacidad aceptada y el **historial** (creado, pagado, cancelado, eliminado, restaurado…, y quién lo hizo: cliente, panel o webhook). Los pedidos manuales se marcan como pagados (descuenta stock) o se cancelan; los de Bold cambian solos por el webhook (ADR 0012).

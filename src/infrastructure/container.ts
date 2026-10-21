@@ -56,6 +56,9 @@ import { ManagedSiteContentRepository } from "./content/managed-site-content-rep
 import { InMemoryIdentitySettingsRepository } from "./repositories/in-memory-identity-repository";
 import { MongoIdentitySettingsRepository } from "./mongo/mongo-identity-repository";
 import type { IdentitySettingsRepository } from "@/application/ports/identity-settings";
+import type { AppearanceSettingsRepository, StoreAppearance } from "@/application/ports/appearance-settings";
+import { InMemoryVersionedSettings } from "./repositories/in-memory-versioned-settings";
+import { MongoVersionedSettings } from "./mongo/mongo-versioned-settings";
 
 /**
  * Contenedor tipado y explícito. Sin framework de DI.
@@ -85,6 +88,8 @@ export interface Container {
   companySettings: CompanySettingsRepository;
   /** Identidad de la tienda (nombre, wordmark, isotipo, logo): panel › Identidad. */
   identity: IdentitySettingsRepository;
+  /** Colores y tipografía de la tienda: Ajustes › Apariencia. */
+  appearance: AppearanceSettingsRepository;
   /** Contenido del código, sin nada de lo editado en el panel (la identidad "de fábrica"). */
   codeContent: SiteContentRepository;
   identityUploader: MediaUploader;
@@ -118,7 +123,7 @@ export interface Container {
 const g: { __nnContainer?: Container | null } =
   process.env.NODE_ENV === "production" ? (globalThis as unknown as { __nnContainer?: Container | null }) : {};
 
-function persistence(): Pick<Container, "products" | "lines" | "categories" | "brands" | "brandsCopy" | "orders" | "paymentSettings" | "siteMedia" | "homeSettings" | "legalPages" | "companySettings" | "identity" | "adminCredentials"> {
+function persistence(): Pick<Container, "products" | "lines" | "categories" | "brands" | "brandsCopy" | "orders" | "paymentSettings" | "siteMedia" | "homeSettings" | "legalPages" | "companySettings" | "identity" | "appearance" | "adminCredentials"> {
   const uri = process.env.MONGODB_URI;
   if (!uri) {
     return {
@@ -134,6 +139,7 @@ function persistence(): Pick<Container, "products" | "lines" | "categories" | "b
       legalPages: new InMemoryLegalPagesRepository(),
       companySettings: new InMemoryCompanySettingsRepository(),
       identity: new InMemoryIdentitySettingsRepository(),
+      appearance: new InMemoryVersionedSettings<StoreAppearance>(),
       adminCredentials: new InMemoryAdminCredentialsRepository(),
     };
   }
@@ -151,6 +157,7 @@ function persistence(): Pick<Container, "products" | "lines" | "categories" | "b
     legalPages: new MongoLegalPagesRepository(db),
     companySettings: new MongoCompanySettingsRepository(db),
     identity: new MongoIdentitySettingsRepository(db),
+    appearance: new MongoVersionedSettings<StoreAppearance>(db, "appearance", ({ preset, colors, fonts, updatedAt }) => ({ preset, colors: { ...colors }, fonts: { ...fonts }, updatedAt })),
     adminCredentials: new MongoAdminCredentialsRepository(db),
   };
 }
@@ -173,6 +180,7 @@ export function createContainer(overrides: Partial<Container> = {}): Container {
     legalPages: base.legalPages,
     companySettings: base.companySettings,
     identity: base.identity,
+    appearance: base.appearance,
     identityUploader: overrides.identityUploader ?? (process.env.CLOUDINARY_URL ? new CloudinaryMediaUploader(`${SITE_FOLDER}/identidad`) : new LocalDiskMediaUploader()),
     adminCredentials: base.adminCredentials,
     passwordHasher: overrides.passwordHasher ?? new ScryptPasswordHasher(),

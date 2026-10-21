@@ -1,15 +1,10 @@
 import type { Metadata, Viewport } from "next";
-import { Archivo } from "next/font/google";
 import "@/presentation/styles/globals.css";
+import { fontVariables } from "./fonts";
+import { GetActiveAppearance } from "@/application/use-cases/admin/appearance";
+import { ThemeStyle } from "@/presentation/components/seo/ThemeStyle";
 import { getContainer } from "@/infrastructure/container";
 import { absoluteUrl, siteUrl } from "@/presentation/lib/site";
-
-const archivo = Archivo({
-  subsets: ["latin"],
-  weight: ["200", "400", "500", "600"],
-  display: "swap",
-  variable: "--font-archivo",
-});
 
 export async function generateMetadata(): Promise<Metadata> {
   const { brand } = await getContainer().content.get();
@@ -32,13 +27,21 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-export const viewport: Viewport = { themeColor: "#000000", colorScheme: "dark" };
+/** Color de la barra del navegador: el fondo del tema publicado (o el negro de fábrica). */
+export async function generateViewport(): Promise<Viewport> {
+  const appearance = await new GetActiveAppearance(getContainer().appearance).execute();
+  return { themeColor: appearance?.colors.bg ?? "#000000", colorScheme: "dark" };
+}
 
 /** Raíz mínima: la tienda pone su chrome en `(store)/layout.tsx` y el panel el suyo en `admin/`. */
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const site = await getContainer().content.get();
+  const container = getContainer();
+  const [site, appearance] = await Promise.all([container.content.get(), new GetActiveAppearance(container.appearance).execute()]);
   return (
-    <html lang={site.brand.locale} className={archivo.variable}>
+    <html lang={site.brand.locale} className={fontVariables}>
+      <head>
+        <ThemeStyle appearance={appearance} />
+      </head>
       <body className="bg-bg text-ink antialiased">{children}</body>
     </html>
   );

@@ -8,7 +8,7 @@ type Size = "sm" | "md" | "lg";
 const base =
   "inline-flex items-center justify-start gap-2 uppercase font-semibold cursor-pointer select-none transition-colors duration-300 disabled:opacity-45 disabled:cursor-not-allowed";
 const variants: Record<Variant, string> = {
-  primary: "bg-accent text-ink hover:bg-[#e6005f] active:bg-[#cc0055]",
+  primary: "bg-accent text-ink hover:bg-accent-hover active:bg-accent-active",
   secondary: "border border-border-strong text-ink hover:border-ink hover:bg-ink/5",
   ghost: "border border-border text-ink-2 hover:text-ink hover:border-ink",
   link: "border-b border-accent pb-1.5 text-ink hover:text-accent",

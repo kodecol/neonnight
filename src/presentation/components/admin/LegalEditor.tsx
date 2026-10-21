@@ -268,7 +268,7 @@ export function LegalEditor({
           </p>
           <div className="flex shrink-0 flex-wrap items-center gap-4">
             <label className="flex cursor-pointer items-center gap-2 text-label-sm uppercase text-ink-2">
-              <input type="checkbox" checked={major} onChange={(e) => setMajor(e.target.checked)} className="accent-[#ff006e]" data-testid="legal-major" />
+              <input type="checkbox" checked={major} onChange={(e) => setMajor(e.target.checked)} className="accent-accent" data-testid="legal-major" />
               Cambio importante
             </label>
             <Button variant="secondary" size="sm" onClick={onPreview} disabled={pending} data-testid="legal-preview">

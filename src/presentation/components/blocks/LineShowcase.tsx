@@ -28,7 +28,7 @@ export function LineShowcase({ lines, content }: { lines: LineDto[]; content: Si
               <div className="absolute inset-0 transition-transform duration-[1200ms] ease-[cubic-bezier(.215,.61,.355,1)] group-hover:scale-[1.04]">
                 <MediaSlot image={l.cover} sizes="(min-width:768px) 33vw, 100vw" className="h-full w-full" label={l.label} />
               </div>
-              <span className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_top,rgba(0,0,0,.82),rgba(0,0,0,.05)_55%)]" aria-hidden="true" />
+              <span className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_top,color-mix(in_srgb,var(--color-bg)_82%,transparent),color-mix(in_srgb,var(--color-bg)_5%,transparent)_55%)]" aria-hidden="true" />
               <div className="absolute inset-x-0 bottom-0 flex flex-col gap-3 p-7 md:p-8">
                 <span className="text-kicker uppercase text-ink-2">{fill(content.countTemplate, { count: l.count })}</span>
                 <h3 className="m-0 text-h2-sm uppercase md:text-h2">{l.label}</h3>
