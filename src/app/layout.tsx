@@ -5,19 +5,32 @@ import { GetActiveAppearance } from "@/application/use-cases/admin/appearance";
 import { ThemeStyle } from "@/presentation/components/seo/ThemeStyle";
 import { getContainer } from "@/infrastructure/container";
 import { absoluteUrl, siteUrl } from "@/presentation/lib/site";
+import { versioned } from "@/application/use-cases/brand-assets";
+import { brandAssets } from "./_icons/render";
 
 export async function generateMetadata(): Promise<Metadata> {
-  const { brand } = await getContainer().content.get();
+  const [{ brand }, { version }] = await Promise.all([getContainer().content.get(), brandAssets()]);
+  const v = (path: string) => versioned(path, version);
   const google = process.env.GOOGLE_SITE_VERIFICATION?.trim();
   const meta = process.env.META_DOMAIN_VERIFICATION?.trim();
   // Vista previa general; las fichas y las líneas ponen la suya.
-  const url = absoluteUrl("/og/inicio.jpg");
+  const url = absoluteUrl(v("/og/inicio.jpg"));
   const image = { url, secureUrl: url, width: 1200, height: 630, alt: `${brand.name} — relojes, joyas y perfumes de las grandes casas`, type: "image/jpeg" };
   return {
     metadataBase: siteUrl(),
     title: { default: `${brand.name} — Relojes, joyas y perfumes verificados`, template: `%s — ${brand.name}` },
     description: brand.description,
     applicationName: brand.name,
+    // Isotipo de Identidad sobre el fondo de Apariencia; cambian de URL al publicar (`?v=`).
+    icons: {
+      icon: [
+        { url: v("/favicon.ico"), sizes: "48x48" },
+        { url: v("/icons/icon-192.png"), type: "image/png", sizes: "192x192" },
+        { url: v("/icons/icon-512.png"), type: "image/png", sizes: "512x512" },
+      ],
+      apple: [{ url: v("/icons/apple-touch-icon.png"), sizes: "180x180" }],
+    },
+    manifest: v("/manifest.webmanifest"),
     openGraph: { type: "website", siteName: brand.name, locale: brand.locale.replace("-", "_"), images: [image] },
     twitter: { card: "summary_large_image", images: [{ url: image.url, alt: image.alt }] },
     robots: { index: true, follow: true, googleBot: { index: true, follow: true, "max-image-preview": "large", "max-snippet": -1 } },

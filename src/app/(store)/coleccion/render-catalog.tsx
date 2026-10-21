@@ -40,7 +40,7 @@ export async function catalogMetadata(line: string | null, params: RawParams): P
       url: absoluteUrl(base),
       siteName: site.brand.name,
       locale: site.brand.locale,
-      image: ogImage(result.line ? OG_PATHS.line(result.line.slug) : OG_PATHS.home, `${result.line?.label ?? site.collection.title} — ${site.brand.name}`),
+      image: await ogImage(result.line ? OG_PATHS.line(result.line.slug) : OG_PATHS.home, `${result.line?.label ?? site.collection.title} — ${site.brand.name}`),
     }),
     // Las combinaciones de filtros no se indexan: la URL canónica es la de la línea.
     robots: filtered ? { index: false, follow: true } : { index: true, follow: true },
