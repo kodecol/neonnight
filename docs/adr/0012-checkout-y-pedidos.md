@@ -1,6 +1,6 @@
 # ADR 0012 — Checkout con datos del comprador, pedido manual y panel de pedidos
 
-**Fecha:** 2026-10-21 · **Estado:** aceptada · **Amplía:** ADR 0004 y 0006
+**Fecha:** 2026-10-21 · **Estado:** aceptada · **Amplía:** ADR 0004 y 0006 · **Ampliada por:** ADR 0014 (papelera, historial y CSV)
 
 ## Contexto
 

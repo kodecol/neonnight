@@ -4,9 +4,9 @@ import { getContainer } from "@/infrastructure/container";
 import { GetAdminOrder } from "@/application/use-cases/admin/orders";
 import { DOCUMENT_LABEL } from "@/application/dto/checkout.dto";
 import { AdminPageHeader } from "@/presentation/components/admin/AdminShell";
-import { OrderActions } from "@/presentation/components/admin/OrderActions";
+import { OrderActions, OrderReviewNotice } from "@/presentation/components/admin/OrderActions";
 import { Button } from "@/presentation/components/primitives/Button";
-import { updateOrderStatusAction } from "../actions";
+import { deleteOrdersAction, markOrderReviewedAction, purgeOrderAction, restoreOrderAction, updateOrderStatusAction } from "../actions";
 
 export const metadata: Metadata = { title: "Pedido" };
 export const dynamic = "force-dynamic";
@@ -28,20 +28,30 @@ function Facts({ items }: { items: Array<[string, React.ReactNode]> }) {
 
 export default async function OrderPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const o = await new GetAdminOrder(getContainer().orders).execute(id);
+  const o = await new GetAdminOrder(getContainer()).execute(id);
   if (!o) notFound();
   const c = o.customerDetail;
   return (
     <>
       <AdminPageHeader
-        kicker={`Pedido · ${o.statusLabel}`}
+        kicker={`Pedido · ${o.statusLabel}${o.deletedAt ? " · Eliminado" : ""}`}
         title={o.id}
         actions={
-          <Button href="/admin/pedidos" variant="ghost" size="sm">
-            ← Pedidos
+          <Button href={o.deletedAt ? "/admin/pedidos?vista=eliminados" : "/admin/pedidos"} variant="ghost" size="sm">
+            {o.deletedAt ? "← Eliminados" : "← Pedidos"}
           </Button>
         }
       />
+      {(o.review || o.deletedAt) && (
+        <div className="mb-10 flex flex-col gap-4">
+          {o.review && <OrderReviewNotice id={o.id} review={o.review} markReviewed={markOrderReviewedAction} />}
+          {o.deletedAt && (
+            <p className="m-0 border border-divider p-5 text-small text-ink-2" data-testid="order-trashed">
+              En Eliminados desde el {fmt(o.deletedAt)}. Se purga solo el {o.labels.purgeAt}; hasta entonces puedes restaurarlo. Si llega su pago, vuelve solo a la lista y queda marcado para revisar.
+            </p>
+          )}
+        </div>
+      )}
       <div className="grid gap-12 xl:grid-cols-[minmax(0,1fr)_380px]">
         <div className="flex min-w-0 flex-col gap-12">
           <section>
@@ -90,9 +100,41 @@ export default async function OrderPage({ params }: { params: Promise<{ id: stri
               <p className="m-0 text-small text-ink-3">Pedido anterior al checkout con datos: sin información del cliente.</p>
             )}
           </section>
+          <section>
+            <h2 className="mb-5 mt-0 text-label-lg uppercase">Historial</h2>
+            {o.events.length ? (
+              <ol className="m-0 flex list-none flex-col border-t border-divider p-0" data-testid="order-events">
+                {o.events.map((e, i) => (
+                  <li key={`${e.at}-${i}`} className="grid gap-1 border-b border-divider py-3.5 text-small sm:grid-cols-[220px_minmax(0,1fr)] sm:gap-6">
+                    <time dateTime={e.at} className="text-ink-2 tabular-nums">
+                      {fmt(e.at)}
+                    </time>
+                    <span>
+                      <span className={e.type === "pago-tras-eliminar" ? "font-medium text-accent" : "font-medium text-ink"}>{e.label}</span>
+                      <span className="text-ink-3"> · {e.by}</span>
+                      {e.note && <span className="block text-legal text-ink-2">{e.note}</span>}
+                    </span>
+                  </li>
+                ))}
+              </ol>
+            ) : (
+              <p className="m-0 text-small text-ink-3">Sin historial: pedido anterior al registro de eventos.</p>
+            )}
+          </section>
         </div>
         <aside className="flex flex-col gap-8 self-start">
-          <OrderActions id={o.id} canMarkPaid={o.canMarkPaid} canCancel={o.canCancel} update={updateOrderStatusAction} />
+          <OrderActions
+            id={o.id}
+            canMarkPaid={o.canMarkPaid}
+            canCancel={o.canCancel}
+            canDelete={o.canDelete}
+            canRestore={o.canRestore}
+            linkMayBeLive={o.linkMayBeLive}
+            update={updateOrderStatusAction}
+            remove={deleteOrdersAction}
+            restore={restoreOrderAction}
+            purge={purgeOrderAction}
+          />
           <Facts
             items={[
               ["Fecha", fmt(o.createdAt)],

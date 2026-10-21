@@ -16,7 +16,7 @@ import { BrowseCatalog } from "@/application/use-cases/browse-catalog";
 import { ListRelatedProducts } from "@/application/use-cases/list-related-products";
 import { ResolveCart } from "@/application/use-cases/resolve-cart";
 import { Checkout, QuoteCheckout } from "@/application/use-cases/checkout";
-import { GetAdminOrder, ListAdminOrders, UpdateOrderStatus } from "@/application/use-cases/admin/orders";
+import { GetAdminOrder, ListAdminOrders, UpdateOrderStatus, parseAdminOrderFilters } from "@/application/use-cases/admin/orders";
 import { InMemoryPaymentSettingsRepository } from "@/infrastructure/repositories/in-memory-payment-settings-repository";
 import { DEFAULT_PAYMENT_SETTINGS } from "@/application/ports/payment-settings";
 import { orderId } from "@/domain/entities/order";
@@ -351,13 +351,18 @@ describe("Checkout", () => {
       OPTS,
     );
     void uc;
-    const row = await new GetAdminOrder(orders).execute(id);
-    expect(row).toMatchObject({ canMarkPaid: true, canCancel: true, customerDetail: { name: "Ana Pérez" } });
-    await new UpdateOrderStatus({ orders, products }).execute(id, "pagada");
+    const row = await new GetAdminOrder({ orders, clock: fixedClock }).execute(id);
+    expect(row).toMatchObject({ canMarkPaid: true, canCancel: true, canDelete: true, customerDetail: { name: "Ana Pérez" } });
+    await new UpdateOrderStatus({ orders, products, clock: fixedClock }).execute(id, "pagada");
     expect((await orders.findById(orderId(id)))?.status).toBe("pagada");
+    expect((await orders.findById(orderId(id)))?.events.map((e) => [e.type, e.by])).toEqual([
+      ["creado", "cliente"],
+      ["pagado", "admin"],
+    ]);
     expect((await products.findById("pf-01"))?.variants.find((v) => v.id === "100-ml")?.stock).toBe(1);
-    await expect(new UpdateOrderStatus({ orders, products }).execute(id, "cancelada")).rejects.toMatchObject({ field: "status" });
-    expect((await new ListAdminOrders(orders).execute("pagada")).map((o) => o.id)).toEqual([id]);
+    await expect(new UpdateOrderStatus({ orders, products, clock: fixedClock }).execute(id, "cancelada")).rejects.toMatchObject({ field: "status" });
+    const paid = await new ListAdminOrders({ orders, clock: fixedClock }).execute(parseAdminOrderFilters({ estado: "pagada" }));
+    expect(paid.rows.map((o) => o.id)).toEqual([id]);
   });
 });
 

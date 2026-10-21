@@ -1,6 +1,19 @@
-import { orderId, type Order, type OrderConsent, type OrderCustomer, type OrderId, type OrderStatus, type PaymentMethod } from "@/domain/entities/order";
+import type { Filter } from "mongodb";
+import {
+  orderId,
+  trashCutoff,
+  type Order,
+  type OrderConsent,
+  type OrderCustomer,
+  type OrderEventActor,
+  type OrderEventType,
+  type OrderId,
+  type OrderStatus,
+  type PaymentMethod,
+} from "@/domain/entities/order";
 import { productId } from "@/domain/entities/product";
-import type { OrderRepository } from "@/domain/repositories/order-repository";
+import type { OrderQuery, OrderRepository } from "@/domain/repositories/order-repository";
+import { orderSearchPatterns } from "@/domain/services/order-search";
 import { Money } from "@/domain/value-objects/money";
 import type { DbProvider } from "./client";
 
@@ -19,6 +32,10 @@ interface OrderDoc {
   paymentMethod?: PaymentMethod;
   customer?: OrderCustomer | null;
   consent?: OrderConsent | null;
+  /** Papelera, auditoría y marca de revisión: los pedidos anteriores no los traen (activos, sin historial). */
+  deletedAt?: Date | null;
+  events?: Array<{ at: Date; type: OrderEventType; by: OrderEventActor; note?: string }>;
+  review?: string | null;
 }
 
 const toDoc = (o: Order): OrderDoc => ({
@@ -42,6 +59,10 @@ const toDoc = (o: Order): OrderDoc => ({
   paymentMethod: o.paymentMethod,
   customer: o.customer,
   consent: o.consent,
+  deletedAt: o.deletedAt,
+  // Sin `note: undefined`: el driver lo guardaría como null.
+  events: o.events.map((e) => ({ at: e.at, type: e.type, by: e.by, ...(e.note ? { note: e.note } : {}) })),
+  review: o.review,
 });
 
 const fromDoc = (d: OrderDoc): Order => ({
@@ -63,7 +84,31 @@ const fromDoc = (d: OrderDoc): Order => ({
   paymentMethod: d.paymentMethod ?? "bold",
   customer: d.customer ?? null,
   consent: d.consent ?? null,
+  deletedAt: d.deletedAt ?? null,
+  events: (d.events ?? []).map((e) => ({ at: e.at, type: e.type, by: e.by, ...(e.note ? { note: e.note } : {}) })),
+  review: d.review ?? null,
 });
+
+const regex = (source: string) => ({ $regex: source, $options: "i" });
+
+/** `deletedAt: null` también encuentra los documentos sin el campo (anteriores a la papelera). */
+function filterOf(q: OrderQuery): Filter<OrderDoc> {
+  const f: Filter<OrderDoc> = q.deleted ? { deletedAt: { $ne: null } } : { deletedAt: null };
+  if (q.status) f.status = q.status;
+  if (q.review) f.review = { $ne: null };
+  if (q.from || q.to) f.createdAt = { ...(q.from ? { $gte: q.from } : {}), ...(q.to ? { $lt: q.to } : {}) };
+  const p = q.search ? orderSearchPatterns(q.search) : null;
+  if (p) {
+    f.$or = [
+      { _id: regex(p.text) },
+      { "customer.name": regex(p.text) },
+      { "customer.email": regex(p.text) },
+      { "customer.phone": regex(p.text) },
+      ...(p.phone ? [{ "customer.phone": { $regex: p.phone } }] : []),
+    ] as Filter<OrderDoc>[];
+  }
+  return f;
+}
 
 export class MongoOrderRepository implements OrderRepository {
   constructor(private readonly db: DbProvider) {}
@@ -86,12 +131,26 @@ export class MongoOrderRepository implements OrderRepository {
     return d ? fromDoc(d) : null;
   }
 
-  async list(opts: { status?: OrderStatus; limit?: number } = {}): Promise<readonly Order[]> {
+  async list(q: OrderQuery & { limit?: number; offset?: number } = {}): Promise<readonly Order[]> {
     const docs = await (await this.col())
-      .find(opts.status ? { status: opts.status } : {})
-      .sort({ createdAt: -1 })
-      .limit(opts.limit ?? 200)
+      .find(filterOf(q))
+      .sort(q.deleted ? { deletedAt: -1, createdAt: -1 } : { createdAt: -1 })
+      .skip(q.offset ?? 0)
+      .limit(q.limit ?? 0)
       .toArray();
     return docs.map(fromDoc);
+  }
+
+  async count(q: OrderQuery = {}): Promise<number> {
+    return (await this.col()).countDocuments(filterOf(q));
+  }
+
+  async remove(id: OrderId): Promise<void> {
+    await (await this.col()).deleteOne({ _id: id });
+  }
+
+  async purgeExpired(now: Date): Promise<number> {
+    const res = await (await this.col()).deleteMany({ deletedAt: { $lt: trashCutoff(now) } });
+    return res.deletedCount;
   }
 }

@@ -143,6 +143,9 @@ export class Checkout {
       paymentMethod: mode,
       customer: { ...input.customer },
       consent: { termsVersion: input.consent.termsVersion, privacyVersion: input.consent.privacyVersion, acceptedAt: now },
+      deletedAt: null,
+      events: [{ at: now, type: "creado", by: "cliente" }],
+      review: null,
     };
 
     let redirectUrl: string;

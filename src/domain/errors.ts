@@ -66,3 +66,15 @@ export class BrandInUseError extends DomainError {
     super(`La marca "${brand}" tiene ${count} producto(s). Asígnales otra marca antes de borrarla.`);
   }
 }
+
+export class OrderNotDeletableError extends DomainError {
+  constructor(public readonly id: string, detail: string) {
+    super(`El pedido ${id} no se puede eliminar: ${detail}. Solo se eliminan pedidos pendientes.`);
+  }
+}
+
+export class OrderNotInTrashError extends DomainError {
+  constructor(public readonly id: string) {
+    super(`El pedido ${id} no está en Eliminados.`);
+  }
+}

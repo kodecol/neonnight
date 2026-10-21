@@ -1,9 +1,10 @@
-import type { Order } from "@/domain/entities/order";
+import { PAYMENT_LINK_TTL_MS, type Order } from "@/domain/entities/order";
 import type { PaymentGateway, PaymentSession } from "@/application/ports/payment-gateway";
 import { isPaymentReady, type PaymentSettingsRepository } from "@/application/ports/payment-settings";
 
 export const BOLD_API_URL = "https://integrations.api.bold.co";
-const LINK_TTL_MS = 30 * 60 * 1000;
+/** El panel avisa al eliminar un pedido con link quizá vigente: misma constante. */
+const LINK_TTL_MS = PAYMENT_LINK_TTL_MS;
 
 interface BoldLinkResponse {
   payload?: { payment_link?: string; url?: string };

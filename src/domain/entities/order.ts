@@ -43,6 +43,17 @@ export interface OrderConsent {
 /** `bold`: pago en línea. `manual`: sin pasarela; se coordina con el cliente (WhatsApp, transferencia). */
 export type PaymentMethod = "bold" | "manual";
 
+export type OrderEventType = "creado" | "pagado" | "cancelado" | "fallido" | "eliminado" | "restaurado" | "pago-tras-eliminar" | "revisado";
+export type OrderEventActor = "admin" | "webhook" | "cliente";
+
+/** Auditoría: qué le pasó al pedido, cuándo y quién lo hizo. */
+export interface OrderEvent {
+  readonly at: Date;
+  readonly type: OrderEventType;
+  readonly by: OrderEventActor;
+  readonly note?: string;
+}
+
 export interface Order {
   readonly id: OrderId;
   readonly lines: readonly OrderLine[];
@@ -56,7 +67,37 @@ export interface Order {
   /** null en órdenes anteriores al checkout con datos. */
   readonly customer: OrderCustomer | null;
   readonly consent: OrderConsent | null;
+  /** Borrado suave: en la papelera desde esta fecha; null si está activo. */
+  readonly deletedAt: Date | null;
+  /** Más antiguos primero. Vacío en órdenes anteriores a la auditoría. */
+  readonly events: readonly OrderEvent[];
+  /** Marca para revisar a mano (p. ej. un pago que llegó a un pedido eliminado); null si no hay nada. */
+  readonly review: string | null;
 }
+
+/** Días que un pedido eliminado espera en la papelera antes de purgarse. */
+export const ORDER_TRASH_DAYS = 30;
+const DAY_MS = 24 * 60 * 60 * 1000;
+/** Vigencia del link de pago de Bold (ver BoldPaymentGateway). */
+export const PAYMENT_LINK_TTL_MS = 30 * 60 * 1000;
+
+export const REVIEW_PAID_AFTER_DELETE = "Pago recibido de pedido eliminado — revisar";
+
+/** Solo se eliminan pedidos pendientes (pagados, cancelados y rechazados quedan como registro). */
+export const isDeletable = (o: Order): boolean => o.deletedAt === null && o.status === "pendiente";
+
+/** Fecha en que la papelera purga el pedido; null si no está eliminado. */
+export const purgeDate = (o: Order): Date | null => (o.deletedAt ? new Date(o.deletedAt.getTime() + ORDER_TRASH_DAYS * DAY_MS) : null);
+
+/** Corte de la papelera: lo eliminado antes de esta fecha ya venció. */
+export const trashCutoff = (now: Date): Date => new Date(now.getTime() - ORDER_TRASH_DAYS * DAY_MS);
+
+/** El cliente aún podría pagar: pedido de Bold con link creado hace menos de 30 minutos. */
+export const paymentLinkMayBeLive = (o: Order, now: Date): boolean =>
+  o.paymentMethod === "bold" && Boolean(o.paymentReference) && now.getTime() - o.createdAt.getTime() < PAYMENT_LINK_TTL_MS;
+
+/** Añade eventos al historial (inmutable). */
+export const withEvents = (o: Order, ...events: OrderEvent[]): Order => ({ ...o, events: [...o.events, ...events] });
 
 /** Referencia legible para el cliente: NN-AAMMDD-XXXXX. */
 export function newOrderId(now: Date, random: string): OrderId {

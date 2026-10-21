@@ -25,6 +25,9 @@ const order = (over: Partial<Order> = {}): Order => ({
   paymentMethod: "bold",
   customer: null,
   consent: null,
+  deletedAt: null,
+  events: [],
+  review: null,
   ...over,
 });
 

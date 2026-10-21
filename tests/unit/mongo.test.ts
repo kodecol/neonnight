@@ -91,8 +91,33 @@ describe.skipIf(!uri)("Repositorios Mongo", () => {
       paymentMethod: "bold",
       customer: null,
       consent: null,
+      deletedAt: null,
+      events: [],
+      review: null,
     });
     expect((await orders.findByPaymentReference("LNK_9"))?.total.units).toBe(10);
+
+    // Papelera, historial y búsqueda; un documento anterior (sin los campos) se lee activo y sin historial.
+    const base = (await orders.findById(orderId("nn-1")))!;
+    expect(base).toMatchObject({ deletedAt: null, events: [], review: null });
+    await db.collection("orders").insertOne({ ...(await db.collection("orders").findOne({ _id: "nn-1" as never })), _id: "nn-legacy" as never, paymentReference: null });
+    await db.collection("orders").updateOne({ _id: "nn-legacy" as never }, { $unset: { deletedAt: "", events: "", review: "" } });
+    const customer = { name: "Laura Gómez", documentType: "CC" as const, documentNumber: "1", email: "laura@example.com", phone: "+57 310 987 6543", address: "x", city: "Bogotá", department: "Bogotá D.C.", notes: "" };
+    const now = new Date();
+    await orders.save({ ...base, id: orderId("nn-2"), paymentReference: null, customer, events: [{ at: now, type: "creado", by: "cliente" }] });
+    await orders.save({ ...base, id: orderId("nn-3"), paymentReference: null, deletedAt: now, review: "revisar", events: [{ at: now, type: "eliminado", by: "admin", note: "x" }] });
+    await orders.save({ ...base, id: orderId("nn-4"), paymentReference: null, deletedAt: new Date(now.getTime() - 31 * 86_400_000) });
+    expect((await orders.list()).map((o) => o.id).sort()).toEqual(["nn-1", "nn-2", "nn-legacy"]);
+    expect(await orders.count({ deleted: true })).toBe(2);
+    expect((await orders.findById(orderId("nn-3")))?.events).toEqual([{ at: now, type: "eliminado", by: "admin", note: "x" }]);
+    expect((await orders.list({ search: "gomez" })).map((o) => o.id)).toEqual(["nn-2"]);
+    expect((await orders.list({ search: "3109876543" })).map((o) => o.id)).toEqual(["nn-2"]);
+    expect((await orders.list({ search: "NN-LEG" })).map((o) => o.id)).toEqual(["nn-legacy"]);
+    expect(await orders.count({ review: true })).toBe(0);
+    expect(await orders.purgeExpired(now)).toBe(1);
+    expect((await orders.list({ deleted: true, limit: 1 })).map((o) => o.id)).toEqual(["nn-3"]);
+    await orders.remove(orderId("nn-3"));
+    expect(await orders.count({ deleted: true })).toBe(0);
 
     const secret = "s".repeat(40);
     const settings = new MongoPaymentSettingsRepository(provider, () => secret);

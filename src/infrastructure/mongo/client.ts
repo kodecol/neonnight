@@ -19,6 +19,7 @@ async function connect(uri: string, dbName: string): Promise<Db> {
     db.collection("products").createIndex({ createdAt: -1 }),
     db.collection("products").createIndex({ line: 1, category: 1 }),
     db.collection("orders").createIndex({ paymentReference: 1 }),
+    db.collection("orders").createIndex({ deletedAt: 1, createdAt: -1 }),
   ]);
   await seedCatalog(db);
   return db;
