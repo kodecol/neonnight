@@ -54,6 +54,17 @@ test.describe("Tienda: móvil", () => {
   });
 });
 
+test.describe("Tienda: teléfono angosto (360 px)", () => {
+  test.use({ viewport: { width: 360, height: 780 } });
+
+  test("la barra del catálogo y los títulos de Nosotros caben", async ({ page }) => {
+    for (const path of ["/coleccion", "/coleccion/relojeria", "/coleccion/perfumeria", "/nosotros"]) {
+      await page.goto(path);
+      expect(await scrollWidth(page), path).toBe(360);
+    }
+  });
+});
+
 test.describe("Tienda: foco y formularios", () => {
   test("la bolsa atrapa el foco y lo devuelve al botón que la abrió; vacía no deja finalizar", async ({ page }) => {
     await page.goto("/reloj/rolex-sky-dweller-326938");

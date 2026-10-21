@@ -21,11 +21,12 @@ export function CatalogToolbar({ result, base, content }: { result: CatalogResul
 
   return (
     <div className="backdrop-glass sticky top-header z-40 border-b border-divider bg-glass" data-testid="catalog-toolbar">
-      <div className="relative flex h-[60px] items-center justify-between gap-6 px-page">
+      <div className="relative flex h-[60px] items-center justify-between gap-6 px-page max-[380px]:gap-4">
         <p className="m-0 whitespace-nowrap text-label uppercase text-ink-2" aria-live="polite" data-testid="results-count">
           {count === 1 ? content.resultsOne : fill(content.resultsTemplate, { count })}
         </p>
-        <div className="flex h-full items-center gap-6 text-label uppercase md:gap-10">
+        {/* En teléfonos angostos (360 px) los tres rótulos no caben con el espacio de siempre. */}
+        <div className="flex h-full items-center gap-6 text-label uppercase max-[380px]:gap-4 md:gap-10">
           {(result.facets.length > 0 || result.price) && (
             <Disclosure
               testId="filter-panel"

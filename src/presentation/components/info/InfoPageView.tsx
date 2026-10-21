@@ -78,7 +78,7 @@ export function InfoPageView({
         <div className="flex flex-col">
           {page.sections.map((s) => (
             <section key={s.id} id={s.id} aria-labelledby={`${s.id}-title`} className="grid gap-10 border-b border-divider px-page py-section lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-20">
-              <h2 id={`${s.id}-title`} className="m-0 text-h2-fluid uppercase [text-wrap:balance]">
+              <h2 id={`${s.id}-title`} className="m-0 text-h2-fluid uppercase max-md:text-[min(32px,8.5vw)] [text-wrap:balance]">
                 {s.title}
               </h2>
               <div className={s.blocks.some((b) => b.type === "steps") ? "lg:col-span-2" : undefined}>
