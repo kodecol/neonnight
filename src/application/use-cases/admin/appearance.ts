@@ -1,6 +1,7 @@
 import type { Clock } from "../../ports/clock";
 import { DEFAULT_APPEARANCE, StoreAppearanceSchema, type StoreAppearanceInput } from "../../dto/appearance.dto";
 import type { AppearanceSettingsRepository, StoreAppearance } from "../../ports/appearance-settings";
+import { parseSaveMode, type SaveMode } from "../../lib/save-mode";
 
 const toInput = (a: StoreAppearanceInput): StoreAppearanceInput => ({ preset: a.preset, colors: { ...a.colors }, fonts: { ...a.fonts } });
 
@@ -55,9 +56,10 @@ export class GetActiveAppearance {
 export class SaveAppearance {
   constructor(private readonly deps: { appearance: AppearanceSettingsRepository; clock: Clock }) {}
 
-  async execute(raw: unknown, mode: "draft" | "publish" = "publish"): Promise<StoreAppearance> {
+  async execute(raw: unknown, mode: SaveMode = "publish"): Promise<StoreAppearance> {
+    const target = parseSaveMode(mode);
     const appearance: StoreAppearance = { ...StoreAppearanceSchema.parse(raw), updatedAt: this.deps.clock.now() };
-    if (mode === "draft") await this.deps.appearance.saveDraft(appearance);
+    if (target === "draft") await this.deps.appearance.saveDraft(appearance);
     else await this.deps.appearance.publish(appearance);
     return appearance;
   }

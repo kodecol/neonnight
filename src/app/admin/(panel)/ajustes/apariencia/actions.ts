@@ -1,6 +1,7 @@
 "use server";
 import { revalidatePath } from "next/cache";
 import { getContainer } from "@/infrastructure/container";
+import { parseSaveMode } from "@/application/lib/save-mode";
 import { DiscardAppearanceDraft, SaveAppearance } from "@/application/use-cases/admin/appearance";
 import type { ActionResult } from "@/application/dto/admin.dto";
 import type { StoreAppearanceInput } from "@/application/dto/appearance.dto";
@@ -11,8 +12,10 @@ import { toActionError } from "../../../_lib/result";
 export async function saveAppearanceAction(input: StoreAppearanceInput, mode: "draft" | "publish"): Promise<ActionResult> {
   await requireAdmin();
   try {
-    await new SaveAppearance(getContainer()).execute(input, mode === "draft" ? "draft" : "publish");
-    if (mode !== "draft") revalidatePath("/", "layout");
+    // Llega del cliente: sin un modo válido no se guarda (ni se publica por descarte).
+    const target = parseSaveMode(mode);
+    await new SaveAppearance(getContainer()).execute(input, target);
+    if (target === "publish") revalidatePath("/", "layout");
     return { ok: true, data: undefined };
   } catch (e) {
     return toActionError(e, "appearance");

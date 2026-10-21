@@ -1,6 +1,7 @@
 "use server";
 import { revalidatePath } from "next/cache";
 import { getContainer } from "@/infrastructure/container";
+import { parseSaveMode } from "@/application/lib/save-mode";
 import { DiscardLegalDraft, ResetLegalPage, SaveCompanySettings, SaveLegalPage } from "@/application/use-cases/admin/legal";
 import { INFO_PAGE_SLUGS, type InfoPageSlug } from "@/application/dto/info-page.dto";
 import type { ActionResult } from "@/application/dto/admin.dto";
@@ -21,8 +22,10 @@ export async function saveLegalPageAction(slug: string, input: LegalPageInput, m
   await requireAdmin();
   if (!isSlug(slug)) return { ok: false, error: "Esa página no existe." };
   try {
-    const data = await new SaveLegalPage(deps()).execute(slug, input, mode === "draft" ? "draft" : "publish");
-    if (mode !== "draft") publish();
+    // Llega del cliente: sin un modo válido no se guarda (ni se publica por descarte).
+    const target = parseSaveMode(mode);
+    const data = await new SaveLegalPage(deps()).execute(slug, input, target);
+    if (target === "publish") publish();
     return { ok: true, data };
   } catch (e) {
     return toActionError(e, "legal-save");

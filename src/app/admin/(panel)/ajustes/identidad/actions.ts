@@ -1,6 +1,7 @@
 "use server";
 import { revalidatePath } from "next/cache";
 import { getContainer } from "@/infrastructure/container";
+import { parseSaveMode } from "@/application/lib/save-mode";
 import { DiscardIdentityDraft, SaveIdentity, UploadIdentityAsset } from "@/application/use-cases/admin/identity";
 import type { ActionResult } from "@/application/dto/admin.dto";
 import type { StoreIdentityInput } from "@/application/dto/identity.dto";
@@ -11,8 +12,10 @@ import { toActionError } from "../../../_lib/result";
 export async function saveIdentityAction(input: StoreIdentityInput, mode: "draft" | "publish"): Promise<ActionResult> {
   await requireAdmin();
   try {
-    await new SaveIdentity(getContainer()).execute(input, mode === "draft" ? "draft" : "publish");
-    if (mode !== "draft") revalidatePath("/", "layout");
+    // Llega del cliente: sin un modo válido no se guarda (ni se publica por descarte).
+    const target = parseSaveMode(mode);
+    await new SaveIdentity(getContainer()).execute(input, target);
+    if (target === "publish") revalidatePath("/", "layout");
     return { ok: true, data: undefined };
   } catch (e) {
     return toActionError(e, "identity");

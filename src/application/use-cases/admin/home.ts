@@ -4,6 +4,7 @@ import type { MediaUploader } from "../../ports/media-uploader";
 import { DEFAULT_HOME_SETTINGS, mediaInUse, resolveLayout, type HomeSettings, type HomeSettingsRepository } from "../../ports/home-settings";
 import type { DirectUploadTicket, MediaRemover, SiteMedia, SiteMediaRepository, VideoUploadSigner } from "../../ports/site-media";
 import { FieldValidationError } from "../../lib/errors";
+import { parseSaveMode, type SaveMode } from "../../lib/save-mode";
 import {
   BAND_POSITIONS,
   HomeSettingsInputSchema,
@@ -195,7 +196,8 @@ export class GetHomeSettings {
 export class SaveHomeSettings {
   constructor(private readonly deps: HomeDeps & { clock: Clock }) {}
 
-  async execute(raw: unknown, mode: "draft" | "publish" = "publish"): Promise<void> {
+  async execute(raw: unknown, mode: SaveMode = "publish"): Promise<void> {
+    const target = parseSaveMode(mode);
     const input = HomeSettingsInputSchema.parse(raw);
     const heroMedia = input.hero.source === "media" && input.hero.mediaId ? await this.deps.siteMedia.findById(input.hero.mediaId) : null;
     if (input.hero.source === "media" && !heroMedia) throw new FieldValidationError("hero.mediaId", "La foto o el video del hero ya no está en la biblioteca.");
@@ -213,7 +215,7 @@ export class SaveHomeSettings {
       layout: input.layout ? resolveLayout(input.layout) : null,
       updatedAt: this.deps.clock.now(),
     };
-    if (mode === "draft") await this.deps.homeSettings.saveDraft(settings);
+    if (target === "draft") await this.deps.homeSettings.saveDraft(settings);
     else await this.deps.homeSettings.publish(settings);
   }
 }

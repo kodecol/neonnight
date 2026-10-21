@@ -1,5 +1,6 @@
 import type { Clock } from "../../ports/clock";
 import type { MediaUploader } from "../../ports/media-uploader";
+import { parseSaveMode, type SaveMode } from "../../lib/save-mode";
 import type { SiteContent } from "../../dto/site-content.dto";
 import { StoreIdentitySchema, type StoreIdentityInput } from "../../dto/identity.dto";
 import { identityOf, type IdentitySettingsRepository, type StoreIdentity } from "../../ports/identity-settings";
@@ -49,9 +50,10 @@ export class GetIdentityEditor {
 export class SaveIdentity {
   constructor(private readonly deps: { identity: IdentitySettingsRepository; clock: Clock }) {}
 
-  async execute(raw: unknown, mode: "draft" | "publish" = "publish"): Promise<StoreIdentity> {
+  async execute(raw: unknown, mode: SaveMode = "publish"): Promise<StoreIdentity> {
+    const target = parseSaveMode(mode);
     const identity: StoreIdentity = { ...StoreIdentitySchema.parse(raw), updatedAt: this.deps.clock.now() };
-    if (mode === "draft") await this.deps.identity.saveDraft(identity);
+    if (target === "draft") await this.deps.identity.saveDraft(identity);
     else await this.deps.identity.publish(identity);
     return identity;
   }

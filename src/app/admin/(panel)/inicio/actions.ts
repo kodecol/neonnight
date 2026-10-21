@@ -1,6 +1,7 @@
 "use server";
 import { revalidatePath } from "next/cache";
 import { getContainer } from "@/infrastructure/container";
+import { parseSaveMode } from "@/application/lib/save-mode";
 import {
   DeleteSiteMedia,
   DiscardHomeDraft,
@@ -92,8 +93,10 @@ export async function deleteSiteMediaAction(id: string): Promise<ActionResult> {
 export async function saveHomeSettingsAction(input: HomeSettingsInput, mode: "draft" | "publish"): Promise<ActionResult> {
   await requireAdmin();
   try {
-    await new SaveHomeSettings(getContainer()).execute(input, mode === "draft" ? "draft" : "publish");
-    if (mode !== "draft") publish();
+    // Llega del cliente: sin un modo válido no se guarda (ni se publica por descarte).
+    const target = parseSaveMode(mode);
+    await new SaveHomeSettings(getContainer()).execute(input, target);
+    if (target === "publish") publish();
     return { ok: true, data: undefined };
   } catch (e) {
     return toActionError(e, "home-settings");

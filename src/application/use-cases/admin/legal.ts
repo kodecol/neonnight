@@ -5,6 +5,7 @@ import type { LegalPageContent, LegalPagesRepository, LegalPublished } from "../
 import type { CompanySettingsRepository } from "../../ports/company-settings";
 import type { Clock } from "../../ports/clock";
 import { FieldValidationError } from "../../lib/errors";
+import { parseSaveMode, type SaveMode } from "../../lib/save-mode";
 import {
   LEGAL_TOKENS,
   LEGAL_TOKEN_LABELS,
@@ -126,8 +127,9 @@ const isRoute = (path: string) => path === "/" || path === "/coleccion" || path.
 export class SaveLegalPage {
   constructor(private readonly deps: LegalDeps & { clock: Clock }) {}
 
-  async execute(slug: InfoPageSlug, raw: unknown, mode: "draft" | "publish"): Promise<{ version: string | null }> {
+  async execute(slug: InfoPageSlug, raw: unknown, mode: SaveMode): Promise<{ version: string | null }> {
     if (!(INFO_PAGE_SLUGS as readonly string[]).includes(slug)) throw new FieldValidationError("slug", "Esa página no existe.");
+    const target = parseSaveMode(mode);
     const input = LegalPageInputSchema.parse(raw);
     const { values } = await context(this.deps);
 
@@ -148,7 +150,7 @@ export class SaveLegalPage {
     if (all.length) throw new FieldValidationError("body", all.map((i) => (i.line ? `Línea ${i.line}: ${i.message}` : i.message)).join(" · "));
 
     const content: LegalPageContent = { kicker: input.kicker, title: input.title, lead: input.lead, description: input.description, body: input.body };
-    if (mode === "draft") {
+    if (target === "draft") {
       await this.deps.legalPages.saveDraft(slug, { ...content, savedAt: this.deps.clock.now() });
       return { version: null };
     }
