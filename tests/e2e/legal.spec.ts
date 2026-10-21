@@ -17,7 +17,7 @@ test.describe("Páginas institucionales y legales", () => {
       expect(res?.status()).toBe(200);
       await expect(page.locator("h1")).toHaveText(title);
       await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", new RegExp(`${path}$`));
-      await expect(page.locator('meta[property="og:image"]').first()).toHaveAttribute("content", /\/og/);
+      await expect(page.locator('meta[property="og:image"]').first()).toHaveAttribute("content", /\/og\/inicio\.jpg$/);
     });
   }
 
@@ -54,11 +54,12 @@ test.describe("Páginas institucionales y legales", () => {
   });
 
   test("las imágenes de vista previa y el sitemap responden", async ({ request }) => {
-    for (const url of ["/og", "/og?linea=relojeria"]) {
+    for (const url of ["/og/inicio.jpg", "/og/linea/relojeria.jpg", "/og", "/og?linea=relojeria"]) {
       const res = await request.get(url);
-      expect(res.status()).toBe(200);
-      expect(res.headers()["content-type"]).toBe("image/png");
+      expect(res.status(), url).toBe(200);
+      expect(res.headers()["content-type"]).toBe("image/jpeg");
     }
+    expect((await request.get("/og/linea/no-existe.jpg")).status()).toBe(404);
     const sitemap = await (await request.get("/sitemap.xml")).text();
     for (const [path] of PAGES) expect(sitemap).toContain(`${path}</loc>`);
   });

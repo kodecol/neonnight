@@ -7,7 +7,7 @@ import { InfoPageView } from "@/presentation/components/info/InfoPageView";
 import { LineShowcase } from "@/presentation/components/blocks/LineShowcase";
 import { JsonLd } from "@/presentation/components/seo/JsonLd";
 import { absoluteUrl } from "@/presentation/lib/site";
-import { ogImage } from "./og";
+import { OG_PATHS, ogImage, shareMetadata } from "./og";
 
 /** Qué otras páginas se sugieren al pie de cada una. */
 const RELATED: Record<InfoPageSlug, InfoPageSlug[]> = {
@@ -29,7 +29,7 @@ export async function infoMetadata(slug: InfoPageSlug): Promise<Metadata> {
     title: page.title,
     description: page.description,
     alternates: { canonical: url },
-    openGraph: { type: "website", url, title: `${page.title} — ${site.brand.name}`, description: page.description, siteName: site.brand.name, images: [ogImage(site.brand.name)] },
+    ...shareMetadata({ title: `${page.title} — ${site.brand.name}`, description: page.description, url, siteName: site.brand.name, locale: site.brand.locale, image: ogImage(OG_PATHS.home, `${page.title} — ${site.brand.name}`) }),
   };
 }
 

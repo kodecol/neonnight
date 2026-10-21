@@ -5,8 +5,9 @@ import { loadProduct } from "./render-product";
 export const OG_SIZE = { width: 1200, height: 630 };
 
 /** Tarjeta OG de un producto: marca, nombre, precio y la foto recortada de la pieza. */
-export async function productOgImage(slug: string): Promise<ImageResponse> {
+export async function productOgImage(slug: string): Promise<ImageResponse | null> {
   const [p, fonts, iso] = await Promise.all([loadProduct(slug), ogFonts(), ogIsotype()]);
+  if (!p) return null;
   const name = p?.model ?? "Neon Night";
   const brand = p?.brand ?? "";
   const subtitle = p?.subtitle ?? "Relojes, joyas y perfumes verificados";

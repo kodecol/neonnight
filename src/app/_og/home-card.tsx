@@ -1,18 +1,16 @@
 import { ImageResponse } from "next/og";
 import { getContainer } from "@/infrastructure/container";
 import { ListLines } from "@/application/use-cases/list-lines";
-import { OG_COLORS as C, ogFonts, ogIsotype, ogPhoto } from "../_og/brand";
+import { OG_COLORS as C, ogFonts, ogIsotype, ogPhoto } from "./brand";
 
-/** Vista previa al compartir: `/og` (general) y `/og?linea=<slug>` (cada línea). 1200 × 630. */
-export const dynamic = "force-dynamic";
-
+/** Tarjeta de vista previa general (lineSlug null) o de una línea. 1200 × 630, PNG. */
 const SIZE = { width: 1200, height: 630 };
 
-export async function GET(req: Request) {
+export async function homeCard(lineSlug: string | null): Promise<ImageResponse | null> {
   const container = getContainer();
-  const lineSlug = new URL(req.url).searchParams.get("linea");
   const [site, lines, products, fonts, iso] = await Promise.all([container.content.get(), new ListLines(container).execute(), container.products.findAll(), ogFonts(), ogIsotype()]);
   const line = lineSlug ? (lines.find((l) => l.slug === lineSlug) ?? null) : null;
+  if (lineSlug && !line) return null;
 
   const brandRow = (
     <div style={{ display: "flex", alignItems: "center", gap: 22 }}>
@@ -89,6 +87,6 @@ export async function GET(req: Request) {
         {body}
       </div>
     ),
-    { ...SIZE, fonts, headers: { "cache-control": "public, max-age=3600, s-maxage=86400, stale-while-revalidate=604800" } },
+    { ...SIZE, fonts },
   );
 }

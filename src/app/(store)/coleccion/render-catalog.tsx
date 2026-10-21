@@ -11,7 +11,7 @@ import { ActiveFilters, CatalogToolbar } from "@/presentation/components/blocks/
 import { ProductGrid } from "@/presentation/components/blocks/ProductGrid";
 import { JsonLd } from "@/presentation/components/seo/JsonLd";
 import { TrackEvent } from "@/presentation/components/seo/TrackEvent";
-import { ogImage } from "../_info/og";
+import { OG_PATHS, ogImage, shareMetadata } from "../_info/og";
 import { catalogHref } from "@/presentation/lib/catalog-href";
 import { ROUTES, absoluteUrl } from "@/presentation/lib/site";
 
@@ -34,13 +34,14 @@ export async function catalogMetadata(line: string | null, params: RawParams): P
     title: result.line?.label ?? site.collection.title,
     description: result.line ? `${result.line.label} en ${site.brand.name}. ${result.line.description}` : site.brand.description,
     alternates: { canonical: absoluteUrl(base) },
-    openGraph: {
-      type: "website",
-      url: absoluteUrl(base),
+    ...shareMetadata({
       title: `${result.line?.label ?? site.collection.title} — ${site.brand.name}`,
+      description: result.line ? `${result.line.label} en ${site.brand.name}. ${result.line.description}` : site.brand.description,
+      url: absoluteUrl(base),
       siteName: site.brand.name,
-      images: [ogImage(`${result.line?.label ?? site.collection.title} — ${site.brand.name}`, result.line?.slug)],
-    },
+      locale: site.brand.locale,
+      image: ogImage(result.line ? OG_PATHS.line(result.line.slug) : OG_PATHS.home, `${result.line?.label ?? site.collection.title} — ${site.brand.name}`),
+    }),
     // Las combinaciones de filtros no se indexan: la URL canónica es la de la línea.
     robots: filtered ? { index: false, follow: true } : { index: true, follow: true },
   };

@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Archivo } from "next/font/google";
 import "@/presentation/styles/globals.css";
 import { getContainer } from "@/infrastructure/container";
-import { siteUrl } from "@/presentation/lib/site";
+import { absoluteUrl, siteUrl } from "@/presentation/lib/site";
 
 const archivo = Archivo({
   subsets: ["latin"],
@@ -16,14 +16,15 @@ export async function generateMetadata(): Promise<Metadata> {
   const google = process.env.GOOGLE_SITE_VERIFICATION?.trim();
   const meta = process.env.META_DOMAIN_VERIFICATION?.trim();
   // Vista previa general; las fichas y las líneas ponen la suya.
-  const image = { url: "/og", width: 1200, height: 630, alt: `${brand.name} — relojes, joyas y perfumes de las grandes casas`, type: "image/png" };
+  const url = absoluteUrl("/og/inicio.jpg");
+  const image = { url, secureUrl: url, width: 1200, height: 630, alt: `${brand.name} — relojes, joyas y perfumes de las grandes casas`, type: "image/jpeg" };
   return {
     metadataBase: siteUrl(),
     title: { default: `${brand.name} — Relojes, joyas y perfumes verificados`, template: `%s — ${brand.name}` },
     description: brand.description,
     applicationName: brand.name,
     openGraph: { type: "website", siteName: brand.name, locale: brand.locale.replace("-", "_"), images: [image] },
-    twitter: { card: "summary_large_image", images: [image.url] },
+    twitter: { card: "summary_large_image", images: [{ url: image.url, alt: image.alt }] },
     robots: { index: true, follow: true, googleBot: { index: true, follow: true, "max-image-preview": "large", "max-snippet": -1 } },
     formatDetection: { telephone: false },
     // Search Console y Meta Business verifican el dominio con estas etiquetas (variables de entorno).

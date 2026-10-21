@@ -42,7 +42,7 @@ export function onlineStore(site: SiteContent, opts: { telephone: string | null 
     legalName: site.company.tradeName,
     url: absoluteUrl("/"),
     logo: absoluteUrl(site.brand.logo.color),
-    image: absoluteUrl("/og"),
+    image: absoluteUrl("/og/inicio.jpg"),
     description: site.brand.description,
     foundingDate: String(site.company.foundingYear),
     email: site.company.email,

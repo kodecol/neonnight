@@ -18,6 +18,7 @@ import { ClosingCta } from "@/presentation/components/blocks/ClosingCta";
 import { ProductGrid } from "@/presentation/components/blocks/ProductGrid";
 import { Kicker } from "@/presentation/components/primitives/Kicker";
 import { JsonLd } from "@/presentation/components/seo/JsonLd";
+import { OG_PATHS, ogImage, shareMetadata } from "../_info/og";
 import { TrackEvent } from "@/presentation/components/seo/TrackEvent";
 import { WhatsAppMessage } from "@/presentation/components/chrome/WhatsAppFab";
 import { merchantReturnPolicy, shippingDetails } from "@/presentation/lib/structured-data";
@@ -36,7 +37,7 @@ export const loadProduct = cache(async (slug: string): Promise<ProductDetailDto 
 export async function productMetadata(slug: string): Promise<Metadata> {
   const product = await loadProduct(slug);
   if (!product) return { title: "Pieza no encontrada" };
-  const { brand } = await getContainer().content.get();
+  const { brand, brand: { locale } } = await getContainer().content.get();
   const ref = product.reference ? ` ref. ${product.reference}` : "";
   const price = `${product.priceFrom ? "desde " : ""}${product.price.formatted}`;
   const description = `${product.name}${ref} · ${product.subtitle} · ${price}. Verificado en mano, con garantía y envío asegurado.`;
@@ -45,7 +46,9 @@ export async function productMetadata(slug: string): Promise<Metadata> {
     title: product.name,
     description,
     alternates: { canonical: url },
-    openGraph: { title: `${product.name} — ${brand.name}`, description, type: "website", url },
+    ...shareMetadata({ title: `${product.name} — ${brand.name}`, description, url, siteName: brand.name, locale, image: ogImage(OG_PATHS.product(product.slug), product.name) }),
+    // Facebook y Pinterest leen el precio sin cambiar og:type.
+    other: { "product:price:amount": String(product.price.units), "product:price:currency": product.price.currency },
   };
 }
 
