@@ -84,6 +84,8 @@ docker build -t kodecol/jewelry-store:<versión> --build-arg BUILD_SHA=$(git rev
 3. Si cambió `BrandConfigSchema`, corre `npm run brand:schema`. Los cambios deben ser compatibles: campos nuevos opcionales.
 4. Construye la imagen con la versión nueva. Kode actualiza cada instancia (migrate y brand:apply) sin volver a sembrar.
 
+**Nunca reuses una etiqueta.** Cada imagen distinta lleva su propia versión (1.0.1, 1.1.0…). Kode registra qué versión corre cada cliente, así que dos imágenes con la misma etiqueta no se pueden distinguir.
+
 ## Lo neutro y lo de cada tienda
 
 Sin nada publicado, la plantilla se ve así:
