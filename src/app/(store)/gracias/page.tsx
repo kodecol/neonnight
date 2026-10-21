@@ -1,32 +1,54 @@
 import type { Metadata } from "next";
 import { getContainer } from "@/infrastructure/container";
 import { GetOrderStatus } from "@/application/use-cases/get-order-status";
-import { isPaymentReady } from "@/application/ports/payment-settings";
 import { Button } from "@/presentation/components/primitives/Button";
 import { Kicker } from "@/presentation/components/primitives/Kicker";
-import { ROUTES } from "@/presentation/lib/site";
+import { AutoRefresh } from "@/presentation/components/checkout/AutoRefresh";
 import { TrackPurchase } from "@/presentation/components/seo/TrackEvent";
+import { ROUTES } from "@/presentation/lib/site";
 
 export const metadata: Metadata = { title: "Pedido recibido", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
 
 const COPY = {
-  pagada: { kicker: "Pago confirmado", body: "Recibimos tu pago. Te contactamos para coordinar la entrega de la pieza." },
-  pendiente: { kicker: "Pago en verificación", body: "Estamos confirmando tu pago con la pasarela. Te avisamos apenas quede aprobado." },
-  fallida: { kicker: "Pago rechazado", body: "La pasarela no aprobó el pago. Puedes intentarlo de nuevo o escribirnos para ayudarte." },
-  cancelada: { kicker: "Pedido cancelado", body: "Este pedido fue cancelado. Escríbenos si necesitas ayuda." },
+  pagada: { kicker: "Pago confirmado", title: "Gracias", body: "Recibimos tu pago. Te escribimos por WhatsApp para coordinar la entrega." },
+  pendiente: { kicker: "Pago en verificación", title: "Un momento", body: "Estamos confirmando tu pago con Bold. Esta página se actualiza sola." },
+  fallida: { kicker: "Pago rechazado", title: "No se completó", body: "Bold no aprobó el pago y no se hizo ningún cobro. Puedes intentarlo de nuevo o escribirnos para ayudarte." },
+  cancelada: { kicker: "Pedido cancelado", title: "Pedido cancelado", body: "Este pedido fue cancelado. Escríbenos si necesitas ayuda." },
 } as const;
 
+/**
+ * Confirmación del pedido. Bold: muestra el estado que llega por webhook y se
+ * refresca mientras está pendiente. Sin pasarela (pedido manual): muestra las
+ * instrucciones del panel › Pagos y el botón para coordinar por WhatsApp.
+ */
 export default async function ThanksPage({ searchParams }: { searchParams: Promise<{ orden?: string }> }) {
   const { orden } = await searchParams;
-  const { orders, paymentSettings } = getContainer();
+  const { orders, paymentSettings, whatsapp } = getContainer();
   const [order, settings] = await Promise.all([orden ? new GetOrderStatus(orders).execute(orden) : null, paymentSettings.get()]);
-  const gatewayOn = isPaymentReady(settings);
 
-  const copy = order && gatewayOn ? COPY[order.status] : null;
+  if (!order) {
+    return (
+      <main className="flex min-h-screen flex-col justify-center px-page pt-header">
+        <Kicker>Pedido</Kicker>
+        <h1 className="mb-4 mt-4 text-display-fluid uppercase">No encontramos el pedido</h1>
+        <p className="m-0 max-w-[52ch] text-lead text-ink-2">Revisa el enlace o escríbenos con tu número de pedido.</p>
+        <div className="mt-9 flex gap-4">
+          <Button href={ROUTES.collection}>Ver la colección</Button>
+        </div>
+      </main>
+    );
+  }
+
+  const manual = order.paymentMethod === "manual" && order.status === "pendiente";
+  const copy = manual
+    ? { kicker: "Pedido recibido", title: "Gracias", body: settings.manual.instructions }
+    : COPY[order.status];
+  const coordinate = whatsapp.generic(`Hola, hice el pedido ${order.id} por ${order.totalFormatted}. ¿Cómo coordinamos el pago y la entrega?`);
+
   return (
-    <main className="flex min-h-screen flex-col justify-center px-page pt-header">
-      {order && gatewayOn && order.status === "pagada" && (
+    <main className="flex min-h-screen flex-col justify-center px-page pt-header" data-testid={`order-${order.status}`}>
+      {order.status === "pagada" && (
         <TrackPurchase
           event={{
             name: "purchase",
@@ -36,26 +58,24 @@ export default async function ThanksPage({ searchParams }: { searchParams: Promi
           }}
         />
       )}
-      <Kicker>{copy?.kicker ?? "Pedido recibido"}</Kicker>
-      <h1 className="mb-4 mt-4 text-display-fluid uppercase">Gracias</h1>
-      <p className="m-0 max-w-[52ch] text-lead text-ink-2 [text-wrap:pretty]">
-        {copy ? (
-          <>
-            Pedido <span className="text-ink">{order?.id}</span> · {order?.totalFormatted}. {copy.body}
-          </>
-        ) : (
-          <>
-            Tu pedido {orden ? <span className="text-ink">{orden}</span> : null} quedó registrado. Verificamos la pieza y te contactamos para coordinar el pago y la entrega.
-          </>
-        )}
+      {order.status === "pendiente" && order.paymentMethod === "bold" && <AutoRefresh />}
+      <Kicker>{copy.kicker}</Kicker>
+      <h1 className="mb-4 mt-4 text-display-fluid uppercase">{copy.title}</h1>
+      <p className="m-0 text-meta text-ink-2">
+        Pedido <span className="text-ink" data-testid="order-id">{order.id}</span> · {order.totalFormatted}
       </p>
-      {!gatewayOn && <p className="mb-0 mt-3 max-w-[52ch] text-legal text-ink-3">La pasarela de pago aún no está activa: este pedido no generó cobro.</p>}
-      <div className="mt-9 flex gap-4">
-        <Button href={ROUTES.collection}>Seguir viendo</Button>
-        <Button href={ROUTES.home} variant="secondary">
-          Inicio
+      <p className="mb-0 mt-5 max-w-[56ch] text-lead text-ink-2 [text-wrap:pretty]">{copy.body}</p>
+      <div className="mt-9 flex flex-wrap gap-4">
+        {(manual || order.status === "fallida") && coordinate && (
+          <Button href={coordinate} target="_blank" rel="noopener noreferrer" data-testid="order-whatsapp">
+            Coordinar por WhatsApp
+          </Button>
+        )}
+        <Button href={ROUTES.collection} variant={manual ? "secondary" : "primary"}>
+          Seguir viendo
         </Button>
       </div>
+      <p className="mb-0 mt-8 max-w-[56ch] text-legal text-ink-3">Guarda tu número de pedido: es la referencia para cualquier consulta, cambio o garantía.</p>
     </main>
   );
 }

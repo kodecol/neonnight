@@ -12,6 +12,7 @@ import { orderId, type Order } from "@/domain/entities/order";
 import { productId } from "@/domain/entities/product";
 import { productStatus } from "@/domain/services/availability";
 import { Money } from "@/domain/value-objects/money";
+import { DEFAULT_PAYMENT_SETTINGS } from "@/application/ports/payment-settings";
 
 const order = (over: Partial<Order> = {}): Order => ({
   id: orderId("nn-abc12345"),
@@ -20,6 +21,10 @@ const order = (over: Partial<Order> = {}): Order => ({
   status: "pendiente",
   createdAt: new Date("2026-10-03T00:00:00Z"),
   paymentReference: "LNK_TEST",
+  shipping: Money.zero(),
+  paymentMethod: "bold",
+  customer: null,
+  consent: null,
   ...over,
 });
 
@@ -100,7 +105,7 @@ describe("BoldPaymentGateway", () => {
   });
 
   it("activo: crea un link cerrado por el total y redirige a Bold", async () => {
-    const settings = new InMemoryPaymentSettingsRepository({ enabled: true, mode: "pruebas", identityKey: "pk_test", secretKey: "", updatedAt: null });
+    const settings = new InMemoryPaymentSettingsRepository({ enabled: true, mode: "pruebas", identityKey: "pk_test", secretKey: "", manual: DEFAULT_PAYMENT_SETTINGS.manual, updatedAt: null });
     const fetchImpl = vi.fn(async () => new Response(JSON.stringify({ payload: { payment_link: "LNK_1", url: "https://checkout.bold.co/LNK_1" }, errors: [] }), { status: 200 }));
     const gw = new BoldPaymentGateway(settings, new NoopPaymentGateway(), fetchImpl as unknown as typeof fetch, () => 1_000);
     const s = await gw.createSession(order(), "https://neonnight.co/gracias");
@@ -120,7 +125,7 @@ describe("BoldPaymentGateway", () => {
   });
 
   it("omite callback no HTTPS y propaga errores de Bold", async () => {
-    const settings = new InMemoryPaymentSettingsRepository({ enabled: true, mode: "pruebas", identityKey: "pk", secretKey: "", updatedAt: null });
+    const settings = new InMemoryPaymentSettingsRepository({ enabled: true, mode: "pruebas", identityKey: "pk", secretKey: "", manual: DEFAULT_PAYMENT_SETTINGS.manual, updatedAt: null });
     const fetchImpl = vi.fn(async () => new Response(JSON.stringify({ errors: [{ message: "bad" }] }), { status: 400 }));
     const gw = new BoldPaymentGateway(settings, new NoopPaymentGateway(), fetchImpl as unknown as typeof fetch);
     await expect(gw.createSession(order(), "http://localhost:3000/gracias")).rejects.toBeInstanceOf(BoldGatewayError);

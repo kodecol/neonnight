@@ -4,7 +4,7 @@ import type { ActionResult, PaymentSettingsInput, PaymentSettingsViewDto } from 
 import type { PaymentMode } from "@/application/ports/payment-settings";
 import { Button } from "@/presentation/components/primitives/Button";
 import { cn } from "@/presentation/lib/cn";
-import { Segmented, TextInput, Toggle } from "./fields";
+import { Segmented, TextArea, TextInput, Toggle } from "./fields";
 
 const MODES = [
   { value: "pruebas", label: "Pruebas" },
@@ -25,16 +25,24 @@ export function PaymentSettingsForm({
   const [mode, setMode] = useState<PaymentMode>(initial.mode);
   const [identityKey, setIdentityKey] = useState(initial.identityKey);
   const [secretKey, setSecretKey] = useState("");
+  const [manualEnabled, setManualEnabled] = useState(initial.manualEnabled);
+  const [manualInstructions, setManualInstructions] = useState(initial.manualInstructions);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
   const [pending, start] = useTransition();
 
-  const dirty = enabled !== view.enabled || mode !== view.mode || identityKey !== view.identityKey || secretKey !== "";
+  const dirty =
+    enabled !== view.enabled ||
+    mode !== view.mode ||
+    identityKey !== view.identityKey ||
+    secretKey !== "" ||
+    manualEnabled !== view.manualEnabled ||
+    manualInstructions !== view.manualInstructions;
 
   function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     start(async () => {
-      const res = await save({ enabled, mode, identityKey, secretKey });
+      const res = await save({ enabled, mode, identityKey, secretKey, manualEnabled, manualInstructions });
       if (!res.ok) {
         setErrors(res.fieldErrors ?? {});
         setMessage({ ok: false, text: res.error });
@@ -56,7 +64,7 @@ export function PaymentSettingsForm({
           <div className="grid max-w-[640px] gap-8">
             <Toggle
               label="Cobrar con Bold"
-              description="Al pagar, el cliente pasa a la pasarela de Bold. Desactivado, los pedidos se registran sin cobro y se cierran por WhatsApp."
+              description="Al pagar, el cliente pasa a la pasarela de Bold. Desactivado, rige lo que configures abajo en «Sin pasarela»."
               checked={enabled}
               onChange={(v) => {
                 setEnabled(v);
@@ -89,6 +97,28 @@ export function PaymentSettingsForm({
                   : "Se guarda cifrada y nunca se muestra completa. Verifica la firma de los webhooks."
               }
             />
+            <div className="grid gap-6 border-t border-divider pt-8">
+              <Toggle
+                label="Sin pasarela: recibir el pedido y coordinar el pago"
+                description="Cuando Bold está inactivo. Activado, el pedido se registra con los datos del cliente y en la página de confirmación ve estas instrucciones y un botón de WhatsApp. Apagado, el checkout avisa que por ahora no se reciben pagos en línea."
+                checked={manualEnabled}
+                onChange={(v) => {
+                  setManualEnabled(v);
+                  setMessage(null);
+                }}
+              />
+              {manualEnabled && (
+                <TextArea
+                  label="Instrucciones para el cliente"
+                  rows={4}
+                  value={manualInstructions}
+                  onChange={(e) => setManualInstructions(e.target.value)}
+                  maxLength={600}
+                  error={errors.manualInstructions}
+                  hint="Se muestran en la confirmación del pedido (transferencia, contacto, tiempos)."
+                />
+              )}
+            </div>
             <div className="flex flex-wrap items-center gap-6 pt-2">
               <Button type="submit" disabled={pending || !dirty}>
                 {pending ? "Guardando…" : "Guardar configuración"}

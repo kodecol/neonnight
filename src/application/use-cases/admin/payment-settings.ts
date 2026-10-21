@@ -10,6 +10,8 @@ export function toPaymentSettingsView(s: PaymentSettings): PaymentSettingsViewDt
     identityKey: s.identityKey,
     secretKeyHint: s.secretKey ? `••••${s.secretKey.slice(-4)}` : null,
     ready: isPaymentReady(s),
+    manualEnabled: s.manual.enabled,
+    manualInstructions: s.manual.instructions,
     updatedAt: s.updatedAt?.toISOString() ?? null,
   };
 }
@@ -33,6 +35,7 @@ export class SavePaymentSettings {
       mode: input.mode,
       identityKey: input.identityKey,
       secretKey: input.secretKey || prev.secretKey,
+      manual: { enabled: input.manualEnabled, instructions: input.manualInstructions },
       updatedAt: this.deps.clock.now(),
     };
     if (next.enabled && !next.identityKey) throw new FieldValidationError("identityKey", "La llave de identidad es obligatoria para activar Bold.");

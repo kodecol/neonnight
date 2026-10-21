@@ -50,11 +50,20 @@ export class ConfirmPayment {
     const paid = event.data?.amount?.total;
     if (paid !== undefined && paid !== order.total.units) return { handled: false, reason: `monto ${paid} ≠ ${order.total.units}` };
 
-    await this.deps.orders.save({ ...order, status: "pagada" });
-    const results = await Promise.all(order.lines.map((l) => this.deps.products.decrementStock(l.productId, l.variantId, l.quantity)));
-    results.forEach((ok, i) => {
-      if (!ok) console.warn(`[confirm-payment] stock insuficiente en ${order.lines[i]!.slug} (${order.id}): revisar a mano`);
-    });
+    await markOrderPaid(order, this.deps);
     return { handled: true, orderId: order.id, status: "pagada" };
   }
+}
+
+/**
+ * Marca la orden como pagada y descuenta el stock de cada variante (una pieza
+ * única queda en 0 y se lee "Vendido"). Lo usan el webhook de Bold y el panel
+ * (pedidos manuales). Devuelve las piezas sin stock suficiente para revisar a mano.
+ */
+export async function markOrderPaid(order: Order, deps: { orders: OrderRepository; products: ProductRepository }): Promise<string[]> {
+  await deps.orders.save({ ...order, status: "pagada" });
+  const results = await Promise.all(order.lines.map((l) => deps.products.decrementStock(l.productId, l.variantId, l.quantity)));
+  const short = order.lines.filter((_, i) => !results[i]).map((l) => l.slug);
+  short.forEach((slug) => console.warn(`[pedido] stock insuficiente en ${slug} (${order.id}): revisar a mano`));
+  return short;
 }

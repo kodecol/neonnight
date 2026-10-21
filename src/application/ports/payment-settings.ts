@@ -8,16 +8,31 @@ export interface PaymentSettings {
   readonly identityKey: string;
   /** Llave secreta de Bold. Nunca sale del servidor. */
   readonly secretKey: string;
+  /**
+   * Pedidos sin pasarela (Bold inactivo): se registra el pedido y se coordina
+   * el pago con el cliente. Desactivado, el checkout avisa y no deja comprar.
+   */
+  readonly manual: { readonly enabled: boolean; readonly instructions: string };
   readonly updatedAt: Date | null;
 }
+
+export const DEFAULT_MANUAL_INSTRUCTIONS =
+  "Recibimos tu pedido. Te escribimos por WhatsApp o correo en horario de atención para confirmar la pieza y coordinar el pago por transferencia o el medio que prefieras. La pieza no se descuenta del inventario hasta confirmar el pago.";
 
 export const DEFAULT_PAYMENT_SETTINGS: PaymentSettings = {
   enabled: false,
   mode: "pruebas",
   identityKey: "",
   secretKey: "",
+  manual: { enabled: true, instructions: DEFAULT_MANUAL_INSTRUCTIONS },
   updatedAt: null,
 };
+
+/** Cómo se cobra hoy: Bold, pedido manual o nada (el checkout avisa). */
+export function paymentModeOf(s: PaymentSettings): "bold" | "manual" | "unavailable" {
+  if (isPaymentReady(s)) return "bold";
+  return s.manual.enabled ? "manual" : "unavailable";
+}
 
 /** Bold firma los webhooks de pruebas con una llave vacía. */
 export function webhookSecret(settings: PaymentSettings): string {

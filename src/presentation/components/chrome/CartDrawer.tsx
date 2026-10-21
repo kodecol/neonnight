@@ -2,13 +2,13 @@
 import { useEffect, useRef } from "react";
 import Link from "next/link";
 import { cartKey, useCart } from "@/presentation/hooks/use-cart";
-import { useCheckout } from "@/presentation/hooks/use-checkout";
 import { RichText } from "@/presentation/components/primitives/RichText";
 import { useBodyLock } from "@/presentation/hooks/use-body-lock";
 import { formatCop } from "@/presentation/lib/format-money";
 import { Button } from "@/presentation/components/primitives/Button";
 import { QuantityStepper } from "@/presentation/components/primitives/QuantityStepper";
 import { ROUTES } from "@/presentation/lib/site";
+import { cn } from "@/presentation/lib/cn";
 import type { SiteContent } from "@/application/dto/site-content.dto";
 import { fill } from "@/application/lib/template";
 
@@ -26,7 +26,6 @@ export function CartDrawer({
   content: SiteContent["cart"];
 }) {
   const cart = useCart();
-  const { start, submitting, error } = useCheckout();
   const panelRef = useRef<HTMLElement>(null);
   useBodyLock(cart.isOpen);
 
@@ -45,12 +44,6 @@ export function CartDrawer({
           }),
         )}`
       : null;
-
-  const checkout = () =>
-    start(cart.items, () => {
-      cart.clear();
-      cart.close();
-    });
 
   return (
     <div className="backdrop-glass fixed inset-0 z-[70] flex justify-end bg-scrim" onClick={cart.close} data-testid="cart-overlay">
@@ -101,13 +94,14 @@ export function CartDrawer({
           <span data-testid="cart-total">{formatCop(cart.totalCents)}</span>
         </div>
 
-        {error && (
-          <p role="alert" className="mb-3 text-legal text-accent">
-            {error}
-          </p>
-        )}
-        <Button onClick={checkout} disabled={cart.items.length === 0 || submitting} className="w-full justify-start px-6 py-5 text-label-lg" data-testid="checkout-button">
-          {submitting ? "Procesando…" : content.checkout}
+        <Button
+          href={ROUTES.checkout}
+          onClick={cart.close}
+          aria-disabled={cart.items.length === 0}
+          className={cn("w-full justify-start px-6 py-5 text-label-lg", cart.items.length === 0 && "pointer-events-none opacity-45")}
+          data-testid="checkout-button"
+        >
+          {content.checkout}
         </Button>
         <p
           className="mb-0 mt-3.5 text-legal text-ink-3 [text-wrap:pretty]"

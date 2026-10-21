@@ -13,6 +13,7 @@ export class GetOrderStatus {
       status: order.status,
       totalFormatted: order.total.format(),
       totalCents: order.total.cents,
+      paymentMethod: order.paymentMethod,
       lines: order.lines.map((l) => ({ productId: l.productId, name: l.name, variantLabel: l.variantLabel, unitPriceCents: l.unitPrice.cents, quantity: l.quantity })),
     };
   }

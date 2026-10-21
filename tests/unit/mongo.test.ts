@@ -74,12 +74,16 @@ describe.skipIf(!uri)("Repositorios Mongo", () => {
       status: "pendiente",
       createdAt: new Date(),
       paymentReference: "LNK_9",
+      shipping: Money.zero(),
+      paymentMethod: "bold",
+      customer: null,
+      consent: null,
     });
     expect((await orders.findByPaymentReference("LNK_9"))?.total.units).toBe(10);
 
     const secret = "s".repeat(40);
     const settings = new MongoPaymentSettingsRepository(provider, () => secret);
-    await settings.save({ enabled: true, mode: "produccion", identityKey: "pk", secretKey: "sk_live", updatedAt: new Date() });
+    await settings.save({ enabled: true, mode: "produccion", identityKey: "pk", secretKey: "sk_live", manual: { enabled: false, instructions: "x".repeat(30) }, updatedAt: new Date() });
     const raw = await db.collection("settings").findOne({ _id: "payments" as never });
     expect(JSON.stringify(raw)).not.toContain("sk_live");
     expect((await settings.get()).secretKey).toBe("sk_live");

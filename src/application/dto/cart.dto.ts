@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { MAX_QUANTITY_PER_LINE } from "@/domain/services/availability";
+import { ConsentInputSchema, CustomerInputSchema } from "./checkout.dto";
 
 /** Las bolsas guardadas antes de las variantes traen `watchId` y ninguna variante: se aceptan igual. */
 export const CartLineInputSchema = z.preprocess(
@@ -16,7 +17,11 @@ export const CheckoutInputSchema = z.object({
   lines: z.array(CartLineInputSchema).min(1).max(20),
   /** Importe que el cliente cree que va a pagar; solo se usa para detectar desincronización, nunca para cobrar. */
   expectedTotalCents: z.number().int().nonnegative().optional(),
+  customer: CustomerInputSchema,
+  consent: ConsentInputSchema,
 });
+
+export const QuoteInputSchema = z.object({ lines: z.array(z.unknown()).max(20) });
 export type CheckoutInput = z.infer<typeof CheckoutInputSchema>;
 
 export interface CartLineDto {
@@ -40,6 +45,7 @@ export interface CartDto {
 export interface CheckoutResultDto {
   orderId: string;
   status: "pendiente" | "pagada" | "fallida";
+  paymentMethod: "bold" | "manual";
   total: { cents: number; formatted: string };
   /** URL a la que redirigir al cliente (pasarela o página de gracias). */
   redirectUrl: string;

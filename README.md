@@ -56,10 +56,12 @@ Todas se leen **en runtime**: la misma imagen sirve para cualquier dominio y ent
 | `/coleccion` | dinámica | Toda la colección: pestañas de línea, filtros comunes (marca, precio, disponibilidad) y orden |
 | `/coleccion/[linea]` | dinámica, filtros por `searchParams` (`?categoria=`, `?marca=a,b`, `?orden=precio-asc`…) | Página indexable de cada línea: chips de categoría y facetas propias de su plantilla. Con filtros → `noindex, follow`. `/coleccion?categoria=x` redirige a la línea |
 | `/reloj`, `/joya`, `/perfume`, `/producto` + `/[slug]` | dinámica | Detalle según la plantilla: hero, sub-nav sticky, descripción, notas olfativas (perfume), galería, banda, ficha, selector de presentación y cantidad, relacionados. JSON-LD `Product` (`AggregateOffer` con variantes), OG image dinámica |
-| `/gracias` | dinámica | Retorno del checkout; muestra el estado del pago si Bold está activo y registra la compra en la analítica (una vez por pedido) |
+| `/checkout` | dinámica, sin indexar | Resumen verificado en el servidor, datos del comprador, aceptación de términos y privacidad (versión vigente) y pago: Bold, pedido manual o aviso (ADR 0012) |
+| `/gracias` | dinámica | Estado del pedido; con Bold pendiente se refresca sola; en pedido manual, instrucciones y WhatsApp |
 | `/nosotros`, `/envios`, `/pagos`, `/garantia`, `/devoluciones`, `/terminos`, `/privacidad` | dinámica | Páginas institucionales y legales (Ley 1480, Ley 1581). Texto en `src/infrastructure/content/pages/`, plazos desde `SITE_CONTENT.policies`. Ver ADR 0006 |
 | `/og`, `/og?linea=<slug>` | imagen | Vista previa al compartir (1200 × 630) de la home, la colección, las líneas y las páginas institucionales |
-| `/api/checkout` | POST | Recalcula precio y disponibilidad en el servidor y abre la sesión de pago |
+| `/api/checkout/quote` | POST | Resumen del pedido con precios, stock y envío del servidor (no crea nada) |
+| `/api/checkout` | POST | Valida datos y consentimiento, recalcula en el servidor, guarda la orden y abre el pago |
 | `/api/webhooks/bold` | POST | Notificaciones de Bold con firma verificada |
 | `/api/media/[archivo]` | GET | Fotos subidas en desarrollo (sin Cloudinary) |
 | `/admin/*` | dinámica, protegida | Panel: `/admin/catalogo`, `/admin/pagos`, `/admin/login` |
@@ -90,12 +92,12 @@ docs/handoff        Prototipo y README originales      docs/adr   Decisiones
 ### Adaptadores
 
 1. **Catálogo:** MongoDB (`src/infrastructure/mongo/`), con respaldo en memoria si no hay `MONGODB_URI`. Ver `src/infrastructure/cms/README.md`.
-2. **Pagos:** `BoldPaymentGateway` (API de Links de pago). Con Bold inactivo en el panel delega en `NoopPaymentGateway`. Las órdenes se guardan en Mongo.
+2. **Pagos:** `BoldPaymentGateway` (API de Links de pago). Con Bold inactivo, el checkout registra un pedido manual (si el panel › Pagos lo permite) o avisa que no hay pagos en línea. Las órdenes, con comprador y consentimiento, se guardan en Mongo.
 3. **Analítica:** GA4 y píxel de Meta en el cliente, solo con consentimiento (ADR 0006). El puerto `Analytics` del servidor sigue siendo un registro en consola.
 
 ## Panel de administración (`/admin`)
 
-Un solo administrador entra con `ADMIN_PASSWORD`. La sesión es una cookie firmada que dura 7 días. El panel tiene tres secciones:
+Un solo administrador entra con `ADMIN_PASSWORD`. La sesión es una cookie firmada y `Secure` que dura 7 días (el panel exige HTTPS; en `http://` el login avisa). Secciones:
 
 - **Catálogo:**
   - **Líneas** (Relojería, Joyería, Perfumería…): se crean con nombre y plantilla (`reloj`, `joya`, `perfume` o `general`), con portada y frase para la home. La plantilla decide la ficha técnica y los filtros, y no cambia después (ADR 0005).
@@ -103,10 +105,12 @@ Un solo administrador entra con `ADMIN_PASSWORD`. La sesión es una cookie firma
   - **Fotos:** una sola biblioteca por pieza (se suben varias a la vez). Cada foto se asigna a uno o varios usos: portada, segunda vista, fondo del hero, imagen final y galería (ADR 0007).
   - Categorías agrupadas por línea, editables en línea.
   - Los cambios se publican en la tienda al guardar.
+- **Pedidos** (`/admin/pedidos`): lista por estado y detalle con piezas, comprador, entrega y la versión de términos y privacidad aceptada. Los pedidos manuales se marcan como pagados (descuenta stock) o se cancelan; los de Bold cambian solos por el webhook (ADR 0012).
 - **Inicio** (`/admin/inicio`): biblioteca de medios del sitio (fotos por el servidor; videos directo a Cloudinary con firma, hasta 100 MB) y contenido de la home: hero (pieza destacada o foto o video propio con antetítulo, título, texto y botón) banda (foto, frase y encuadre), los tres compromisos de "Garantía y autenticidad", los testimonios (solo se publican los visibles con autorización escrita del cliente) y las redes (activar, usuario y enlace). Además, el orden y la visibilidad de los bloques. Lo vacío o nunca editado usa los textos del código. "Vista previa" guarda un borrador y lo muestra en `/admin/vista-previa` (solo con sesión); "Publicar" lo lleva a la tienda, y las últimas 10 publicaciones se pueden volver a cargar (ADR 0008).
 - **Pagos:**
   - Configuración de Bold: activar el cobro, elegir ambiente (pruebas o producción) e ingresar la llave de identidad y la llave secreta (se guarda cifrada).
   - Muestra la URL del webhook para registrarla en Bold.
+  - **Sin pasarela:** con Bold inactivo, recibir el pedido y coordinar el pago (instrucciones editables que el cliente ve al confirmar) o desactivarlo para que el checkout avise que no hay pagos en línea.
 
 ### Puesta en marcha con servicios reales
 

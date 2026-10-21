@@ -225,13 +225,17 @@ describe("SavePaymentSettings", () => {
   it("exige llaves según el modo y conserva la secreta si llega vacía", async () => {
     const settings = new InMemoryPaymentSettingsRepository();
     const uc = new SavePaymentSettings({ settings, clock });
-    await expect(uc.execute({ enabled: true, mode: "pruebas", identityKey: "", secretKey: "" })).rejects.toMatchObject({ field: "identityKey" });
-    await expect(uc.execute({ enabled: true, mode: "produccion", identityKey: "pk", secretKey: "" })).rejects.toMatchObject({ field: "secretKey" });
+    const manual = { manualEnabled: true, manualInstructions: "Te escribimos por WhatsApp para coordinar el pago." };
+    await expect(uc.execute({ enabled: true, mode: "pruebas", identityKey: "", secretKey: "", ...manual })).rejects.toMatchObject({ field: "identityKey" });
+    await expect(uc.execute({ enabled: true, mode: "produccion", identityKey: "pk", secretKey: "", ...manual })).rejects.toMatchObject({ field: "secretKey" });
 
-    const view = await uc.execute({ enabled: true, mode: "produccion", identityKey: "pk", secretKey: "sk_live_12345678" });
-    expect(view).toMatchObject({ ready: true, secretKeyHint: "••••5678" });
-    await uc.execute({ enabled: true, mode: "produccion", identityKey: "pk2", secretKey: "" });
+    const view = await uc.execute({ enabled: true, mode: "produccion", identityKey: "pk", secretKey: "sk_live_12345678", ...manual });
+    expect(view).toMatchObject({ ready: true, secretKeyHint: "••••5678", manualEnabled: true });
+    await uc.execute({ enabled: true, mode: "produccion", identityKey: "pk2", secretKey: "", ...manual, manualEnabled: false });
     expect((await settings.get()).secretKey).toBe("sk_live_12345678");
+    expect((await settings.get()).manual.enabled).toBe(false);
+    // Las instrucciones del pedido manual no pueden quedar vacías.
+    await expect(uc.execute({ enabled: false, mode: "pruebas", identityKey: "", secretKey: "", manualEnabled: true, manualInstructions: "corto" })).rejects.toThrow();
   });
 });
 

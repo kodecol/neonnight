@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { ZodError } from "zod";
 import { getContainer } from "@/infrastructure/container";
-import { Checkout } from "@/application/use-cases/checkout";
+import { Checkout, GetLegalVersions } from "@/application/use-cases/checkout";
+import { FieldValidationError } from "@/application/lib/errors";
 import { DomainError } from "@/domain/errors";
 import { BoldGatewayError } from "@/infrastructure/payments/bold-payment-gateway";
 import { ROUTES, absoluteUrl } from "@/presentation/lib/site";
@@ -16,10 +17,17 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Cuerpo inválido." }, { status: 400 });
   }
   try {
-    const result = await new Checkout(getContainer()).execute(body, absoluteUrl(ROUTES.thanks));
+    const c = getContainer();
+    const legal = await new GetLegalVersions(c.content).execute();
+    const result = await new Checkout(c).execute(body, { returnUrl: absoluteUrl(ROUTES.thanks), legal });
     return NextResponse.json(result, { status: 200 });
   } catch (e) {
-    if (e instanceof ZodError) return NextResponse.json({ error: "Datos de la bolsa inválidos." }, { status: 400 });
+    if (e instanceof ZodError) {
+      const fieldErrors: Record<string, string> = {};
+      for (const issue of e.issues) fieldErrors[issue.path.join(".")] ??= issue.message;
+      return NextResponse.json({ error: "Revisa los datos marcados.", fieldErrors }, { status: 400 });
+    }
+    if (e instanceof FieldValidationError) return NextResponse.json({ error: e.message, fieldErrors: { [e.field]: e.message } }, { status: 409 });
     if (e instanceof DomainError) return NextResponse.json({ error: e.message }, { status: 409 });
     if (e instanceof BoldGatewayError) {
       console.error("[checkout] Bold", e.message);

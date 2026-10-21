@@ -202,6 +202,9 @@ export const PaymentSettingsInputSchema = z.object({
   identityKey: z.string().trim().max(200),
   /** Vacío = conservar la llave guardada. */
   secretKey: z.string().trim().max(200),
+  /** Pedidos sin pasarela cuando Bold está inactivo. */
+  manualEnabled: z.boolean(),
+  manualInstructions: z.string().trim().min(20, "Explica en una o dos frases cómo se coordina el pago.").max(600),
 });
 export type PaymentSettingsInput = z.infer<typeof PaymentSettingsInputSchema>;
 
@@ -212,6 +215,8 @@ export interface PaymentSettingsViewDto {
   /** `••••1234` o null si no hay llave. */
   secretKeyHint: string | null;
   ready: boolean;
+  manualEnabled: boolean;
+  manualInstructions: string;
   updatedAt: string | null;
 }
 
@@ -220,6 +225,7 @@ export interface OrderStatusDto {
   status: "pendiente" | "pagada" | "fallida" | "cancelada";
   totalFormatted: string;
   totalCents: number;
+  paymentMethod: "bold" | "manual";
   /** Para registrar la compra en analítica (sin datos del comprador). */
   lines: Array<{ productId: string; name: string; variantLabel: string; unitPriceCents: number; quantity: number }>;
 }

@@ -27,7 +27,8 @@ interface CartState {
 interface CartApi extends CartState {
   count: number;
   totalCents: number;
-  add: (item: CartItem) => void;
+  /** Añade a la bolsa; por defecto la abre (en "Comprar ahora" no, porque se va directo al checkout). */
+  add: (item: CartItem, opts?: { open?: boolean }) => void;
   setQuantity: (key: string, quantity: number) => void;
   remove: (key: string) => void;
   clear: () => void;
@@ -97,7 +98,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     return () => document.removeEventListener("keydown", onKey);
   }, [state.isOpen]);
 
-  const add = useCallback((item: CartItem) => {
+  const add = useCallback((item: CartItem, opts: { open?: boolean } = {}) => {
     track({ name: "add_to_cart", item: { id: item.productId, name: item.name, variant: item.variantLabel || undefined, priceCents: item.priceCents, quantity: item.quantity } });
     setState((s) => {
       const key = cartKey(item);
@@ -106,7 +107,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       const items = prev
         ? s.items.map((i) => (cartKey(i) === key ? { ...item, quantity: Math.min(item.maxQuantity, i.quantity + item.quantity) } : i))
         : [...s.items, { ...item, quantity: Math.min(item.maxQuantity, item.quantity) }];
-      return { ...s, items, isOpen: true };
+      return { ...s, items, isOpen: opts.open ?? true };
     });
   }, []);
   const setQuantity = useCallback(

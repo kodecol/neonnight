@@ -1,6 +1,6 @@
 import { existsSync } from "node:fs";
 import { join } from "node:path";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { createContainer } from "@/infrastructure/container";
 import { InMemoryProductRepository } from "@/infrastructure/repositories/in-memory-product-repository";
 import { InMemoryLineRepository } from "@/infrastructure/repositories/in-memory-line-repository";
@@ -14,10 +14,14 @@ import { GetFeaturedProduct } from "@/application/use-cases/get-featured-product
 import { BrowseCatalog } from "@/application/use-cases/browse-catalog";
 import { ListRelatedProducts } from "@/application/use-cases/list-related-products";
 import { ResolveCart } from "@/application/use-cases/resolve-cart";
-import { Checkout } from "@/application/use-cases/checkout";
+import { Checkout, QuoteCheckout } from "@/application/use-cases/checkout";
+import { GetAdminOrder, ListAdminOrders, UpdateOrderStatus } from "@/application/use-cases/admin/orders";
+import { InMemoryPaymentSettingsRepository } from "@/infrastructure/repositories/in-memory-payment-settings-repository";
+import { DEFAULT_PAYMENT_SETTINGS } from "@/application/ports/payment-settings";
+import { orderId } from "@/domain/entities/order";
 import { ListBrands } from "@/application/use-cases/list-brands";
 import { ListLines } from "@/application/use-cases/list-lines";
-import { LineNotFoundError, ProductNotFoundError, ProductUnavailableError } from "@/domain/errors";
+import { LineNotFoundError, PaymentsUnavailableError, ProductNotFoundError, ProductUnavailableError } from "@/domain/errors";
 import type { Product } from "@/domain/entities/product";
 
 const fixedClock = { now: () => new Date("2026-09-13T00:00:00Z") };
@@ -226,32 +230,74 @@ describe("ResolveCart", () => {
 });
 
 describe("Checkout", () => {
-  const make = (products: readonly Product[] = SEED_PRODUCTS) => {
+  const LEGAL = { terms: { version: "1.0", updatedAt: "2026-10-20" }, privacy: { version: "1.0", updatedAt: "2026-10-20" } };
+  const OPTS = { returnUrl: "http://x.test/gracias", legal: LEGAL };
+  const customer = {
+    name: "Ana Pérez",
+    documentType: "CC",
+    documentNumber: "1020304050",
+    email: "Ana@Example.com",
+    phone: "+57 300-123-4567",
+    address: "Calle 93 # 11-20 apto 501",
+    city: "Bogotá",
+    department: "Bogotá D.C.",
+    notes: "",
+  };
+  const consent = { accepted: true, termsVersion: "1.0", privacyVersion: "1.0" };
+  const body = (lines: unknown[], extra: Record<string, unknown> = {}) => ({ lines, customer, consent, ...extra });
+  const make = (products: readonly Product[] = SEED_PRODUCTS, over: Parameters<typeof createContainer>[0] = {}) => {
     const orders = new InMemoryOrderRepository();
-    const c = createContainer({ products: repo(products), orders, analytics: new NoopAnalytics(), clock: fixedClock, ids: seqIds() });
+    const c = createContainer({ products: repo(products), orders, analytics: new NoopAnalytics(), clock: fixedClock, ids: seqIds(), ...over });
     return { uc: new Checkout(c), orders };
   };
 
-  it("recalcula el total en el servidor y marca priceChanged si el cliente mintió", async () => {
+  it("sin pasarela: registra el pedido manual con el comprador y la versión aceptada", async () => {
     const { uc, orders } = make();
-    const res = await uc.execute({ lines: [{ productId: "w-01", quantity: 1 }], expectedTotalCents: 1 }, "http://x.test/gracias");
+    const res = await uc.execute(body([{ productId: "w-01", quantity: 1 }], { expectedTotalCents: 1 }), OPTS);
     expect(res.total.cents).toBe(168_000_000 * 100);
     expect(res.priceChanged).toBe(true);
-    expect(res.redirectUrl).toBe("http://x.test/gracias?orden=order-1");
-    expect(orders.all()[0]?.total.cents).toBe(168_000_000 * 100);
+    expect(res.paymentMethod).toBe("manual");
+    expect(res.orderId).toMatch(/^NN-\d{6}-[A-Z0-9]{5}$/);
+    expect(res.redirectUrl).toBe(`http://x.test/gracias?orden=${res.orderId}`);
+    const order = orders.all()[0]!;
+    expect(order.total.cents).toBe(168_000_000 * 100);
+    expect(order.shipping.cents).toBe(0);
+    expect(order.customer).toMatchObject({ email: "ana@example.com", phone: "+57 300 123 4567", department: "Bogotá D.C." });
+    expect(order.consent).toMatchObject({ termsVersion: "1.0", privacyVersion: "1.0" });
+  });
+
+  it("con Bold activo abre la pasarela y guarda la referencia", async () => {
+    const payments = { createSession: vi.fn(async () => ({ reference: "LNK_1", redirectUrl: "https://checkout.bold.co/LNK_1", status: "pendiente" as const })) };
+    const paymentSettings = new InMemoryPaymentSettingsRepository({ ...DEFAULT_PAYMENT_SETTINGS, enabled: true, identityKey: "pk_test" });
+    const { uc, orders } = make(SEED_PRODUCTS, { payments, paymentSettings });
+    const res = await uc.execute(body([{ productId: "w-03", quantity: 1 }]), OPTS);
+    expect(res).toMatchObject({ paymentMethod: "bold", redirectUrl: "https://checkout.bold.co/LNK_1" });
+    expect(orders.all()[0]).toMatchObject({ paymentMethod: "bold", paymentReference: "LNK_1", status: "pendiente" });
+  });
+
+  it("sin pasarela ni pedido manual no deja comprar", async () => {
+    const paymentSettings = new InMemoryPaymentSettingsRepository({ ...DEFAULT_PAYMENT_SETTINGS, manual: { ...DEFAULT_PAYMENT_SETTINGS.manual, enabled: false } });
+    await expect(make(SEED_PRODUCTS, { paymentSettings }).uc.execute(body([{ productId: "w-03", quantity: 1 }]), OPTS)).rejects.toBeInstanceOf(PaymentsUnavailableError);
+  });
+
+  it("exige aceptar la versión vigente de términos y privacidad, y datos válidos", async () => {
+    const { uc } = make();
+    await expect(uc.execute(body([{ productId: "w-03", quantity: 1 }], { consent: { ...consent, accepted: false } }), OPTS)).rejects.toThrow();
+    await expect(uc.execute(body([{ productId: "w-03", quantity: 1 }], { consent: { ...consent, termsVersion: "0.9" } }), OPTS)).rejects.toMatchObject({ field: "consent" });
+    await expect(uc.execute(body([{ productId: "w-03", quantity: 1 }], { customer: { ...customer, phone: "12345" } }), OPTS)).rejects.toThrow();
+    await expect(uc.execute(body([{ productId: "w-03", quantity: 1 }], { customer: { ...customer, documentNumber: "abc" } }), OPTS)).rejects.toThrow();
+    await expect(uc.execute(body([{ productId: "w-03", quantity: 1 }], { customer: { ...customer, department: "Narnia" } }), OPTS)).rejects.toThrow();
   });
 
   it("cobra la presentación elegida por cantidad y une líneas repetidas", async () => {
     const { uc, orders } = make();
     const res = await uc.execute(
-      {
-        lines: [
-          { productId: "pf-01", variantId: "50-ml", quantity: 1 },
-          { productId: "pf-01", variantId: "50-ml", quantity: 1 },
-          { watchId: "w-03", quantity: 1 },
-        ],
-      },
-      "http://x.test/gracias",
+      body([
+        { productId: "pf-01", variantId: "50-ml", quantity: 1 },
+        { productId: "pf-01", variantId: "50-ml", quantity: 1 },
+        { watchId: "w-03", quantity: 1 },
+      ]),
+      OPTS,
     );
     expect(res.total.cents).toBe((2 * 1_520_000 + 16_900_000) * 100);
     const order = orders.all()[0]!;
@@ -261,23 +307,51 @@ describe("Checkout", () => {
 
   it("rechaza piezas vendidas, stock insuficiente y presentaciones sin elegir", async () => {
     const sold = SEED_PRODUCTS.map((p) => (p.id === "w-02" ? { ...p, availability: "vendido" as const } : p));
-    await expect(make(sold).uc.execute({ lines: [{ productId: "w-02", quantity: 1 }] }, "http://x.test/gracias")).rejects.toBeInstanceOf(ProductUnavailableError);
+    await expect(make(sold).uc.execute(body([{ productId: "w-02", quantity: 1 }]), OPTS)).rejects.toBeInstanceOf(ProductUnavailableError);
 
     const err = await make()
-      .uc.execute({ lines: [{ productId: "pf-01", variantId: "100-ml", quantity: 5 }] }, "http://x.test/gracias")
+      .uc.execute(body([{ productId: "pf-01", variantId: "100-ml", quantity: 5 }]), OPTS)
       .catch((e: unknown) => e);
     expect(err).toBeInstanceOf(ProductUnavailableError);
     expect((err as Error).message).toContain("solo tiene 3 unidades");
 
-    await expect(make().uc.execute({ lines: [{ productId: "pf-01", quantity: 1 }] }, "http://x.test/gracias")).rejects.toBeInstanceOf(ProductUnavailableError);
-    await expect(make().uc.execute({ lines: [{ productId: "w-01", quantity: 2 }] }, "http://x.test/gracias")).rejects.toBeInstanceOf(ProductUnavailableError);
+    await expect(make().uc.execute(body([{ productId: "pf-01", quantity: 1 }]), OPTS)).rejects.toBeInstanceOf(ProductUnavailableError);
+    await expect(make().uc.execute(body([{ productId: "w-01", quantity: 2 }]), OPTS)).rejects.toBeInstanceOf(ProductUnavailableError);
   });
 
   it("rechaza ids desconocidos y entradas inválidas", async () => {
     const { uc } = make();
-    await expect(uc.execute({ lines: [{ productId: "zzz", quantity: 1 }] }, "http://x.test/gracias")).rejects.toBeInstanceOf(ProductNotFoundError);
-    await expect(uc.execute({ lines: [] }, "http://x.test/gracias")).rejects.toThrow();
-    await expect(uc.execute({ lines: [{ productId: "w-01", quantity: 11 }] }, "http://x.test/gracias")).rejects.toThrow();
+    await expect(uc.execute(body([{ productId: "zzz", quantity: 1 }]), OPTS)).rejects.toBeInstanceOf(ProductNotFoundError);
+    await expect(uc.execute(body([]), OPTS)).rejects.toThrow();
+    await expect(uc.execute(body([{ productId: "w-01", quantity: 11 }]), OPTS)).rejects.toThrow();
+  });
+
+  it("la cotización marca lo que no se puede pagar sin lanzar", async () => {
+    const sold = SEED_PRODUCTS.map((p) => (p.id === "w-02" ? { ...p, availability: "vendido" as const } : p));
+    const q = await new QuoteCheckout(repo(sold)).execute({ lines: [{ productId: "w-02", quantity: 1 }, { productId: "w-03", quantity: 1 }, { productId: "nada", quantity: 1 }] });
+    expect(q.lines).toHaveLength(2);
+    expect(q.lines[0]!.problem).toContain("ya no está disponible");
+    expect(q.lines[1]!.problem).toBeNull();
+    expect(q.ready).toBe(false);
+    expect(q.shipping).toMatchObject({ cents: 0, label: "Sin costo · asegurado" });
+    expect(q.total.cents).toBe(q.subtotal.cents);
+  });
+
+  it("pedidos en el panel: marcar pagado descuenta stock; Bold no se toca a mano", async () => {
+    const { uc, orders } = make();
+    const products = repo();
+    const { orderId: id } = await new Checkout(createContainer({ products, orders, analytics: new NoopAnalytics(), clock: fixedClock, ids: seqIds() })).execute(
+      body([{ productId: "pf-01", variantId: "100-ml", quantity: 2 }]),
+      OPTS,
+    );
+    void uc;
+    const row = await new GetAdminOrder(orders).execute(id);
+    expect(row).toMatchObject({ canMarkPaid: true, canCancel: true, customerDetail: { name: "Ana Pérez" } });
+    await new UpdateOrderStatus({ orders, products }).execute(id, "pagada");
+    expect((await orders.findById(orderId(id)))?.status).toBe("pagada");
+    expect((await products.findById("pf-01"))?.variants.find((v) => v.id === "100-ml")?.stock).toBe(1);
+    await expect(new UpdateOrderStatus({ orders, products }).execute(id, "cancelada")).rejects.toMatchObject({ field: "status" });
+    expect((await new ListAdminOrders(orders).execute("pagada")).map((o) => o.id)).toEqual([id]);
   });
 });
 

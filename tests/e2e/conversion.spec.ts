@@ -20,25 +20,58 @@ test.describe("Caminos de conversión", () => {
     await expect(page.locator("[data-testid=cart-count]")).toHaveText("1");
   });
 
-  test("checkout recalcula en el servidor y redirige a gracias", async ({ page }) => {
+  test("checkout: datos del comprador, aceptación legal y pedido manual sin pasarela", async ({ page }) => {
     await page.goto("/reloj/rolex-cosmograph-daytona-126500ln");
     await page.locator("[data-testid=add-rolex-cosmograph-daytona-126500ln]").click();
     await page.locator("[data-testid=checkout-button]").click();
-    await expect(page).toHaveURL(/\/gracias\?orden=nn-/);
+    await expect(page).toHaveURL(/\/checkout$/);
+    await expect(page.getByTestId("checkout-total")).toHaveText(/\$ [\d.]+ COP/);
+    await expect(page.getByTestId("checkout-summary")).toContainText("Sin costo");
+
+    // Sin aceptar los términos no avanza.
+    const form = page.getByTestId("checkout-form");
+    await form.getByLabel("Nombre completo").fill("Ana Pérez");
+    await form.getByLabel("Número de documento").fill("1020304050");
+    await form.getByLabel("Correo").fill("ana@example.com");
+    await form.getByLabel("Celular").fill("300 123 4567");
+    await form.getByLabel("Dirección").fill("Calle 93 # 11-20");
+    await form.getByLabel("Ciudad o municipio").fill("Bogotá");
+    await form.getByLabel("Departamento").selectOption("Bogotá D.C.");
+    await page.getByTestId("checkout-submit").click();
+    await expect(page.getByText("Debes aceptar los términos y la política de privacidad.")).toBeVisible();
+
+    // Un dato inválido vuelve marcado desde el servidor.
+    await form.getByLabel("Celular").fill("12345");
+    await page.getByTestId("checkout-consent").locator("input").check();
+    await page.getByTestId("checkout-submit").click();
+    await expect(page.getByText(/celular colombiano/)).toBeVisible();
+
+    await form.getByLabel("Celular").fill("300 123 4567");
+    await page.getByTestId("checkout-submit").click();
+    await expect(page).toHaveURL(/\/gracias\?orden=NN-\d{6}-[A-Z0-9]{5}$/);
+    await expect(page.getByTestId("order-pendiente")).toBeVisible();
+    await expect(page.getByTestId("order-whatsapp")).toHaveAttribute("href", /wa\.me\/573000000000\?text=.*NN-/);
     await expect(page.locator("[data-testid=cart-count]")).toHaveText("0");
   });
 
-  test("el checkout rechaza importes manipulados y piezas inexistentes", async ({ request }) => {
-    const ok = await request.post("/api/checkout", { data: { lines: [{ productId: "w-03", quantity: 1 }], expectedTotalCents: 1 } });
+  test("el checkout rechaza importes manipulados, piezas inexistentes y datos incompletos", async ({ request }) => {
+    const customer = { name: "Ana Pérez", documentType: "CC", documentNumber: "1020304050", email: "ana@example.com", phone: "3001234567", address: "Calle 93 # 11-20", city: "Bogotá", department: "Bogotá D.C." };
+    const legal = await (await request.get("/terminos")).text();
+    const version = /Versión ([\d.]+)/.exec(legal)?.[1] ?? "1.0";
+    const consent = { accepted: true, termsVersion: version, privacyVersion: version };
+    const ok = await request.post("/api/checkout", { data: { lines: [{ productId: "w-03", quantity: 1 }], expectedTotalCents: 1, customer, consent } });
     expect(ok.status()).toBe(200);
-    const body = (await ok.json()) as { total: { cents: number }; priceChanged: boolean };
+    const body = (await ok.json()) as { total: { cents: number }; priceChanged: boolean; paymentMethod: string };
     expect(body.total.cents).toBe(16_900_000 * 100);
     expect(body.priceChanged).toBe(true);
+    expect(body.paymentMethod).toBe("manual");
 
-    const bad = await request.post("/api/checkout", { data: { lines: [{ productId: "nope", quantity: 1 }] } });
+    const bad = await request.post("/api/checkout", { data: { lines: [{ productId: "nope", quantity: 1 }], customer, consent } });
     expect(bad.status()).toBe(409);
     const invalid = await request.post("/api/checkout", { data: { lines: [] } });
     expect(invalid.status()).toBe(400);
+    const noConsent = await request.post("/api/checkout", { data: { lines: [{ productId: "w-03", quantity: 1 }], customer, consent: { ...consent, accepted: false } } });
+    expect(noConsent.status()).toBe(400);
   });
 
   test("perfume: elegir presentación y cantidad, y la bolsa suma por unidades", async ({ page }) => {
@@ -51,7 +84,8 @@ test.describe("Caminos de conversión", () => {
     await expect(page.locator("[data-testid=cart-total]")).toHaveText("$ 4.080.000 COP");
     await expect(page.locator("[data-testid=cart-count]")).toHaveText("2");
     await page.locator("[data-testid=checkout-button]").click();
-    await expect(page).toHaveURL(/\/gracias\?orden=nn-/);
+    await expect(page).toHaveURL(/\/checkout$/);
+    await expect(page.getByTestId("checkout-total")).toHaveText("$ 4.080.000 COP");
   });
 
   test("colección: líneas, filtros por URL y orden", async ({ page }) => {

@@ -38,9 +38,9 @@ test.describe("Páginas institucionales y legales", () => {
     await page.goto("/reloj/rolex-cosmograph-daytona-126500ln");
     await expect(page.getByTestId("add-rolex-cosmograph-daytona-126500ln")).toBeVisible();
     await page.getByTestId("buy-rolex-cosmograph-daytona-126500ln").click();
-    // Sin pasarela activa el checkout termina en /gracias; la bolsa no se toca.
-    await expect(page).toHaveURL(/\/gracias\?orden=/);
-    await expect(page.getByTestId("cart-count")).toHaveText("0");
+    // "Comprar ahora" lleva directo al checkout con la pieza.
+    await expect(page).toHaveURL(/\/checkout$/);
+    await expect(page.getByTestId("checkout-summary")).toContainText("Daytona");
   });
 
   test("la bolsa avisa de los términos antes de pagar", async ({ page }) => {

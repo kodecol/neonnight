@@ -20,4 +20,5 @@ export const ROUTES = {
   line: (slug: string) => `/coleccion/${slug}`,
   product: (kind: ProductKind, slug: string) => `/${PRODUCT_SEGMENT[kind]}/${slug}`,
   thanks: "/gracias",
+  checkout: "/checkout",
 } as const;

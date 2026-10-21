@@ -16,6 +16,13 @@ export class InMemoryOrderRepository implements OrderRepository {
     return [...this.orders.values()].find((o) => o.paymentReference === reference) ?? null;
   }
 
+  async list(opts: { status?: Order["status"]; limit?: number } = {}): Promise<readonly Order[]> {
+    return [...this.orders.values()]
+      .filter((o) => !opts.status || o.status === opts.status)
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+      .slice(0, opts.limit ?? 200);
+  }
+
   all(): readonly Order[] {
     return [...this.orders.values()];
   }

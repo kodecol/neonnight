@@ -54,3 +54,9 @@ export class MediaInUseError extends DomainError {
     super(`Esta foto se usa en: ${where.join(", ")}. Cámbiala allí antes de quitarla.`);
   }
 }
+
+export class PaymentsUnavailableError extends DomainError {
+  constructor() {
+    super("Por ahora no recibimos pagos en línea. Escríbenos por WhatsApp y cerramos la compra contigo.");
+  }
+}

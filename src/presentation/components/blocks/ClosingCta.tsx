@@ -9,16 +9,17 @@ import { Price } from "@/presentation/components/primitives/Price";
 import { QuantityStepper } from "@/presentation/components/primitives/QuantityStepper";
 import { cn } from "@/presentation/lib/cn";
 import { RichText } from "@/presentation/components/primitives/RichText";
-import { useCheckout } from "@/presentation/hooks/use-checkout";
-import type { CartItem } from "@/presentation/hooks/use-cart";
+import { useRouter } from "next/navigation";
+import { useCart, type CartItem } from "@/presentation/hooks/use-cart";
+import { ROUTES } from "@/presentation/lib/site";
 import { AddToCartButton } from "./AddToCartButton";
 
 type Content = SiteContent["product"]["purchase"];
 
 /**
  * Cierre de compra: presentación (si hay varias), cantidad (si se vende por
- * unidades) y CTA: "Comprar ahora" paga solo esta pieza (la bolsa no se toca)
- * y "Añadir a la bolsa" la guarda. Precio y stock siguen a la opción elegida;
+ * unidades) y CTA: "Comprar ahora" la suma a la bolsa y lleva al checkout;
+ * "Añadir a la bolsa" la guarda y abre la bolsa. Precio y stock siguen a la opción elegida;
  * el servidor los vuelve a validar al pagar.
  */
 export function ClosingCta({
@@ -33,7 +34,13 @@ export function ClosingCta({
   legalNote: string;
   variantLabel: string;
 }) {
-  const { start, submitting, error } = useCheckout();
+  const router = useRouter();
+  const cart = useCart();
+  // "Comprar ahora": la pieza va a la bolsa (sin abrirla) y se pasa directo al checkout.
+  const buyNow = (item: CartItem) => {
+    cart.add(item, { open: false });
+    router.push(ROUTES.checkout);
+  };
   const initial = product.variants.find((v) => v.purchasable) ?? product.variants[0]!;
   const [variantId, setVariantId] = useState(initial.id);
   const [quantity, setQuantity] = useState(1);
@@ -95,16 +102,11 @@ export function ClosingCta({
       <div className="flex flex-col gap-4 lg:max-w-[520px]">
         <div className="flex flex-wrap items-center gap-3.5">
           {canBuy && variant.maxQuantity > 1 && <QuantityStepper value={quantity} max={variant.maxQuantity} onChange={setQuantity} label={content.quantity} />}
-          <Button size="lg" disabled={!item || submitting} onClick={() => item && start([item])} data-testid={`buy-${product.slug}`}>
-            {submitting ? "Procesando…" : canBuy ? content.buyNow : multi ? "Agotado" : product.status.label}
+          <Button size="lg" disabled={!item} onClick={() => item && buyNow(item)} data-testid={`buy-${product.slug}`}>
+            {canBuy ? content.buyNow : multi ? "Agotado" : product.status.label}
           </Button>
           {canBuy && <AddToCartButton size="lg" variant="secondary" testId={`add-${product.slug}`} label={content.add} item={item} />}
         </div>
-        {error && (
-          <p role="alert" className="m-0 text-legal text-accent">
-            {error}
-          </p>
-        )}
         {canBuy && (
           <p className="m-0 text-legal text-ink-3 [text-wrap:pretty]">
             <RichText text={legalNote} linkClassName="text-ink-2" />

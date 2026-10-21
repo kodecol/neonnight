@@ -10,6 +10,8 @@ interface SettingsDoc {
   identityKey: string;
   /** Llave secreta cifrada con AES-256-GCM (ver secret-box.ts). */
   secretKeySealed: string | null;
+  /** Documentos anteriores no lo traen: pedido manual activo con las instrucciones por defecto. */
+  manual?: { enabled: boolean; instructions: string };
   updatedAt: Date;
 }
 
@@ -28,7 +30,7 @@ export class MongoPaymentSettingsRepository implements PaymentSettingsRepository
     if (!d) return DEFAULT_PAYMENT_SETTINGS;
     const secret = this.secret();
     const secretKey = d.secretKeySealed && secret ? (open(d.secretKeySealed, secret) ?? "") : "";
-    return { enabled: d.enabled, mode: d.mode, identityKey: d.identityKey, secretKey, updatedAt: d.updatedAt };
+    return { enabled: d.enabled, mode: d.mode, identityKey: d.identityKey, secretKey, manual: d.manual ?? DEFAULT_PAYMENT_SETTINGS.manual, updatedAt: d.updatedAt };
   }
 
   async save(s: PaymentSettings): Promise<void> {
@@ -41,6 +43,7 @@ export class MongoPaymentSettingsRepository implements PaymentSettingsRepository
       mode: s.mode,
       identityKey: s.identityKey,
       secretKeySealed: s.secretKey && secret ? seal(s.secretKey, secret) : null,
+      manual: s.manual,
       updatedAt: s.updatedAt ?? new Date(),
     };
     await (await this.col()).replaceOne({ _id: "payments" }, doc, { upsert: true });

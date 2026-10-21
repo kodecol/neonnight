@@ -7,8 +7,9 @@ import { cn } from "@/presentation/lib/cn";
 
 const NAV = [
   { n: "01", href: "/admin/catalogo", label: "Catálogo" },
-  { n: "02", href: "/admin/inicio", label: "Inicio" },
-  { n: "03", href: "/admin/pagos", label: "Pagos" },
+  { n: "02", href: "/admin/pedidos", label: "Pedidos" },
+  { n: "03", href: "/admin/inicio", label: "Inicio" },
+  { n: "04", href: "/admin/pagos", label: "Pagos" },
 ] as const;
 
 /**
