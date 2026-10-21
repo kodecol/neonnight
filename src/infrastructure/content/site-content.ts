@@ -13,6 +13,12 @@ const YOUTUBE_URL = process.env.YOUTUBE_URL || process.env.NEXT_PUBLIC_YOUTUBE_U
 // TikTok aparece solo cuando exista el perfil (TIKTOK_URL).
 const TIKTOK_URL = process.env.TIKTOK_URL || process.env.NEXT_PUBLIC_TIKTOK_URL || "";
 
+/**
+ * Transportadora por defecto. Se edita en el panel › Legales › Envíos; los
+ * textos que la nombran la toman de aquí (y el panel la reemplaza al fusionar).
+ */
+export const CARRIER = "Interrapidísimo";
+
 export const SITE_CONTENT: SiteContent = {
   company: {
     tradeName: "NEON NIGHT",
@@ -35,7 +41,7 @@ export const SITE_CONTENT: SiteContent = {
     returnDays: 10,
     retractBusinessDays: 5,
     refundMaxDays: 30,
-    shipping: { carrier: "Coordinadora", free: true, handlingDays: 1, transitMain: [1, 3], transitOther: [3, 6], maxDays: 30 },
+    shipping: { carrier: CARRIER, trackingUrl: "https://www.interrapidisimo.com/", free: true, handlingDays: 1, transitMain: [1, 3], transitOther: [3, 6], maxDays: 30 },
   },
 
   brand: {
@@ -128,7 +134,7 @@ export const SITE_CONTENT: SiteContent = {
         {
           number: "03",
           title: "Envío asegurado, sin costo",
-          body: "Despachamos al siguiente día hábil con Coordinadora, asegurado y sin costo, a toda Colombia. Tienes 10 días desde la entrega para devolver la pieza.",
+          body: `Despachamos al siguiente día hábil con ${CARRIER}, asegurado y sin costo, a toda Colombia. Tienes 10 días desde la entrega para devolver la pieza.`,
           accent: true,
         },
       ],
@@ -323,7 +329,7 @@ export const SITE_CONTENT: SiteContent = {
     },
     related: {
       nosotros: { label: "Nosotros", body: "Quiénes somos y cómo verificamos cada pieza." },
-      envios: { label: "Envíos", body: "Asegurados y sin costo a toda Colombia, con Coordinadora." },
+      envios: { label: "Envíos", body: `Asegurados y sin costo a toda Colombia, con ${CARRIER}.` },
       pagos: { label: "Pagos", body: "Medios de pago, seguridad y confirmación del pedido." },
       garantia: { label: "Garantía", body: "12 meses en todas las piezas, desde la entrega." },
       devoluciones: { label: "Cambios y devoluciones", body: "10 días para devolver o cambiar tu pieza." },

@@ -80,7 +80,7 @@ export function shippingPage(ctx: PageContext): InfoPage {
         blocks: [
           {
             type: "p",
-            text: `Cuando despachamos te enviamos el número de guía de ${shipping.carrier}. Con él puedes seguir el envío en [coordinadora.com](https://www.coordinadora.com) o preguntarnos en cualquier momento.`,
+            text: `Cuando despachamos te enviamos el número de guía de ${shipping.carrier}. Con él puedes seguir el envío en la [página de ${shipping.carrier}](${shipping.trackingUrl}) o preguntarnos en cualquier momento.`,
           },
         ],
       },

@@ -119,6 +119,8 @@ export interface StorePolicies {
   refundMaxDays: number;
   shipping: {
     carrier: string;
+    /** Página de la transportadora donde se consulta la guía (https). */
+    trackingUrl: string;
     free: boolean;
     /** Días hábiles hasta despachar tras el pago aprobado. */
     handlingDays: number;
