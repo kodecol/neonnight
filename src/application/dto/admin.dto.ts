@@ -108,6 +108,10 @@ export const AdminVariantInputSchema = z.object({
 });
 export type AdminVariantInput = z.infer<typeof AdminVariantInputSchema>;
 
+/** Párrafo de la descripción o ítem de "incluye": límites por elemento para que nadie guarde megas en una ficha. */
+const MAX_DESCRIPTION_ITEM = 2000;
+const MAX_INCLUDES_ITEM = 200;
+
 export const AdminProductInputSchema = z.object({
   id: z.string().min(1).nullable(),
   line: text(60, "Elige una línea."),
@@ -123,10 +127,22 @@ export const AdminProductInputSchema = z.object({
   availability: z.enum(PRODUCT_AVAILABILITIES),
   featured: z.boolean(),
   subtitle: text(120),
-  description: z.array(z.string().trim().min(1)).max(12),
-  includes: z.array(z.string().trim().min(1)).max(12),
+  description: z.array(z.string().trim().min(1).max(MAX_DESCRIPTION_ITEM, `Máximo ${MAX_DESCRIPTION_ITEM} caracteres por párrafo.`)).max(12),
+  includes: z.array(z.string().trim().min(1).max(MAX_INCLUDES_ITEM)).max(12),
   specs: ProductSpecsInputSchema,
-  variants: z.array(AdminVariantInputSchema).min(1, "Añade al menos una presentación.").max(12),
+  variants: z
+    .array(AdminVariantInputSchema)
+    .min(1, "Añade al menos una presentación.")
+    .max(12)
+    .superRefine((variants, ctx) => {
+      // El carrito busca la presentación por id (la primera que coincide): uno repetido cobraría el precio de otra.
+      const ids = new Set<string>();
+      variants.forEach((v, i) => {
+        if (v.id === null) return;
+        if (ids.has(v.id)) ctx.addIssue({ code: "custom", path: [i, "id"], message: "Presentación repetida." });
+        ids.add(v.id);
+      });
+    }),
   media: AdminMediaInputSchema,
 });
 export type AdminProductInput = z.infer<typeof AdminProductInputSchema>;

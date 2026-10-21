@@ -115,6 +115,15 @@ describe("SaveProduct", () => {
     await expect(
       uc.execute(perfumeInput({ variants: [{ id: null, label: "50 ml", priceUnits: 1, stock: 1 }, { id: null, label: "50 ML", priceUnits: 1, stock: 1 }] })),
     ).rejects.toMatchObject({ field: "variants.1.label" });
+    // Ids de presentación repetidos: el carrito tomaría la primera y cobraría otro precio.
+    await expect(
+      uc.execute(perfumeInput({ variants: [{ id: "v-1", label: "50 ml", priceUnits: 1, stock: 1 }, { id: "v-1", label: "100 ml", priceUnits: 2, stock: 1 }] })),
+    ).rejects.toBeInstanceOf(ZodError);
+    // Párrafos de descripción enormes o demasiados ítems.
+    await expect(uc.execute(watchInput({ description: ["x".repeat(2 * 1024 * 1024)] }))).rejects.toBeInstanceOf(ZodError);
+    await expect(uc.execute(watchInput({ description: ["x".repeat(2001)] }))).rejects.toBeInstanceOf(ZodError);
+    await expect(uc.execute(watchInput({ description: Array.from({ length: 13 }, () => "Párrafo.") }))).rejects.toBeInstanceOf(ZodError);
+    await expect(uc.execute(watchInput({ includes: ["x".repeat(201)] }))).rejects.toBeInstanceOf(ZodError);
     await expect(
       uc.execute(watchInput({ media: { library: [{ src: "https://evil.example/x.png", width: 1, height: 1 }], roles: { front: "https://evil.example/x.png", back: null, hero: null, band: null }, gallery: [] } })),
     ).rejects.toBeInstanceOf(ZodError);
