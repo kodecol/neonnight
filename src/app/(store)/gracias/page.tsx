@@ -31,7 +31,7 @@ export default async function ThanksPage({ searchParams }: { searchParams: Promi
     return (
       <main className="flex min-h-screen flex-col justify-center px-page pt-header">
         <Kicker>Pedido</Kicker>
-        <h1 className="mb-4 mt-4 text-display-fluid uppercase max-sm:text-h2-sm">No encontramos el pedido</h1>
+        <h1 className="mb-4 mt-4 text-display-fluid uppercase max-md:text-[min(44px,9vw)]">No encontramos el pedido</h1>
         <p className="m-0 max-w-[52ch] text-lead text-ink-2">Revisa el enlace o escríbenos con tu número de pedido.</p>
         <div className="mt-9 flex gap-4">
           <Button href={ROUTES.collection}>Ver la colección</Button>
@@ -60,7 +60,7 @@ export default async function ThanksPage({ searchParams }: { searchParams: Promi
       )}
       {order.status === "pendiente" && order.paymentMethod === "bold" && <AutoRefresh />}
       <Kicker>{copy.kicker}</Kicker>
-      <h1 className="mb-4 mt-4 text-display-fluid uppercase">{copy.title}</h1>
+      <h1 className="mb-4 mt-4 text-display-fluid uppercase max-md:text-[min(44px,9vw)]">{copy.title}</h1>
       <p className="m-0 text-meta text-ink-2">
         Pedido <span className="text-ink" data-testid="order-id">{order.id}</span> · {order.totalFormatted}
       </p>

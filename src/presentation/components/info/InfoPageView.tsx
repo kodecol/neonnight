@@ -48,7 +48,7 @@ export function InfoPageView({
       <header className="border-b border-divider px-page pb-14 pt-12 md:pb-20 md:pt-16">
         <Breadcrumb items={[{ label: breadcrumbHome, href: "/" }, { label: breadcrumbLabel }]} />
         <Kicker className="mt-10">{page.kicker}</Kicker>
-        <h1 className="mb-0 mt-4 max-w-[18ch] text-display-fluid uppercase [text-wrap:balance]">{page.title}</h1>
+        <h1 className="mb-0 mt-4 max-w-[18ch] text-display-fluid uppercase max-md:text-[min(44px,9vw)] [text-wrap:balance]">{page.title}</h1>
         <p className="mb-0 mt-7 max-w-[62ch] text-lead text-ink-2 [text-wrap:pretty]">{page.lead}</p>
         {legal && (
           <p className="mb-0 mt-8 text-legal text-ink-3">
