@@ -16,6 +16,7 @@ import { BrowseCatalog } from "@/application/use-cases/browse-catalog";
 import { ListRelatedProducts } from "@/application/use-cases/list-related-products";
 import { ResolveCart } from "@/application/use-cases/resolve-cart";
 import { Checkout, QuoteCheckout } from "@/application/use-cases/checkout";
+import { CustomerInputSchema } from "@/application/dto/checkout.dto";
 import { GetAdminOrder, ListAdminOrders, UpdateOrderStatus, parseAdminOrderFilters } from "@/application/use-cases/admin/orders";
 import { InMemoryPaymentSettingsRepository } from "@/infrastructure/repositories/in-memory-payment-settings-repository";
 import { DEFAULT_PAYMENT_SETTINGS } from "@/application/ports/payment-settings";
@@ -293,6 +294,14 @@ describe("Checkout", () => {
     await expect(uc.execute(body([{ productId: "w-03", quantity: 1 }], { customer: { ...customer, phone: "12345" } }), OPTS)).rejects.toThrow();
     await expect(uc.execute(body([{ productId: "w-03", quantity: 1 }], { customer: { ...customer, documentNumber: "abc" } }), OPTS)).rejects.toThrow();
     await expect(uc.execute(body([{ productId: "w-03", quantity: 1 }], { customer: { ...customer, department: "Narnia" } }), OPTS)).rejects.toThrow();
+  });
+
+  it("el error del documento sale junto con los de otros campos", () => {
+    // El departamento sin elegir (un enum) cortaba las validaciones del objeto.
+    const res = CustomerInputSchema.safeParse({ ...customer, name: "A", department: "", documentNumber: "12" });
+    const fields = res.error?.issues.map((i) => i.path.join("."));
+    expect(fields).toEqual(expect.arrayContaining(["name", "department", "documentNumber"]));
+    expect(CustomerInputSchema.safeParse({ ...customer, documentType: "NIT", documentNumber: "900123456-7" }).success).toBe(true);
   });
 
   it("cobra la presentación elegida por cantidad y une líneas repetidas", async () => {
