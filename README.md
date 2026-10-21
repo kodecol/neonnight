@@ -99,7 +99,7 @@ docs/handoff        Prototipo y README originales      docs/adr   Decisiones
 
 Un solo administrador. La primera vez entra con `ADMIN_PASSWORD`; al cambiarla en **Cuenta** queda guardada con hash (scrypt) en la base y la del entorno deja de aplicar. La sesión es una cookie firmada y `Secure` que dura 7 días (el panel exige HTTPS; en `http://` el login avisa) y lleva una versión: cambiar la contraseña o "cerrar las demás sesiones" invalida las anteriores. El login admite 5 fallos por IP cada 15 minutos (y 50 en total).
 
-El menú agrupa las secciones por intención: **Operación** (Pedidos, Catálogo, Marcas), **Sitio** (Inicio, Legales) y **Configuración**, con un único módulo **Ajustes** en pestañas (Pagos, Seguridad…; el mapa está en `src/presentation/components/admin/admin-nav.ts`). En móvil, el menú abre a pantalla completa. Las rutas viejas `/admin/pagos` y `/admin/cuenta` redirigen. Secciones:
+El menú agrupa las secciones por intención: **Operación** (Pedidos, Catálogo, Marcas), **Sitio** (Inicio, Legales) y **Configuración**, con un único módulo **Ajustes** en pestañas (Identidad, Pagos y Seguridad; el mapa está en `src/presentation/components/admin/admin-nav.ts`). En móvil, el menú abre a pantalla completa. Las rutas viejas `/admin/pagos` y `/admin/cuenta` redirigen. Secciones:
 
 - **Catálogo:**
   - **Líneas** (Relojería, Joyería, Perfumería…): se crean con nombre y plantilla (`reloj`, `joya`, `perfume` o `general`), con portada y frase para la home. La plantilla decide la ficha técnica y los filtros, y no cambia después (ADR 0005).

@@ -17,10 +17,12 @@ test.describe("Panel › Menú", () => {
     await expect(nav.getByRole("link", { name: "Catálogo" })).toHaveAttribute("aria-current", "page");
 
     await nav.getByRole("link", { name: "Ajustes" }).click();
-    await expect(page).toHaveURL(/\/admin\/ajustes\/pagos$/);
+    await expect(page).toHaveURL(/\/admin\/ajustes\/identidad$/);
     await expect(nav.getByRole("link", { name: "Ajustes" })).toHaveAttribute("aria-current", "page");
     const tabs = page.getByRole("navigation", { name: "Ajustes" });
-    await expect(tabs.getByRole("link", { name: "Pagos" })).toHaveAttribute("aria-current", "page");
+    await expect(tabs.getByRole("link", { name: "Identidad" })).toHaveAttribute("aria-current", "page");
+    await tabs.getByRole("link", { name: "Pagos" }).click();
+    await expect(page).toHaveURL(/\/admin\/ajustes\/pagos$/);
     await tabs.getByRole("link", { name: "Seguridad" }).click();
     await expect(page).toHaveURL(/\/admin\/ajustes\/seguridad$/);
     await expect(nav.getByRole("link", { name: "Ajustes" })).toHaveAttribute("aria-current", "page");
@@ -30,7 +32,7 @@ test.describe("Panel › Menú", () => {
     await page.goto("/admin/cuenta");
     await expect(page).toHaveURL(/\/admin\/ajustes\/seguridad$/);
     await page.goto("/admin/ajustes");
-    await expect(page).toHaveURL(/\/admin\/ajustes\/pagos$/);
+    await expect(page).toHaveURL(/\/admin\/ajustes\/identidad$/);
   });
 
   test("móvil: el menú abre a pantalla completa, navega y se cierra", async ({ page }) => {

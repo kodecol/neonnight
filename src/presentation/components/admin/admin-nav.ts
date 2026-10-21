@@ -18,6 +18,7 @@ export interface NavGroup {
 }
 
 export const SETTINGS_TABS: readonly NavItem[] = [
+  { href: "/admin/ajustes/identidad", label: "Identidad" },
   { href: "/admin/ajustes/pagos", label: "Pagos" },
   { href: "/admin/ajustes/seguridad", label: "Seguridad" },
 ];
