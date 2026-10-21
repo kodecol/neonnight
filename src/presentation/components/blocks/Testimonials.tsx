@@ -139,9 +139,10 @@ export function Testimonials({ content }: { content: SiteContent["home"]["testim
       </div>
 
       {/* Controles */}
-      <div className="mx-auto mt-10 flex w-full max-w-[620px] items-center gap-6">
+      <div className="mx-auto mt-10 flex w-full max-w-[620px] items-center gap-3 sm:gap-6">
         <NavButton label="Testimonio anterior" dir="prev" onClick={() => go(active - 1)} />
-        <div className="flex flex-1 gap-2" role="group" aria-label="Elegir testimonio">
+        {/* Cada botón mide al menos 24 px (WCAG 2.5.8): se tocan entre sí y la línea deja el aire; con muchos, dos filas. */}
+        <div className="grid flex-1 grid-cols-[repeat(auto-fit,minmax(24px,1fr))]" role="group" aria-label="Elegir testimonio">
           {items.map((t, i) => (
             <button
               key={`${t.name}-dot-${i}`}
@@ -149,20 +150,22 @@ export function Testimonials({ content }: { content: SiteContent["home"]["testim
               onClick={() => go(i)}
               aria-label={`Testimonio ${i + 1}: ${t.name}`}
               aria-current={i === active ? "true" : undefined}
-              className="group relative h-6 flex-1 cursor-pointer"
+              className="group relative h-6 cursor-pointer"
             >
-              <span className="absolute inset-x-0 top-1/2 h-px -translate-y-1/2 bg-divider transition-colors group-hover:bg-ink-2" />
-              {i === active && (
-                <span
-                  key={`${active}-${running}`}
-                  className={cn("absolute left-0 top-1/2 h-px -translate-y-1/2 bg-accent", running ? "nn-progress" : "w-full")}
-                  style={running ? { animationDuration: `${ROTATE_MS}ms` } : undefined}
-                />
-              )}
+              <span className="absolute inset-x-1 top-1/2 h-px -translate-y-1/2">
+                <span className="absolute inset-0 bg-divider transition-colors group-hover:bg-ink-2" />
+                {i === active && (
+                  <span
+                    key={`${active}-${running}`}
+                    className={cn("absolute inset-y-0 left-0 bg-accent", running ? "nn-progress" : "w-full")}
+                    style={running ? { animationDuration: `${ROTATE_MS}ms` } : undefined}
+                  />
+                )}
+              </span>
             </button>
           ))}
         </div>
-        <span className="w-14 text-right text-label tabular-nums text-ink-2" aria-hidden="true">
+        <span className="hidden w-14 text-right text-label tabular-nums text-ink-2 sm:block" aria-hidden="true">
           <span className="text-ink">{String(active + 1).padStart(2, "0")}</span>/{String(n).padStart(2, "0")}
         </span>
         <NavButton label="Testimonio siguiente" dir="next" onClick={() => go(active + 1)} />

@@ -67,7 +67,7 @@ export function ProductCard({ item, ratio, sizes, actions }: { item: ProductCard
             <AddToCartButton className="flex-1" testId={`add-${p.slug}`} item={null} label={p.status.label} />
           )}
           {!(p.purchasable && !quick) && (
-            <Button href={href} variant="ghost" size="sm" aria-label={`Ver ${p.name}`} data-testid={`view-${p.slug}`}>
+            <Button href={href} variant="ghost" size="sm" aria-label={`Ver pieza: ${p.name}`} data-testid={`view-${p.slug}`}>
               Ver pieza
             </Button>
           )}
