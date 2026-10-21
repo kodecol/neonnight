@@ -29,7 +29,7 @@ test.describe("Panel › Marcas", () => {
     // Un SVG con script se rechaza.
     await row.getByRole("button", { name: "Editar" }).click();
     await page.getByTestId("brand-editor").locator("input[type=file]").setInputFiles({ name: "malo.svg", mimeType: "image/svg+xml", buffer: Buffer.from(LOGO.replace("<path", "<script>alert(1)</script><path")) });
-    await expect(page.getByTestId("brand-editor")).toContainText("scripts");
+    await expect(page.getByTestId("brand-editor")).toContainText("elementos no permitidos (<script>)");
     await page.getByTestId("brand-editor").getByRole("button", { name: "Cancelar" }).click();
 
     // Asignarla a una pieza desde el formulario (y crear otra al vuelo).

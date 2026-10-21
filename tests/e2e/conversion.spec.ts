@@ -56,9 +56,8 @@ test.describe("Caminos de conversión", () => {
 
   test("el checkout rechaza importes manipulados, piezas inexistentes y datos incompletos", async ({ request }) => {
     const customer = { name: "Ana Pérez", documentType: "CC", documentNumber: "1020304050", email: "ana@example.com", phone: "3001234567", address: "Calle 93 # 11-20", city: "Bogotá", department: "Bogotá D.C." };
-    const legal = await (await request.get("/terminos")).text();
-    const version = /Versión ([\d.]+)/.exec(legal)?.[1] ?? "1.0";
-    const consent = { accepted: true, termsVersion: version, privacyVersion: version };
+    const versionOf = async (path: string) => /Versión ([\d.]+)/.exec(await (await request.get(path)).text())?.[1] ?? "1.0";
+    const consent = { accepted: true, termsVersion: await versionOf("/terminos"), privacyVersion: await versionOf("/privacidad") };
     const ok = await request.post("/api/checkout", { data: { lines: [{ productId: "w-03", quantity: 1 }], expectedTotalCents: 1, customer, consent } });
     expect(ok.status()).toBe(200);
     const body = (await ok.json()) as { total: { cents: number }; priceChanged: boolean; paymentMethod: string };
