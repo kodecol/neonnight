@@ -3,6 +3,7 @@ import type { IdentityAsset } from "../dto/identity.dto";
 import type { AppearanceSettingsRepository } from "../ports/appearance-settings";
 import type { IdentitySettingsRepository } from "../ports/identity-settings";
 import type { SiteContentRepository } from "../ports/site-content-repository";
+import { GetActiveAppearance } from "./admin/appearance";
 
 /** Lo que necesitan el favicon, los íconos, el manifest y las vistas previas. */
 export interface BrandAssets {
@@ -38,14 +39,16 @@ export class GetBrandAssets {
   constructor(private readonly deps: { content: SiteContentRepository; identity: IdentitySettingsRepository; appearance: AppearanceSettingsRepository }) {}
 
   async execute(): Promise<BrandAssets> {
-    const [{ brand }, identity, appearance] = await Promise.all([
+    const [{ brand }, identity, appearance, active] = await Promise.all([
       this.deps.content.get(),
       this.deps.identity.get().catch(() => null),
       this.deps.appearance.get().catch(() => null),
+      // El color, de la apariencia revalidada con su esquema: va al manifest y a los íconos sin más revisión.
+      new GetActiveAppearance(this.deps.appearance).execute(),
     ]);
     // Cada publicación lleva la hora del momento: la mayor basta como versión.
     const published = Math.max(identity?.updatedAt.getTime() ?? 0, appearance?.updatedAt.getTime() ?? 0);
-    const bg = (appearance?.colors.bg ?? DEFAULT_APPEARANCE.colors.bg).toLowerCase();
+    const bg = (active?.colors.bg ?? DEFAULT_APPEARANCE.colors.bg).toLowerCase();
     const isotype = brand.isotype ?? null;
     return {
       version: published > 0 ? published.toString(36) : "",

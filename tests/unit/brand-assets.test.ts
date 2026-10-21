@@ -57,6 +57,12 @@ describe("Íconos y manifest: GetBrandAssets", () => {
     expect(await brand.execute()).toMatchObject({ version: "", factoryIcons: true });
   });
 
+  it("un fondo alterado en la base (fuera del panel) no llega al manifest: rige el de fábrica", async () => {
+    const { appearance, brand } = setup();
+    await appearance.publish({ ...DEFAULT_APPEARANCE, colors: { ...DEFAULT_APPEARANCE.colors, bg: '#000"}</script><script>alert(1)//' }, updatedAt: new Date("2026-10-21T12:30:00Z") });
+    expect(await brand.execute()).toMatchObject({ bg: DEFAULT_APPEARANCE.colors.bg, factoryIcons: true });
+  });
+
   it("nombre corto: el nombre si cabe en 12, si no el wordmark, si no la primera palabra", () => {
     expect(shortNameOf("Neon Night", "NEON NIGHT")).toBe("Neon Night");
     expect(shortNameOf("Relojería del Centro", "RDC")).toBe("RDC");
