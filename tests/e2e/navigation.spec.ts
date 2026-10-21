@@ -17,7 +17,8 @@ test.describe("Navegación entre las tres vistas", () => {
     await expect(page.locator("[data-testid=payment-methods] li")).toHaveCount(8);
     await expect(page.locator("[data-testid=payment-methods] img")).toHaveCount(7);
     const order = await page.locator("main > section[id]").evaluateAll((els) => els.map((e) => e.id));
-    expect(order.indexOf("clientes")).toBeGreaterThan(order.indexOf("autenticidad"));
+    // Sin testimonios reales publicados, el bloque de clientes no aparece.
+    expect(order).not.toContain("clientes");
     expect(order.indexOf("pagos")).toBe(order.indexOf("redes") - 1);
 
     await page.getByRole("link", { name: /Ver las 30 piezas/i }).click();
@@ -61,7 +62,7 @@ test.describe("Navegación entre las tres vistas", () => {
       await page.goto(path);
       await expect(page.locator("h1")).toHaveCount(1);
     }
-    await expect(page).toHaveTitle("Rolex Sky-Dweller — Neon Night");
+    await expect(page).toHaveTitle("Rolex Sky-Dweller — Tu tienda");
     await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", /\/reloj\/rolex-sky-dweller-326938$/);
   });
 

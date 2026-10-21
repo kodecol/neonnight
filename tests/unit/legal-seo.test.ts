@@ -73,7 +73,6 @@ describe("Páginas institucionales y legales", () => {
     const trust = SITE_CONTENT.home.trust.items.map((i) => `${i.title} ${i.body}`).join(" ");
     expect(trust).toContain(`${returnDays} días`);
     expect(trust).toContain(shipping.carrier);
-    expect(SITE_CONTENT.brand.description).toContain(`${warrantyMonths} meses`);
     expect(SITE_CONTENT.cart.legalNote).toContain(`${returnDays} días`);
     expect(SITE_CONTENT.info.related.devoluciones.body).toContain(`${returnDays} días`);
     expect(SITE_CONTENT.info.related.garantia.body).toContain(`${warrantyMonths} meses`);

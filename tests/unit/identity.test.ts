@@ -27,12 +27,12 @@ function setup() {
 }
 
 describe("Identidad de la tienda (marca blanca, fase 1)", () => {
-  it("sin nada publicado, el sitio es Neon Night y las fichas {tienda} se rellenan", async () => {
+  it("sin nada publicado rige la identidad neutra de la plantilla y las fichas {tienda} se rellenan", async () => {
     const { content } = setup();
     const site = await content.get();
-    expect(site.brand.name).toBe("Neon Night");
-    expect(site.footer.copyrightTemplate).toBe("© {year} Neon Night");
-    expect(site.home.brands.disclaimer).toMatch(/^Neon Night es un revendedor/);
+    expect(site.brand.name).toBe("Tu tienda");
+    expect(site.footer.copyrightTemplate).toBe("© {year} Tu tienda");
+    expect(site.home.brands.disclaimer).toMatch(/^Tu tienda es un revendedor/);
     expect(JSON.stringify(site)).not.toContain("{tienda}");
   });
 
@@ -52,7 +52,7 @@ describe("Identidad de la tienda (marca blanca, fase 1)", () => {
     const { repo, deps, content } = setup();
     const save = new SaveIdentity(deps);
     await save.execute({ ...identity, name: "Borrador" }, "draft");
-    expect((await content.get()).brand.name).toBe("Neon Night");
+    expect((await content.get()).brand.name).toBe("Tu tienda");
     const draft = (await repo.getDraft())!;
     expect((await content.get({ identity: draft })).brand.name).toBe("Borrador");
 
@@ -62,7 +62,7 @@ describe("Identidad de la tienda (marca blanca, fase 1)", () => {
     expect(editor.hasDraft).toBe(false);
     expect(editor.history).toHaveLength(IDENTITY_HISTORY_LIMIT);
     expect(editor.history[0]!.input.name).toBe(`Versión ${IDENTITY_HISTORY_LIMIT + 1}`);
-    expect(editor.factory.name).toBe("Neon Night");
+    expect(editor.factory.name).toBe("Tu tienda");
   });
 
   it("brand:apply valida el objeto (contrato del brand.config.json)", async () => {

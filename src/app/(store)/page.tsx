@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { brand } = await getContainer().content.get();
-  const title = `${brand.name} — Relojes, joyas y perfumes verificados`;
+  const title = `${brand.name} — ${brand.titleSuffix}`;
   return {
     title: { absolute: title },
     alternates: { canonical: absoluteUrl(ROUTES.home) },

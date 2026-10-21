@@ -21,9 +21,9 @@ describe("Markdown de las páginas legales", () => {
   });
 
   it("las fichas reemplazan los datos de la empresa", () => {
-    const md = tokenize("Escríbenos a contacto@neonightonline.com o por WhatsApp +57 300 123 4567.", values);
+    const md = tokenize(`Escríbenos a ${values.correo} o por WhatsApp +57 300 123 4567.`, values);
     expect(md).toBe("Escríbenos a {correo} o por WhatsApp {whatsapp}.");
-    expect(fillTokens(md, { ...values, correo: "hola@neonightonline.com" })).toBe("Escríbenos a hola@neonightonline.com o por WhatsApp +57 300 123 4567.");
+    expect(fillTokens(md, { ...values, correo: "hola@tienda.example" })).toBe("Escríbenos a hola@tienda.example o por WhatsApp +57 300 123 4567.");
     expect(unknownTokens("Hola {correo} y {nombre}")).toEqual(["nombre"]);
   });
 

@@ -7,11 +7,18 @@ import type { SiteContent } from "@/application/dto/site-content.dto";
  * `StaticSiteContentRepository` se sustituye por un adaptador que devuelva
  * esta misma forma.
  */
-const INSTAGRAM_URL = process.env.INSTAGRAM_URL || process.env.NEXT_PUBLIC_INSTAGRAM_URL || "https://www.instagram.com/neonnight01/";
-const FACEBOOK_URL = process.env.FACEBOOK_URL || process.env.NEXT_PUBLIC_FACEBOOK_URL || "https://www.facebook.com/neonnightonline/";
-const YOUTUBE_URL = process.env.YOUTUBE_URL || process.env.NEXT_PUBLIC_YOUTUBE_URL || "https://www.youtube.com/NeonNightsChannel";
-// TikTok aparece solo cuando exista el perfil (TIKTOK_URL).
+// Plantilla neutra: las redes salen de Inicio › Redes (brand:apply las escribe)
+// o, en su defecto, de estas variables. Sin ninguna, no se muestran redes.
+const INSTAGRAM_URL = process.env.INSTAGRAM_URL || process.env.NEXT_PUBLIC_INSTAGRAM_URL || "";
+const FACEBOOK_URL = process.env.FACEBOOK_URL || process.env.NEXT_PUBLIC_FACEBOOK_URL || "";
+const YOUTUBE_URL = process.env.YOUTUBE_URL || process.env.NEXT_PUBLIC_YOUTUBE_URL || "";
 const TIKTOK_URL = process.env.TIKTOK_URL || process.env.NEXT_PUBLIC_TIKTOK_URL || "";
+
+/** Usuario a partir del enlace del perfil (`…/aurora.joyeria/` → `@aurora.joyeria`). */
+const handleOf = (href: string, at = true) => {
+  const seg = href.split("/").filter(Boolean).pop() ?? "";
+  return at ? `@${seg.replace(/^@/, "")}` : seg;
+};
 
 /**
  * Transportadora por defecto. Se edita en el panel › Legales › Envíos; los
@@ -21,19 +28,19 @@ export const CARRIER = "Interrapidísimo";
 
 export const SITE_CONTENT: SiteContent = {
   company: {
-    tradeName: "NEON NIGHT",
+    // Datos de EJEMPLO de la plantilla: cada tienda escribe los suyos en
+    // Legales › Datos de la empresa (o con brand:apply, desde su brand.json).
+    tradeName: "TU TIENDA",
     legalForm: "Establecimiento de comercio",
-    registry: { chamber: "Cámara de Comercio de Bogotá", number: "3812180" },
-    // PENDIENTE: propietario del establecimiento y su NIT (responsable del tratamiento de datos).
+    registry: { chamber: "Cámara de Comercio de Bogotá", number: "0000000" },
     city: "Bogotá D.C.",
     region: "Bogotá D.C.",
     country: "Colombia",
     countryCode: "CO",
-    foundingYear: 2025,
-    // PENDIENTE: confirmar que el buzón existe antes del lanzamiento.
-    email: "contacto@neonightonline.com",
-    privacyEmail: "contacto@neonightonline.com",
-    hours: "Lunes a sábado, de 9:00 a. m. a 7:00 p. m. (hora de Colombia)",
+    foundingYear: new Date().getFullYear(),
+    email: "contacto@tutienda.example",
+    privacyEmail: "contacto@tutienda.example",
+    hours: "Lunes a sábado, de 9:00 a. m. a 6:00 p. m. (hora de Colombia)",
   },
 
   policies: {
@@ -45,10 +52,11 @@ export const SITE_CONTENT: SiteContent = {
   },
 
   brand: {
-    name: "Neon Night",
-    wordmark: "NEON NIGHT",
-    tagline: "Relojes, joyas y perfumes de las grandes casas, verificados uno por uno y a un precio justo.",
-    description: "Relojes, joyas y perfumes de lujo nuevos y auténticos en Colombia. Cada pieza verificada en mano, con garantía de 12 meses y envío asegurado sin costo.",
+    name: "Tu tienda",
+    wordmark: "TU TIENDA",
+    tagline: "Relojes, joyas y perfumes seleccionados, con garantía y envío asegurado.",
+    titleSuffix: "Relojes, joyas y perfumes verificados",
+    description: "Relojes, joyas y perfumes auténticos en Colombia, revisados antes de publicarlos, con garantía, envío asegurado y asesoría por WhatsApp.",
     currencyLabel: "COP",
     locale: "es-CO",
     logo: { mono: "/assets/isotipo-mono.png", color: "/assets/isotipo-color.png" },
@@ -59,10 +67,10 @@ export const SITE_CONTENT: SiteContent = {
     title: "Síguenos de cerca",
     body: "Lo que acaba de llegar, piezas en uso y el detrás de cada verificación. Lo publicamos primero en redes.",
     networks: [
-      { id: "instagram", label: "Instagram", handle: "@neonnight01", href: INSTAGRAM_URL, description: "Llegadas nuevas y detalles de cada pieza", cta: "Seguir" },
-      { id: "facebook", label: "Facebook", handle: "neonnightonline", href: FACEBOOK_URL, description: "Novedades y lo que pasa detrás de cámaras", cta: "Seguir" },
-      { id: "youtube", label: "YouTube", handle: "NeonNightsChannel", href: YOUTUBE_URL, description: "Reseñas y verificaciones paso a paso", cta: "Suscribirse" },
-      ...(TIKTOK_URL ? [{ id: "tiktok" as const, label: "TikTok", handle: "{tienda}", href: TIKTOK_URL, description: "Videos cortos de las piezas en uso", cta: "Seguir" }] : []),
+      ...(INSTAGRAM_URL ? [{ id: "instagram" as const, label: "Instagram", handle: handleOf(INSTAGRAM_URL), href: INSTAGRAM_URL, description: "Llegadas nuevas y detalles de cada pieza", cta: "Seguir" }] : []),
+      ...(FACEBOOK_URL ? [{ id: "facebook" as const, label: "Facebook", handle: handleOf(FACEBOOK_URL, false), href: FACEBOOK_URL, description: "Novedades y lo que pasa detrás de cámaras", cta: "Seguir" }] : []),
+      ...(YOUTUBE_URL ? [{ id: "youtube" as const, label: "YouTube", handle: handleOf(YOUTUBE_URL, false), href: YOUTUBE_URL, description: "Reseñas y presentaciones paso a paso", cta: "Suscribirse" }] : []),
+      ...(TIKTOK_URL ? [{ id: "tiktok" as const, label: "TikTok", handle: handleOf(TIKTOK_URL), href: TIKTOK_URL, description: "Videos cortos de las piezas en uso", cta: "Seguir" }] : []),
     ],
   },
 
@@ -132,42 +140,13 @@ export const SITE_CONTENT: SiteContent = {
         },
       ],
     },
-    // PENDIENTE: textos de EJEMPLO. Antes de publicar, reemplazar por testimonios reales con autorización
-    // escrita de cada cliente (Ley 1480: la publicidad no puede inducir a error). Ver README.
+    // Sin testimonios de fábrica: solo se publican los reales, cargados en
+    // Inicio › Testimonios con autorización escrita del cliente (Ley 1480).
     testimonials: {
       kicker: "Clientes",
       title: "Lo que cuentan quienes ya compraron",
       note: "Testimonios de clientes en Colombia",
-      items: [
-        {
-          quote: "Antes de pagar me mandaron un video del reloj, y el informe de verificación llegó con él. Compré con la tranquilidad de una boutique, a un precio que no encontré en ningún otro lado.",
-          name: "Andrés M.",
-          city: "Medellín",
-          piece: "Rolex Datejust 36",
-          rating: 5,
-        },
-        {
-          quote: "Llevaba años queriendo el LOVE y me daba miedo comprarlo fuera de una tienda oficial. Llegó en dos días, con su estuche y su certificado, y me explicaron cómo revisar el número de serie.",
-          name: "Carolina R.",
-          city: "Bogotá",
-          piece: "Cartier LOVE",
-          rating: 5,
-        },
-        {
-          quote: "Pedí el Baccarat Rouge sellado y con el lote a la vista. Me resolvieron todas las dudas por WhatsApp, sin afanes ni presión. Ya voy por el segundo.",
-          name: "Mariana S.",
-          city: "Cali",
-          piece: "Baccarat Rouge 540",
-          rating: 5,
-        },
-        {
-          quote: "La asesoría fue clara de principio a fin: referencia, estado y garantía, sin rodeos. El empaque y la entrega estuvieron a la altura del reloj.",
-          name: "Felipe G.",
-          city: "Barranquilla",
-          piece: "Omega Speedmaster",
-          rating: 5,
-        },
-      ],
+      items: [],
     },
     payments: {
       kicker: "Métodos de pago",

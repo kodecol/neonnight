@@ -223,6 +223,15 @@ export function IdentityEditor({
           <TextInput label="Nombre de la tienda" value={draft.name} onChange={(e) => set("name", e.target.value)} maxLength={40} error={err("name")} data-testid="identity-name" hint="Así aparece en los títulos de las páginas y en Google." />
           <TextInput label="Wordmark" value={draft.wordmark} onChange={(e) => set("wordmark", e.target.value)} maxLength={40} error={err("wordmark")} data-testid="identity-wordmark" hint="Junto al isotipo, en mayúsculas." />
           <TextArea className="md:col-span-2" rows={2} label="Frase" value={draft.tagline} onChange={(e) => set("tagline", e.target.value)} maxLength={160} error={err("tagline")} hint="Bajo el título de la portada y en el pie de página." />
+          <TextInput
+            className="md:col-span-2"
+            label="Título para buscadores"
+            value={draft.titleSuffix ?? ""}
+            onChange={(e) => set("titleSuffix", e.target.value || undefined)}
+            maxLength={60}
+            error={err("titleSuffix")}
+            hint={`Sigue al nombre en el título de la portada: «${draft.name || "Tu tienda"} — ${draft.titleSuffix || "…"}».`}
+          />
           <TextArea className="md:col-span-2" rows={3} label="Descripción para buscadores" value={draft.description} onChange={(e) => set("description", e.target.value)} maxLength={200} error={err("description")} hint={`${draft.description.length}/200 · la que muestran Google y las vistas previas al compartir.`} />
         </div>
       </FormSection>

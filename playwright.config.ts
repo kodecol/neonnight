@@ -46,6 +46,10 @@ export default defineConfig({
       // Los e2e crean muchos pedidos desde la misma IP.
       CHECKOUT_RATE_LIMIT: "10000",
       STORE_ORDER_PREFIX: "NN",
+      // La plantilla no trae redes de fábrica: los e2e prueban las que llegan por entorno.
+      INSTAGRAM_URL: "https://www.instagram.com/tienda.e2e/",
+      FACEBOOK_URL: "https://www.facebook.com/tienda.e2e/",
+      YOUTUBE_URL: "https://www.youtube.com/TiendaE2E",
       ADMIN_SECRET: "e2e-secret-e2e-secret-e2e-secret-0000",
       GA_MEASUREMENT_ID: E2E_GA_ID,
       META_PIXEL_ID: E2E_PIXEL_ID,

@@ -20,7 +20,7 @@ for (const [path, image] of PAGES) {
     expect(await meta('meta[property="og:image:height"]')).toBe("630");
     expect(await meta('meta[property="og:image:type"]')).toBe("image/jpeg");
     expect(await meta('meta[property="og:image:alt"]')).toBeTruthy();
-    expect(await meta('meta[property="og:site_name"]')).toBe("Neon Night");
+    expect(await meta('meta[property="og:site_name"]')).toBe("Tu tienda");
     expect(await meta('meta[property="og:locale"]')).toBe("es_CO");
     expect(await meta('meta[name="twitter:card"]')).toBe("summary_large_image");
     expect(await meta('meta[name="twitter:image"]')).toBe(og);

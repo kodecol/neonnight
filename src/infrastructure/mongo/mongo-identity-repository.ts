@@ -13,6 +13,7 @@ const clean = (s: StoreIdentity): StoreIdentity => ({
   name: s.name,
   wordmark: s.wordmark,
   tagline: s.tagline,
+  ...(s.titleSuffix ? { titleSuffix: s.titleSuffix } : {}),
   description: s.description,
   isotype: s.isotype,
   logo: s.logo,

@@ -45,6 +45,7 @@ export const BrandConfigSchema = z
     wordmark: text(2, 40).optional().describe("Cómo se escribe junto al isotipo. Por defecto, el nombre en mayúsculas."),
     tagline: text(10, 160).optional().describe("Frase corta del hero y el pie. Por defecto, una del nicho."),
     description: text(30, 200).optional().describe("Descripción para buscadores. Por defecto, una del nicho."),
+    seo_title: text(3, 60).optional().describe("Lo que sigue al nombre en el título de la portada. Por defecto, uno del nicho."),
     niche: z.enum(NICHES),
     colors: z
       .object({
@@ -130,20 +131,24 @@ export function brandColors(c: BrandConfig["colors"]): ThemeColors {
   };
 }
 
-const NICHE_COPY: Record<Niche, { tagline: string; description: string }> = {
+const NICHE_COPY: Record<Niche, { title: string; tagline: string; description: string }> = {
   relojeria: {
+    title: "Relojes nuevos y verificados",
     tagline: "Relojes seleccionados uno por uno, con garantía y envío asegurado.",
     description: "Relojes nuevos y auténticos en Colombia, revisados antes de publicarlos, con garantía, envío asegurado y asesoría por WhatsApp.",
   },
   joyeria: {
+    title: "Joyas en oro, plata y piedras",
     tagline: "Joyas para todos los días y para las fechas que importan.",
     description: "Joyería en oro, plata y piedras en Colombia, con certificado, garantía, envío asegurado y asesoría por WhatsApp.",
   },
   perfumeria: {
+    title: "Perfumes originales",
     tagline: "Perfumes originales, sellados y con envío asegurado.",
     description: "Perfumes originales en Colombia, en sus presentaciones de siempre, con envío asegurado y asesoría por WhatsApp.",
   },
   ecommerce: {
+    title: "Relojes, joyas y perfumes verificados",
     tagline: "Relojes, joyas y perfumes seleccionados, con garantía y envío asegurado.",
     description: "Relojes, joyas y perfumes auténticos en Colombia, revisados antes de publicarlos, con garantía, envío asegurado y asesoría por WhatsApp.",
   },
@@ -152,7 +157,7 @@ const NICHE_COPY: Record<Niche, { tagline: string; description: string }> = {
 /** Identidad para Ajustes › Identidad (isotipo y logo los resuelve quien sube las imágenes). */
 export function brandIdentity(b: BrandConfig, assets: { isotype: StoreIdentityInput["isotype"]; logo: StoreIdentityInput["logo"] }): StoreIdentityInput {
   const copy = NICHE_COPY[b.niche];
-  return { name: b.name, wordmark: b.wordmark ?? b.name.toUpperCase(), tagline: b.tagline ?? copy.tagline, description: b.description ?? copy.description, ...assets };
+  return { name: b.name, wordmark: b.wordmark ?? b.name.toUpperCase(), tagline: b.tagline ?? copy.tagline, titleSuffix: b.seo_title ?? copy.title, description: b.description ?? copy.description, ...assets };
 }
 
 export function brandAppearance(b: BrandConfig): StoreAppearanceInput {

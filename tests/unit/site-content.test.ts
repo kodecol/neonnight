@@ -10,12 +10,13 @@ import { LINE_TEMPLATES } from "@/domain/entities/product-line";
 describe("Contenido centralizado", () => {
   it("el repositorio estático devuelve el contenido", async () => {
     const c = await new StaticSiteContentRepository().get();
-    expect(c.brand.name).toBe("Neon Night");
-    expect(c.social.networks.map((n) => n.id)).toEqual(["instagram", "facebook", "youtube"]);
-    expect(c.social.networks.every((n) => n.href.startsWith("https://"))).toBe(true);
+    // Plantilla neutra: sin marca ni redes de fábrica (las pone brand:apply o el panel).
+    expect(c.brand.name).toBe("Tu tienda");
+    expect(c.social.networks).toEqual([]);
+    expect(JSON.stringify(c).toLowerCase()).not.toMatch(/neon ?night|neonight/);
     expect(c.home.trust.items.map((i) => i.title)).toEqual(["Verificado en mano", "Garantía de 12 meses", "Envío asegurado, sin costo"]);
     expect(c.home.payments.logos.map((l) => l.name)).toEqual(["Visa", "Mastercard", "American Express", "Bold", "PSE", "Nequi", "Bancolombia", "Daviplata"]);
-    expect(c.home.testimonials.items.every((t) => t.rating >= 1 && t.rating <= 5 && t.quote.length > 20)).toBe(true);
+    expect(c.home.testimonials.items).toEqual([]);
     expect(c.footer.columns.flatMap((col) => col.links.map((l) => l.label))).not.toContain("Financiación");
   });
 
@@ -25,7 +26,7 @@ describe("Contenido centralizado", () => {
     expect(fill(SITE_CONTENT.home.lines.ctaTemplate, { label: "perfumería" })).toBe("Explorar perfumería");
     expect(fill(SITE_CONTENT.collection.resultsTemplate, { count: 12 })).toBe("12 piezas");
     expect(fill(SITE_CONTENT.product.purchase.lowStockTemplate, { count: 2 })).toBe("Quedan 2");
-    expect(fill(fillStoreName(SITE_CONTENT.footer.copyrightTemplate, SITE_CONTENT.brand.name), { year: 2026 })).toBe("© 2026 Neon Night");
+    expect(fill(fillStoreName(SITE_CONTENT.footer.copyrightTemplate, SITE_CONTENT.brand.name), { year: 2026 })).toBe("© 2026 Tu tienda");
     expect(fill("sin claves {x}", {})).toBe("sin claves {x}");
   });
 

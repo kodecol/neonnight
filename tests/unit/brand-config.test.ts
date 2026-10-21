@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { ZodError } from "zod";
 import { BrandConfigSchema, brandAppearance, brandColors, brandCompany } from "@/application/dto/brand-config.dto";
-import { StoreAppearanceSchema, contrastChecks } from "@/application/dto/appearance.dto";
+import { PRESETS, StoreAppearanceSchema, contrastChecks } from "@/application/dto/appearance.dto";
 import { ApplyBrandConfig } from "@/application/use-cases/admin/brand-config";
 import { TEMPLATE } from "@/application/lib/template-info";
 import { SCHEMA_VERSION } from "@/infrastructure/mongo/migrations";
@@ -42,6 +42,12 @@ describe("Plantilla jewelry-store: contrato con Kodecol", () => {
     expect(bad({ social: { instagram: "https://evil.example/aurora" } })).toBe(false);
     expect(bad({ isotipo_url: "http://inseguro.example/iso.png" })).toBe(false);
     expect(bad({ isotipo_url: "/assets/../../etc/passwd" })).toBe(false);
+  });
+
+  it("el brand pack de Neon Night es válido y reproduce su apariencia de fábrica", () => {
+    const nn = BrandConfigSchema.parse(JSON.parse(readFileSync("brands/neonnight/brand.json", "utf8")));
+    expect(brandColors(nn.colors)).toEqual(PRESETS["neon-night"].colors);
+    expect(() => StoreAppearanceSchema.parse(brandAppearance(nn))).not.toThrow();
   });
 
   it("deriva empresa con valores razonables", () => {

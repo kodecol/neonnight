@@ -1,0 +1,41 @@
+{
+  "$schema": "../../brand.schema.json",
+  "slug": "neonnight",
+  "name": "Neon Night",
+  "wordmark": "NEON NIGHT",
+  "tagline": "Relojes, joyas y perfumes de las grandes casas, verificados uno por uno y a un precio justo.",
+  "description": "Relojes, joyas y perfumes de lujo nuevos y auténticos en Colombia. Cada pieza verificada en mano, con garantía de 12 meses y envío asegurado sin costo.",
+  "seo_title": "Relojes, joyas y perfumes verificados",
+  "niche": "ecommerce",
+  "colors": {
+    "accent": "#ff006e",
+    "background": "#000000",
+    "surface": "#0e0e0e",
+    "ink": "#ffffff",
+    "ink2": "#a1a1a1",
+    "ink3": "#515151",
+    "divider": "#969696",
+    "border": "#969696"
+  },
+  "font": "archivo",
+  "isotipo_url": "/assets/brands/neonnight/isotipo-dark.png",
+  "company": {
+    "legal_name": "NEON NIGHT",
+    "tax_id": "3812180",
+    "legal_form": "Establecimiento de comercio",
+    "chamber": "Cámara de Comercio de Bogotá",
+    "city": "Bogotá D.C.",
+    "region": "Bogotá D.C.",
+    "email": "contacto@neonightonline.com",
+    "hours": "Lunes a sábado, de 9:00 a. m. a 7:00 p. m. (hora de Colombia)",
+    "carrier": "Interrapidísimo",
+    "tracking_url": "https://www.interrapidisimo.com/"
+  },
+  "social": {
+    "instagram": "https://www.instagram.com/neonnight01/",
+    "facebook": "https://www.facebook.com/neonnightonline/",
+    "youtube": "https://www.youtube.com/NeonNightsChannel"
+  },
+  "locale": "es-CO",
+  "currency": "COP"
+}

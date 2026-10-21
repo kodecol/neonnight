@@ -36,6 +36,12 @@
       "minLength": 30,
       "maxLength": 200
     },
+    "seo_title": {
+      "description": "Lo que sigue al nombre en el título de la portada. Por defecto, uno del nicho.",
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 60
+    },
     "niche": {
       "type": "string",
       "enum": [

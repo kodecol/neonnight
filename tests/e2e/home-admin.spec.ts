@@ -59,11 +59,17 @@ test.describe("Panel › Inicio", () => {
     const original = await firstTitle.inputValue();
     await firstTitle.fill("Verificado de verdad");
 
-    // Testimonios: solo los autorizados se publican.
+    // Testimonios: la plantilla no trae; uno nuevo solo se publica autorizado.
+    await page.getByRole("button", { name: /Añadir testimonio/ }).click();
     const items = page.getByTestId("testimonial");
-    await expect(items.first()).toContainText("Falta autorización");
-    await items.first().getByRole("switch", { name: "Autorizado por el cliente" }).click();
-    await expect(items.first()).toContainText("Publicado");
+    const t = items.last();
+    await t.getByLabel("Testimonio", { exact: true }).fill("Me mostraron la pieza por video antes de pagar y llegó tal cual.");
+    await t.getByLabel("Nombre", { exact: true }).fill("Andrea P.");
+    await t.getByLabel("Ciudad", { exact: true }).fill("Bogotá");
+    await t.getByLabel("Pieza", { exact: true }).fill("Reloj de prueba");
+    await expect(t).toContainText("Falta autorización");
+    await t.getByRole("switch", { name: "Autorizado por el cliente" }).click();
+    await expect(t).toContainText("Publicado");
 
     await page.getByTestId("network-facebook").getByRole("switch").click();
     await page.getByTestId("save-home").click();
@@ -78,6 +84,7 @@ test.describe("Panel › Inicio", () => {
     // Deja la home como estaba para el resto de pruebas.
     await page.goto("/admin/inicio");
     await page.getByTestId("trust-editor").getByLabel("Título").first().fill(original);
+    await page.getByTestId("testimonial").last().getByRole("button", { name: /Quitar|Eliminar/ }).click();
     await page.getByTestId("network-facebook").getByRole("switch").click();
     await page.getByTestId("save-home").click();
     await expect(page.getByText("Publicado en la home")).toBeVisible();
@@ -85,9 +92,9 @@ test.describe("Panel › Inicio", () => {
 
   test("vista previa del borrador, orden de bloques y versiones", async ({ page, context }) => {
     await page.goto("/admin/inicio");
-    // Oculta los testimonios y sube "Garantía" al primer lugar.
+    // Oculta los métodos de pago y sube "Garantía" al primer lugar (la plantilla no trae testimonios).
     const layout = page.getByTestId("home-layout");
-    await layout.getByTestId("block-testimonios").getByRole("switch").click();
+    await layout.getByTestId("block-pagos").getByRole("switch").click();
     const garantia = layout.getByTestId("block-garantia");
     for (let i = 0; i < 4; i++) await garantia.getByRole("button", { name: /Subir/ }).click();
     await expect(layout.locator("li").first()).toContainText("Garantía");
@@ -99,11 +106,11 @@ test.describe("Panel › Inicio", () => {
     await expect(preview.locator("#autenticidad")).toBeVisible();
     const order = await preview.locator("main > section").evaluateAll((els) => els.map((e) => e.id || e.getAttribute("aria-labelledby") || ""));
     expect(order.indexOf("autenticidad")).toBe(1);
-    await expect(preview.getByText("Lo que cuentan quienes ya compraron")).toHaveCount(0);
+    await expect(preview.getByText("Paga como prefieras")).toHaveCount(0);
     await preview.close();
 
     await page.goto("/");
-    await expect(page.getByText("Lo que cuentan quienes ya compraron")).toBeVisible();
+    await expect(page.getByText("Paga como prefieras")).toBeVisible();
 
     // Publicar lleva el borrador a la tienda.
     await page.goto("/admin/inicio");
@@ -111,7 +118,7 @@ test.describe("Panel › Inicio", () => {
     await page.getByTestId("save-home").click();
     await expect(page.getByText("Publicado en la home")).toBeVisible();
     await page.goto("/");
-    await expect(page.getByText("Lo que cuentan quienes ya compraron")).toHaveCount(0);
+    await expect(page.getByText("Paga como prefieras")).toHaveCount(0);
 
     // Volver a la versión anterior desde el historial.
     await page.goto("/admin/inicio");
@@ -120,7 +127,7 @@ test.describe("Panel › Inicio", () => {
     await page.getByTestId("save-home").click();
     await expect(page.getByText("Publicado en la home")).toBeVisible();
     await page.goto("/");
-    await expect(page.getByText("Lo que cuentan quienes ya compraron")).toBeVisible();
+    await expect(page.getByText("Paga como prefieras")).toBeVisible();
   });
 
   test("la vista previa exige sesión del panel", async ({ browser }) => {

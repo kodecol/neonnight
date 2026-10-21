@@ -59,10 +59,11 @@ export async function HomeView({ preview = false, identity }: { preview?: boolea
     ),
     banda: <ParallaxBand image={custom.band?.image ?? site.home.band.image} title={custom.band?.title ?? site.home.band.title} label={(custom.band?.image.alt || site.home.band.image.alt) ?? ""} />,
     garantia: <TrustColumns content={site.home.trust} />,
-    testimonios: <Testimonials content={site.home.testimonials} />,
+    // Sin testimonios publicados (reales y autorizados), el bloque no aparece.
+    testimonios: site.home.testimonials.items.length ? <Testimonials content={site.home.testimonials} /> : null,
     movimiento: <MotionSection video={featured?.video ?? null} whatsappUrl={whatsapp.generic(site.home.motion.whatsappMessage)} content={site.home.motion} />,
     pagos: <PaymentMethods content={site.home.payments} whatsappUrl={whatsapp.generic(site.home.payments.whatsappMessage)} />,
-    redes: <SocialSection content={site.social} />,
+    redes: site.social.networks.length ? <SocialSection content={site.social} /> : null,
   };
 
   return (

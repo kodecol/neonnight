@@ -24,7 +24,7 @@ test.describe("Páginas institucionales y legales", () => {
   test("el pie de página lleva a las páginas legales y a la SIC", async ({ page }) => {
     await page.goto("/");
     const footer = page.getByTestId("site-footer");
-    await expect(footer).toContainText("Matrícula mercantil 3812180");
+    await expect(footer).toContainText("Matrícula mercantil 0000000");
     await expect(footer.getByRole("link", { name: "Superintendencia de Industria y Comercio" })).toHaveAttribute("href", "https://www.sic.gov.co");
     await footer.getByRole("link", { name: "Garantía" }).click();
     await expect(page).toHaveURL(/\/garantia$/);

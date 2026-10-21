@@ -19,7 +19,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const image = { url, secureUrl: url, width: 1200, height: 630, alt: `${brand.name} — relojes, joyas y perfumes de las grandes casas`, type: "image/jpeg" };
   return {
     metadataBase: siteUrl(),
-    title: { default: `${brand.name} — Relojes, joyas y perfumes verificados`, template: `%s — ${brand.name}` },
+    title: { default: `${brand.name} — ${brand.titleSuffix}`, template: `%s — ${brand.name}` },
     description: brand.description,
     applicationName: brand.name,
     // Isotipo de Identidad sobre el fondo de Apariencia; cambian de URL al publicar (`?v=`).

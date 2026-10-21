@@ -23,7 +23,7 @@ test.describe("Panel › Identidad", () => {
     await expect(preview.getByRole("link", { name: "Casa Aurora, inicio" }).first()).toBeVisible();
     await preview.close();
     await page.goto("/");
-    await expect(page).toHaveTitle(/Neon Night/);
+    await expect(page).toHaveTitle(/Tu tienda/);
 
     await page.goto("/admin/ajustes/identidad");
     await expect(page.getByText("Borrador sin publicar", { exact: true })).toBeVisible();
@@ -45,11 +45,11 @@ test.describe("Panel › Identidad", () => {
     // Volver a la identidad de fábrica.
     await page.goto("/admin/ajustes/identidad");
     await page.getByTestId("identity-factory").click();
-    await expect(page.getByTestId("identity-name")).toHaveValue("Neon Night");
+    await expect(page.getByTestId("identity-name")).toHaveValue("Tu tienda");
     await page.getByTestId("identity-publish").click();
     await expect(page.getByText("Publicado en la tienda")).toBeVisible();
     await page.goto("/");
-    await expect(page).toHaveTitle(/Neon Night/);
+    await expect(page).toHaveTitle(/Tu tienda/);
   });
 
   test("la vista previa de identidad exige sesión", async ({ browser }) => {

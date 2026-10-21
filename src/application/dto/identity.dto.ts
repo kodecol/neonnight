@@ -23,6 +23,8 @@ export const StoreIdentitySchema = z.object({
   wordmark: z.string().trim().min(2, "Escribe el wordmark.").max(40),
   /** Frase corta bajo el hero y en el pie de página. */
   tagline: z.string().trim().min(10, "Escribe una frase de al menos 10 caracteres.").max(160),
+  /** Lo que sigue al nombre en el título de la portada ("Aurora — Joyas en oro y plata"). Sin valor: el del código. */
+  titleSuffix: z.string().trim().min(3, "Escribe al menos 3 caracteres.").max(60).optional(),
   /** Descripción para buscadores y vistas previas (meta description). */
   description: z.string().trim().min(30, "La descripción para buscadores necesita al menos 30 caracteres.").max(200),
   /** Isotipo para fondo oscuro (cuadrado o casi). null: el del sitio. */

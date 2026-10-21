@@ -135,6 +135,8 @@ export interface SiteContent {
     /** Wordmark en mayúsculas para header, loader y footer. */
     wordmark: string;
     tagline: string;
+    /** Lo que sigue al nombre en el título de la portada. */
+    titleSuffix: string;
     description: string;
     /** Divisa que se muestra en el header. */
     currencyLabel: string;

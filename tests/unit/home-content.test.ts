@@ -47,6 +47,15 @@ const settings = (over: Partial<HomeSettingsInput["hero"]> = {}, band: Partial<H
   layout: null,
 });
 
+// La plantilla no trae testimonios ni redes de fábrica: los tests usan los suyos.
+const T = (id: string, name: string) => ({ id, quote: "Me atendieron con calma y la pieza llegó como la mostraron.", name, city: "Bogotá", piece: "Reloj de prueba", rating: 5, authorized: false, visible: true });
+const NETWORKS = [
+  { id: "instagram" as const, enabled: true, handle: "@tienda", href: "https://www.instagram.com/tienda/", description: "Novedades" },
+  { id: "facebook" as const, enabled: true, handle: "tienda", href: "https://www.facebook.com/tienda/", description: "Novedades" },
+  { id: "tiktok" as const, enabled: false, handle: "", href: "", description: "" },
+  { id: "youtube" as const, enabled: true, handle: "tienda", href: "https://www.youtube.com/tienda", description: "Videos" },
+];
+
 describe("Inicio editable desde el panel", () => {
   it("sube fotos y videos a la biblioteca; los videos solo desde nuestra carpeta de Cloudinary", async () => {
     const d = setup();
@@ -104,23 +113,23 @@ describe("Inicio editable desde el panel", () => {
     expect(form.trust).toBeNull();
     // El editor arranca con el contenido actual; los testimonios del código entran como ejemplo sin autorización.
     expect(form.defaults.trust.items).toHaveLength(3);
-    expect(form.defaults.testimonials.items.every((t) => t.id.startsWith("ejemplo-") && !t.authorized)).toBe(true);
-    expect(form.defaults.social.networks.find((n) => n.id === "tiktok")?.enabled).toBe(false);
+    expect(form.defaults.testimonials.items).toHaveLength(0);
+    expect(form.defaults.social.networks.find((n) => n.id === "tiktok")?.enabled ?? false).toBe(false);
 
     // Guardar solo el hero no toca los bloques.
     await new SaveHomeSettings(d).execute(settings({ source: "featured" }));
-    expect((await content.get()).home.testimonials.items).toHaveLength(SITE_CONTENT.home.testimonials.items.length);
+    expect((await content.get()).home.testimonials.items).toHaveLength(0);
 
     const testimonials = {
       ...form.defaults.testimonials,
       items: [
-        { ...form.defaults.testimonials.items[0]!, authorized: true },
-        { ...form.defaults.testimonials.items[1]!, authorized: false },
-        { ...form.defaults.testimonials.items[2]!, authorized: true, visible: false },
+        { ...T("t1", "Andrea P."), authorized: true },
+        { ...T("t2", "Bruno L."), authorized: false },
+        { ...T("t3", "Camila R."), authorized: true, visible: false },
       ],
     };
     const trust = { kicker: "Lo que prometemos", items: form.defaults.trust.items.map((t, i) => ({ ...t, title: `Compromiso ${i + 1}` })) };
-    const social = { ...form.defaults.social, networks: form.defaults.social.networks.map((n) => (n.id === "facebook" ? { ...n, enabled: false } : n)) };
+    const social = { ...form.defaults.social, networks: NETWORKS.map((n) => (n.id === "facebook" ? { ...n, enabled: false } : n)) };
     await new SaveHomeSettings(d).execute({ ...settings({ source: "featured" }), trust, testimonials, social });
 
     const site = await content.get();
@@ -131,7 +140,7 @@ describe("Inicio editable desde el panel", () => {
       ["03", "Compromiso 3", true],
     ]);
     // Solo el visible y autorizado se publica.
-    expect(site.home.testimonials.items.map((t) => t.name)).toEqual([SITE_CONTENT.home.testimonials.items[0]!.name]);
+    expect(site.home.testimonials.items.map((t) => t.name)).toEqual(["Andrea P."]);
     expect(site.social.networks.map((n) => n.id)).toEqual(["instagram", "youtube"]);
     expect(site.social.networks[0]).toMatchObject({ label: "Instagram", cta: "Seguir" });
   });
@@ -141,13 +150,13 @@ describe("Inicio editable desde el panel", () => {
     const form = await new GetHomeSettings(d.homeSettings).execute(SITE_CONTENT);
     const save = (over: Partial<HomeSettingsInput>) => new SaveHomeSettings(d).execute({ ...settings({ source: "featured" }), ...over });
     await expect(save({ trust: { kicker: null, items: form.defaults.trust.items.slice(0, 2) } })).rejects.toBeInstanceOf(ZodError);
-    await expect(save({ testimonials: { ...form.defaults.testimonials, items: [{ ...form.defaults.testimonials.items[0]!, quote: "corto" }] } })).rejects.toBeInstanceOf(ZodError);
-    const bad = form.defaults.social.networks.map((n) => (n.id === "instagram" ? { ...n, href: "https://evil.example/neonnight" } : n));
+    await expect(save({ testimonials: { ...form.defaults.testimonials, items: [{ ...T("t1", "Andrea P."), quote: "corto" }] } })).rejects.toBeInstanceOf(ZodError);
+    const bad = NETWORKS.map((n) => (n.id === "instagram" ? { ...n, href: "https://evil.example/neonnight" } : n));
     await expect(save({ social: { ...form.defaults.social, networks: bad } })).rejects.toBeInstanceOf(ZodError);
-    const fake = form.defaults.social.networks.map((n) => (n.id === "youtube" ? { ...n, href: "https://www.instagram.com/x" } : n));
+    const fake = NETWORKS.map((n) => (n.id === "youtube" ? { ...n, href: "https://www.instagram.com/x" } : n));
     await expect(save({ social: { ...form.defaults.social, networks: fake } })).rejects.toBeInstanceOf(ZodError);
     // Una red apagada no necesita enlace.
-    const off = form.defaults.social.networks.map((n) => (n.id === "tiktok" ? { ...n, enabled: false, href: "" } : n));
+    const off = NETWORKS.map((n) => (n.id === "tiktok" ? { ...n, enabled: false, href: "" } : n));
     await expect(save({ social: { ...form.defaults.social, networks: off } })).resolves.toBeUndefined();
   });
 

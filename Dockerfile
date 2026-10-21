@@ -40,6 +40,7 @@ COPY --from=build --chown=nextjs:nodejs /app/public ./public
 COPY --from=build --chown=nextjs:nodejs /app/dist/lifecycle.mjs ./lifecycle.mjs
 COPY --from=build --chown=nextjs:nodejs /app/template.manifest.json /app/brand.schema.json ./
 COPY --from=build --chown=nextjs:nodejs /app/examples ./examples
+COPY --from=build --chown=nextjs:nodejs /app/brands ./brands
 # Caché de next/image (optimización de fotos): debe ser escribible por el usuario de la app.
 RUN mkdir -p .next/cache && chown nextjs:nodejs .next/cache
 # Fotos subidas sin Cloudinary (MEDIA_DIR): se monta un volumen por instancia.
