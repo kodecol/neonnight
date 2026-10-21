@@ -161,6 +161,10 @@ Build actual: JS inicial ≈113 kB (presupuesto 120 kB). Imágenes vía `next/im
 
 Ramas, commits con **gitmoji**, pull requests, CI, versiones y configuración del repositorio: **[`docs/GITHUB.md`](docs/GITHUB.md)**. Resumen en [`CONTRIBUTING.md`](CONTRIBUTING.md); vulnerabilidades en [`SECURITY.md`](SECURITY.md).
 
+## Marca blanca (plantilla `jewelry-store`)
+
+Este repo es la plantilla `jewelry-store` de Kodecol: una imagen para todas las tiendas, una base por cliente y un ciclo de vida dentro de la imagen (`lifecycle.mjs`: `migrate`, `brand:apply`, `seed`). El contrato está en `template.manifest.json` y `brand.schema.json`; la guía, en [docs/MARCA-BLANCA.md](docs/MARCA-BLANCA.md) (ADR 0017). Neon Night es una instancia más: `brands/neonnight/brand.json`.
+
 ## Despliegue
 
 Producción (`https://neonightonline.com`) corre como app Node.js en un hosting administrado y se publica con **Kode**, la plataforma de Kodecol: `kode deploy neonnight` construye `main` y lo publica. La base está en MongoDB Atlas y las fotos en Cloudinary. GitHub Actions solo verifica (tipos, lint, tests y build); no despliega.
