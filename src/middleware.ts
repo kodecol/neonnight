@@ -1,15 +1,18 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { SESSION_COOKIE, adminSecret, verifySessionToken } from "@/infrastructure/auth/session";
 
-/** Protege /admin: sin sesión válida, todo redirige al login. */
+/**
+ * Protege /admin: sin sesión firmada y vigente, todo redirige al login. Aquí no
+ * hay base, así que la versión de sesión la comprueba el servidor (isAdmin): por
+ * eso el login no redirige al panel por su cuenta (una cookie de versión vieja
+ * rebotaría entre los dos); lo decide la propia página de login.
+ */
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
   const secret = adminSecret();
   const authed = secret ? await verifySessionToken(req.cookies.get(SESSION_COOKIE)?.value, secret) : false;
 
-  if (pathname === "/admin/login") {
-    return authed ? NextResponse.redirect(new URL("/admin/catalogo", req.url)) : NextResponse.next();
-  }
+  if (pathname === "/admin/login") return NextResponse.next();
   if (!authed) return NextResponse.redirect(new URL("/admin/login", req.url));
   if (pathname === "/admin" || pathname === "/admin/") return NextResponse.redirect(new URL("/admin/catalogo", req.url));
   return NextResponse.next();

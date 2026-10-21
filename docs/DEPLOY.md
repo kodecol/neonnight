@@ -95,7 +95,7 @@ La imagen no depende del dominio: todo se lee al arrancar.
 | `MONGODB_URI` | sí | `mongodb+srv://…` de Atlas. Sin ella, la app usa memoria y **pierde los cambios al reiniciar** |
 | `MONGODB_DB` | no | `neonnight` |
 | `CLOUDINARY_URL` | sí, para fotos | `cloudinary://key:secret@cloud` |
-| `ADMIN_PASSWORD` | sí | Contraseña del panel |
+| `ADMIN_PASSWORD` | sí | Contraseña inicial del panel; al cambiarla en `/admin/cuenta` rige la de la base |
 | `ADMIN_SECRET` | sí | 32 caracteres o más. Si cambia, hay que volver a ingresar la llave de Bold |
 | `WHATSAPP_NUMBER` | no | `573001234567` |
 | `INSTAGRAM_URL`, `FACEBOOK_URL`, `YOUTUBE_URL` | no | Por defecto ya son los perfiles reales; solo hace falta si cambian |

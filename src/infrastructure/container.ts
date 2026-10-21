@@ -15,6 +15,7 @@ import type { MediaRemover, SiteMediaRepository, VideoUploadSigner } from "@/app
 import type { HomeSettingsRepository } from "@/application/ports/home-settings";
 import type { LegalPagesRepository } from "@/application/ports/legal-pages";
 import type { CompanySettingsRepository } from "@/application/ports/company-settings";
+import type { AdminCredentialsRepository, LoginThrottle, PasswordHasher } from "@/application/ports/admin-credentials";
 import { trackingIds, type TrackingIds } from "@/application/lib/tracking-ids";
 import { InMemoryProductRepository } from "./repositories/in-memory-product-repository";
 import { InMemoryLineRepository } from "./repositories/in-memory-line-repository";
@@ -41,6 +42,10 @@ import { BoldPaymentGateway } from "./payments/bold-payment-gateway";
 import { LocalDiskMediaUploader } from "./media/local-disk-uploader";
 import { CloudinaryMediaUploader } from "./media/cloudinary-uploader";
 import { adminSecret } from "./auth/session";
+import { ScryptPasswordHasher } from "./auth/password";
+import { createLoginThrottles } from "./auth/login-throttle";
+import { MongoAdminCredentialsRepository } from "./mongo/mongo-admin-credentials-repository";
+import { InMemoryAdminCredentialsRepository } from "./repositories/in-memory-admin-credentials-repository";
 import { ConsoleAnalytics } from "./analytics/console-analytics";
 import { WaMeLinkBuilder } from "./whatsapp/wa-me-link-builder";
 import { RandomIdGenerator, SystemClock } from "./system";
@@ -75,6 +80,10 @@ export interface Container {
   /** Páginas legales editadas y datos de la empresa (panel › Legales). */
   legalPages: LegalPagesRepository;
   companySettings: CompanySettingsRepository;
+  /** Contraseña (hash) y versión de sesión del administrador (panel › Cuenta). */
+  adminCredentials: AdminCredentialsRepository;
+  passwordHasher: PasswordHasher;
+  loginThrottles: { perIp: LoginThrottle; global: LoginThrottle };
   /** WhatsApp con formato legible, para las fichas de las páginas legales. */
   whatsappLabel: string | null;
   /** Fotos del sitio: Cloudinary `neonnight/sitio` o disco local. */
@@ -101,7 +110,7 @@ export interface Container {
 const g: { __nnContainer?: Container | null } =
   process.env.NODE_ENV === "production" ? (globalThis as unknown as { __nnContainer?: Container | null }) : {};
 
-function persistence(): Pick<Container, "products" | "lines" | "categories" | "brands" | "brandsCopy" | "orders" | "paymentSettings" | "siteMedia" | "homeSettings" | "legalPages" | "companySettings"> {
+function persistence(): Pick<Container, "products" | "lines" | "categories" | "brands" | "brandsCopy" | "orders" | "paymentSettings" | "siteMedia" | "homeSettings" | "legalPages" | "companySettings" | "adminCredentials"> {
   const uri = process.env.MONGODB_URI;
   if (!uri) {
     return {
@@ -116,6 +125,7 @@ function persistence(): Pick<Container, "products" | "lines" | "categories" | "b
       homeSettings: new InMemoryHomeSettingsRepository(),
       legalPages: new InMemoryLegalPagesRepository(),
       companySettings: new InMemoryCompanySettingsRepository(),
+      adminCredentials: new InMemoryAdminCredentialsRepository(),
     };
   }
   const db = mongoDb(uri, process.env.MONGODB_DB || "neonnight");
@@ -131,6 +141,7 @@ function persistence(): Pick<Container, "products" | "lines" | "categories" | "b
     homeSettings: new MongoHomeSettingsRepository(db),
     legalPages: new MongoLegalPagesRepository(db),
     companySettings: new MongoCompanySettingsRepository(db),
+    adminCredentials: new MongoAdminCredentialsRepository(db),
   };
 }
 
@@ -151,6 +162,9 @@ export function createContainer(overrides: Partial<Container> = {}): Container {
     homeSettings: base.homeSettings,
     legalPages: base.legalPages,
     companySettings: base.companySettings,
+    adminCredentials: base.adminCredentials,
+    passwordHasher: overrides.passwordHasher ?? new ScryptPasswordHasher(),
+    loginThrottles: overrides.loginThrottles ?? createLoginThrottles(),
     whatsappLabel: staticContent.whatsapp,
     siteUploader: overrides.siteUploader ?? (process.env.CLOUDINARY_URL ? new CloudinaryMediaUploader(SITE_FOLDER) : new LocalDiskMediaUploader()),
     videoSigner: overrides.videoSigner ?? (process.env.CLOUDINARY_URL ? new CloudinaryVideoSigner() : new DisabledVideoSigner()),

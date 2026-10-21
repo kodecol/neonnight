@@ -16,7 +16,8 @@
     "db:up": "docker compose up -d mongo",
     "db:down": "docker compose stop mongo",
     "prepare": "git config core.hooksPath .githooks 2>/dev/null || true",
-    "commit:check": "node scripts/check-commit-msg.mjs --text"
+    "commit:check": "node scripts/check-commit-msg.mjs --text",
+    "admin:reset-password": "node scripts/reset-admin-password.mjs"
   },
   "dependencies": {
     "cloudinary": "^2.11.0",
