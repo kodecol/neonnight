@@ -1,6 +1,7 @@
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it, vi } from "vitest";
+import { startingPrice } from "@/domain/services/pricing";
 import { createContainer } from "@/infrastructure/container";
 import { InMemoryProductRepository } from "@/infrastructure/repositories/in-memory-product-repository";
 import { InMemoryLineRepository } from "@/infrastructure/repositories/in-memory-line-repository";
@@ -143,7 +144,9 @@ describe("BrowseCatalog", () => {
   it("toda la colección: facetas comunes y líneas con conteo", async () => {
     const r = await catalog().execute({ line: null, params: {} });
     expect(r.total).toBe(SEED_PRODUCTS.length);
-    expect(r.facets.map((f) => f.key)).toEqual(["marca", "precio", "disponibilidad"]);
+    expect(r.facets.map((f) => f.key)).toEqual(["marca", "disponibilidad"]);
+    // El precio es un rango aparte, con el mínimo y el máximo reales de la vista.
+    expect(r.price).toMatchObject({ min: Math.min(...SEED_PRODUCTS.map((p) => startingPrice(p).units)), max: Math.max(...SEED_PRODUCTS.map((p) => startingPrice(p).units)) });
     expect(r.lines.map((l) => [l.slug, l.count])).toEqual([
       ["relojeria", 12],
       ["joyeria", 8],

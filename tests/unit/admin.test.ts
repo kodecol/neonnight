@@ -52,7 +52,7 @@ const watchInput = (over: Partial<AdminProductInput> = {}): AdminProductInput =>
   subtitle: "Cronógrafo · 41 mm",
   description: ["Un clásico de vestir."],
   includes: ["Caja y papeles"],
-  specs: { kind: "reloj", movement: "Automático · Cal. 69355", powerReserveHours: 46, caseMm: 41, caseMaterial: "acero", crystal: "Zafiro", waterResistanceM: 30 },
+  specs: { kind: "reloj", movement: "Automático · Cal. 69355", powerReserveHours: 46, caseMm: 41, caseMaterial: "acero", caseMaterialKey: "acero", crystal: "Zafiro", waterResistanceM: 30 },
   variants: [{ id: null, label: "", priceUnits: 28_500_000, stock: 1 }],
   media: { library: [{ src: "/api/media/x.png", width: 1000, height: 1000 }], roles: { front: "/api/media/x.png", back: null, hero: null, band: null }, gallery: ["/api/media/x.png"] },
   ...over,

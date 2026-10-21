@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { CASE_MATERIAL_KEYS, JEWELRY_METAL_KEYS, type CaseMaterialKey, type JewelryMetalKey } from "@/domain/services/materials";
 import {
   PERFUME_GENDERS,
   PRODUCT_AVAILABILITIES,
@@ -63,6 +64,8 @@ export const WatchSpecsInputSchema = z.object({
   powerReserveHours: optionalInt,
   caseMm: z.number({ error: "Medida inválida." }).positive("Debe ser mayor que 0.").max(80),
   caseMaterial: text(80),
+  /** Material canónico para los filtros de la tienda. */
+  caseMaterialKey: z.enum(CASE_MATERIAL_KEYS as [CaseMaterialKey, ...CaseMaterialKey[]], { message: "Elige el material." }),
   crystal: text(60),
   waterResistanceM: optionalInt,
 });
@@ -70,6 +73,8 @@ export const WatchSpecsInputSchema = z.object({
 export const JewelrySpecsInputSchema = z.object({
   kind: z.literal("joya"),
   metal: text(80),
+  /** Metal canónico para los filtros de la tienda. */
+  metalKey: z.enum(JEWELRY_METAL_KEYS as [JewelryMetalKey, ...JewelryMetalKey[]], { message: "Elige el metal." }),
   stones: optionalText(120),
   caratTotal: optionalDecimal,
   weightGrams: optionalDecimal,

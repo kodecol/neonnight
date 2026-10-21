@@ -1,8 +1,9 @@
 import type { Product } from "@/domain/entities/product";
 import type { LineTemplate } from "@/domain/entities/product-line";
 import { isPurchasable } from "@/domain/services/availability";
-import { startingPrice } from "@/domain/services/pricing";
+import { CASE_MATERIALS, JEWELRY_METALS, inferCaseMaterial, inferJewelryMetal } from "@/domain/services/materials";
 import { GENDER_LABEL } from "./spec-rows";
+import { bucketIndex, bucketsFromCuts, quantileCuts } from "./ranges";
 
 export interface FacetValue {
   value: string;
@@ -12,13 +13,12 @@ export interface FacetValue {
 /**
  * Faceta de filtrado. `values` devuelve los valores de un producto (vacío si
  * no aplica). Las de una sola opción (`multi: false`) se comportan como radio.
+ * El precio no es una faceta: es un rango aparte (ver `BrowseCatalog`).
  */
 export interface FacetDef {
   key: string;
   label: string;
   multi: boolean;
-  /** null = todas las plantillas (y la vista de toda la colección). */
-  templates: readonly LineTemplate[] | null;
   /** Orden fijo de las opciones; sin él, alfabético. */
   order?: readonly string[];
   /** Interruptor de una sola opción (se muestra aunque solo tenga una). */
@@ -26,7 +26,13 @@ export interface FacetDef {
   values(p: Product): FacetValue[];
 }
 
-const slug = (s: string) =>
+/** Marca tal como la define el catálogo de marcas (cuando exista): nombre visible y orden. */
+export interface BrandEntry {
+  name: string;
+  order?: number;
+}
+
+export const slugOf = (s: string) =>
   s
     .normalize("NFD")
     .replace(/[̀-ͯ]/g, "")
@@ -34,135 +40,121 @@ const slug = (s: string) =>
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
 
-const THOUSAND = 1_000;
-const MILLION = 1_000_000;
+const num = (n: number) => new Intl.NumberFormat("es-CO", { maximumFractionDigits: 1 }).format(n);
 
-/** "800 mil", "1,5 millones", "20 millones". */
-function amount(units: number): string {
-  if (units < MILLION) return `${units / THOUSAND} mil`;
-  const m = new Intl.NumberFormat("es-CO", { maximumFractionDigits: 1 }).format(units / MILLION);
-  return `${m} ${units === MILLION ? "millón" : "millones"}`;
-}
-
-/** Tramos de precio a la medida de cada plantilla: un perfume y un reloj no se filtran igual. */
-const PRICE_STEPS: Record<LineTemplate | "todo", number[]> = {
-  todo: [2 * MILLION, 10 * MILLION, 35 * MILLION, 100 * MILLION],
-  reloj: [20 * MILLION, 60 * MILLION, 150 * MILLION],
-  joya: [10 * MILLION, 35 * MILLION],
-  perfume: [800 * THOUSAND, 1_500 * THOUSAND],
-  general: [1 * MILLION, 5 * MILLION, 20 * MILLION],
+/** Mililitros de una presentación ("100 ml", "Eau de Parfum 50 ml"). */
+export const mlOf = (label: string): number | null => {
+  const m = /(\d+(?:[.,]\d+)?)\s*ml\b/i.exec(label);
+  return m ? Number(m[1]!.replace(",", ".")) : null;
 };
 
-function priceBuckets(steps: number[]): Array<FacetValue & { max: number }> {
-  return [...steps, Infinity].map((max, i) => {
-    const min = steps[i - 1];
-    if (min === undefined) return { value: `hasta-${max}`, label: `Hasta ${amount(max)}`, max };
-    if (max === Infinity) return { value: `desde-${min}`, label: `Más de ${amount(min)}`, max };
-    return { value: `${min}-${max}`, label: `De ${amount(min)} a ${amount(max)}`, max };
-  });
+/**
+ * Faceta numérica a partir de los valores reales de la vista: con pocos
+ * valores distintos (≤ 8) cada uno es una opción ("40 mm"); con más, tramos
+ * por cuantiles ("Hasta 38 mm", "De 38 a 41 mm", "Más de 41 mm", extremo
+ * superior inclusivo).
+ */
+function numericFacet(key: string, label: string, unit: string, valuesOf: (p: Product) => number[], scope: readonly Product[]): FacetDef {
+  const all = scope.flatMap(valuesOf);
+  const distinct = [...new Set(all)].sort((a, b) => a - b);
+  if (distinct.length <= 8) {
+    const id = (v: number) => String(v).replace(".", "_");
+    return {
+      key,
+      label,
+      multi: true,
+      order: distinct.map(id),
+      values: (p) => [...new Set(valuesOf(p))].map((v) => ({ value: id(v), label: `${num(v)} ${unit}` })),
+    };
+  }
+  const cuts = quantileCuts(all, (x) => Math.round(x), 3);
+  const buckets = bucketsFromCuts(cuts).map(({ lo, hi }) => ({
+    value: lo === null ? `hasta-${hi}` : hi === null ? `desde-${lo}` : `${lo}-${hi}`,
+    label: lo === null ? `Hasta ${num(hi!)} ${unit}` : hi === null ? `Más de ${num(lo)} ${unit}` : `De ${num(lo)} a ${num(hi)} ${unit}`,
+  }));
+  return {
+    key,
+    label,
+    multi: true,
+    order: buckets.map((b) => b.value),
+    values: (p) => [...new Set(valuesOf(p).map((v) => bucketIndex(v, cuts)))].map((i) => buckets[i]!),
+  };
 }
 
-function priceFacet(template: LineTemplate | null): FacetDef {
-  const buckets = priceBuckets(PRICE_STEPS[template ?? "todo"]);
+function brandFacet(brands: readonly BrandEntry[] | undefined, scope: readonly Product[]): FacetDef {
+  const directory = new Map((brands ?? []).map((b, i) => [slugOf(b.name), { name: b.name, order: b.order ?? i }]));
+  const present = [...new Set(scope.map((p) => slugOf(p.brand)).filter(Boolean))];
+  // Primero el orden del catálogo de marcas; las que no estén en él, alfabéticas al final.
+  const order = present.sort((a, b) => {
+    const oa = directory.get(a)?.order ?? Infinity;
+    const ob = directory.get(b)?.order ?? Infinity;
+    return oa !== ob ? oa - ob : a.localeCompare(b, "es");
+  });
   return {
-    key: "precio",
-    label: "Precio",
-    multi: false,
-    templates: null,
-    order: buckets.map((b) => b.value),
+    key: "marca",
+    label: "Marca",
+    multi: true,
+    order,
     values: (p) => {
-      const units = startingPrice(p).units;
-      const b = buckets.find((x) => units <= x.max)!;
-      return [{ value: b.value, label: b.label }];
+      const value = slugOf(p.brand);
+      return value ? [{ value, label: directory.get(value)?.name ?? p.brand.trim() }] : [];
     },
   };
 }
 
-function caseBucket(mm: number): FacetValue {
-  if (mm < 38.5) return { value: "hasta-38", label: "Hasta 38 mm" };
-  if (mm < 41.5) return { value: "39-41", label: "De 39 a 41 mm" };
-  return { value: "42-mas", label: "42 mm o más" };
+/** Material de la caja: el campo estructurado o, en datos antiguos, el deducido del texto. */
+function caseMaterialValue(p: Product): FacetValue[] {
+  if (p.specs.kind !== "reloj") return [];
+  const key = p.specs.caseMaterialKey ?? inferCaseMaterial(p.specs.caseMaterial);
+  if (!key) return [];
+  if (key === "otro") return p.specs.caseMaterial.trim() ? [{ value: slugOf(p.specs.caseMaterial), label: p.specs.caseMaterial.trim() }] : [];
+  return [{ value: key, label: CASE_MATERIALS[key] }];
 }
 
-/** Agrupa el material de caja en familias que un cliente reconoce. */
-function caseMaterialFamily(material: string): FacetValue {
-  const m = material.toLowerCase();
-  if (m.includes("rolesor") || (m.includes("acero") && m.includes("oro"))) return { value: "acero-y-oro", label: "Acero y oro" };
-  if (m.includes("oro") || m.includes("everose")) return { value: "oro", label: "Oro" };
-  if (m.includes("titanio")) return { value: "titanio", label: "Titanio" };
-  if (m.includes("platino")) return { value: "platino", label: "Platino" };
-  if (m.includes("cerámica") || m.includes("ceramica")) return { value: "ceramica", label: "Cerámica" };
-  return { value: "acero", label: "Acero" };
+function jewelryMetalValue(p: Product): FacetValue[] {
+  if (p.specs.kind !== "joya") return [];
+  const key = p.specs.metalKey ?? inferJewelryMetal(p.specs.metal);
+  if (!key) return [];
+  if (key === "otro") return p.specs.metal.trim() ? [{ value: slugOf(p.specs.metal), label: p.specs.metal.trim() }] : [];
+  return [{ value: key, label: JEWELRY_METALS[key] }];
 }
 
-/** Metal de una joya: color del oro, platino o plata; varias tonalidades → combinado. */
-function jewelryMetal(metal: string): FacetValue {
-  const m = metal.toLowerCase();
-  if (m.includes("platino")) return { value: "platino", label: "Platino" };
-  if (m.includes("plata")) return { value: "plata", label: "Plata" };
-  const tones = (["amarillo", "blanco", "rosa"] as const).filter((t) => m.includes(t));
-  if (tones.length > 1) return { value: "oro-combinado", label: "Oros combinados" };
-  if (tones[0]) return { value: `oro-${tones[0]}`, label: `Oro ${tones[0]}` };
-  return { value: slug(metal), label: metal };
-}
-
-export const FACETS: readonly FacetDef[] = [
-  {
-    key: "marca",
-    label: "Marca",
-    multi: true,
-    templates: null,
-    values: (p) => (p.brand.trim() ? [{ value: slug(p.brand), label: p.brand.trim() }] : []),
-  },
-  {
-    key: "caja",
-    label: "Tamaño de caja",
-    multi: true,
-    templates: ["reloj"],
-    order: ["hasta-38", "39-41", "42-mas"],
-    values: (p) => (p.specs.kind === "reloj" ? [caseBucket(p.specs.caseMm)] : []),
-  },
-  {
-    key: "material",
-    label: "Material",
-    multi: true,
-    templates: ["reloj"],
-    values: (p) => (p.specs.kind === "reloj" ? [caseMaterialFamily(p.specs.caseMaterial)] : []),
-  },
-  {
-    key: "metal",
-    label: "Metal",
-    multi: true,
-    templates: ["joya"],
-    values: (p) => (p.specs.kind === "joya" ? [jewelryMetal(p.specs.metal)] : []),
-  },
-  {
-    key: "genero",
-    label: "Para",
-    multi: true,
-    templates: ["perfume"],
-    order: ["femenino", "masculino", "unisex"],
-    values: (p) => (p.specs.kind === "perfume" ? [{ value: p.specs.gender, label: GENDER_LABEL[p.specs.gender] }] : []),
-  },
-  {
-    key: "concentracion",
-    label: "Concentración",
-    multi: true,
-    templates: ["perfume"],
-    values: (p) => (p.specs.kind === "perfume" ? [{ value: slug(p.specs.concentration), label: p.specs.concentration }] : []),
-  },
-  {
+/**
+ * Facetas de una vista (toda la colección o una línea), construidas con los
+ * productos de esa vista: las opciones, los tramos numéricos y el orden de
+ * las marcas salen de los datos, no de listas fijas.
+ */
+export function facetsFor(template: LineTemplate | null, scope: readonly Product[], opts: { brands?: readonly BrandEntry[] } = {}): FacetDef[] {
+  const defs: FacetDef[] = [brandFacet(opts.brands, scope)];
+  if (template === "reloj") {
+    defs.push(numericFacet("caja", "Tamaño de caja", "mm", (p) => (p.specs.kind === "reloj" && p.specs.caseMm > 0 ? [p.specs.caseMm] : []), scope));
+    defs.push({ key: "material", label: "Material", multi: true, order: Object.keys(CASE_MATERIALS), values: caseMaterialValue });
+  }
+  if (template === "joya") {
+    defs.push({ key: "metal", label: "Metal", multi: true, order: Object.keys(JEWELRY_METALS), values: jewelryMetalValue });
+  }
+  if (template === "perfume") {
+    defs.push({
+      key: "genero",
+      label: "Para",
+      multi: true,
+      order: ["femenino", "masculino", "unisex"],
+      values: (p) => (p.specs.kind === "perfume" ? [{ value: p.specs.gender, label: GENDER_LABEL[p.specs.gender] }] : []),
+    });
+    defs.push({
+      key: "concentracion",
+      label: "Concentración",
+      multi: true,
+      values: (p) => (p.specs.kind === "perfume" && p.specs.concentration.trim() ? [{ value: slugOf(p.specs.concentration), label: p.specs.concentration.trim() }] : []),
+    });
+    defs.push(numericFacet("ml", "Tamaño", "ml", (p) => p.variants.map((v) => mlOf(v.label)).filter((n): n is number => n !== null), scope));
+  }
+  defs.push({
     key: "disponibilidad",
     label: "Disponibilidad",
     multi: false,
     toggle: true,
-    templates: null,
     values: (p) => (p.variants.some((v) => isPurchasable(p, v)) ? [{ value: "disponible", label: "Solo disponibles" }] : []),
-  },
-];
-
-export function facetsFor(template: LineTemplate | null): FacetDef[] {
-  const own = FACETS.filter((f) => f.templates === null || (template !== null && f.templates.includes(template)));
-  // El precio va segundo, después de la marca.
-  return [own[0]!, priceFacet(template), ...own.slice(1)];
+  });
+  return defs;
 }

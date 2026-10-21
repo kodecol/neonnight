@@ -1,17 +1,25 @@
 import type { ProductRepository } from "@/domain/repositories/product-repository";
 import type { Product, ProductImage, ProductSpecs } from "@/domain/entities/product";
 import type { LineTemplate, ProductLine } from "@/domain/entities/product-line";
+import { inferCaseMaterial, inferJewelryMetal } from "@/domain/services/materials";
 import { HERO_VIDEO, isVideo, libraryOf } from "@/domain/services/media-library";
 import type { AdminImageInput, AdminProductFormDto, ProductSpecsInput } from "../../dto/admin.dto";
 
 const toImage = (img: ProductImage): AdminImageInput => ({ src: img.src, width: img.width, height: img.height, alt: img.alt });
 
-const cloneSpecs = (s: ProductSpecs): ProductSpecsInput =>
-  s.kind === "perfume"
-    ? { ...s, notes: { top: [...s.notes.top], heart: [...s.notes.heart], base: [...s.notes.base] } }
-    : s.kind === "general"
-      ? { kind: "general", rows: s.rows.map((r) => ({ ...r })) }
-      : { ...s };
+/** Copia editable de la ficha. Datos antiguos sin material canónico lo reciben deducido del texto. */
+const cloneSpecs = (s: ProductSpecs): ProductSpecsInput => {
+  switch (s.kind) {
+    case "perfume":
+      return { ...s, notes: { top: [...s.notes.top], heart: [...s.notes.heart], base: [...s.notes.base] } };
+    case "general":
+      return { kind: "general", rows: s.rows.map((r) => ({ ...r })) };
+    case "reloj":
+      return { ...s, caseMaterialKey: s.caseMaterialKey ?? inferCaseMaterial(s.caseMaterial) ?? "acero" };
+    case "joya":
+      return { ...s, metalKey: s.metalKey ?? inferJewelryMetal(s.metal) ?? "otro" };
+  }
+};
 
 export function toAdminProductForm(p: Product): AdminProductFormDto {
   return {
@@ -47,9 +55,9 @@ export function toAdminProductForm(p: Product): AdminProductFormDto {
 export function emptySpecs(template: LineTemplate): ProductSpecsInput {
   switch (template) {
     case "reloj":
-      return { kind: "reloj", movement: "", powerReserveHours: null, caseMm: 40, caseMaterial: "", crystal: "Zafiro", waterResistanceM: null };
+      return { kind: "reloj", movement: "", powerReserveHours: null, caseMm: 40, caseMaterial: "", caseMaterialKey: "acero", crystal: "Zafiro", waterResistanceM: null };
     case "joya":
-      return { kind: "joya", metal: "", stones: null, caratTotal: null, weightGrams: null, dimensions: null, certificate: null };
+      return { kind: "joya", metal: "", metalKey: "oro-amarillo", stones: null, caratTotal: null, weightGrams: null, dimensions: null, certificate: null };
     case "perfume":
       return { kind: "perfume", concentration: "Eau de Parfum", gender: "unisex", perfumer: null, year: null, notes: { top: [], heart: [], base: [] } };
     case "general":

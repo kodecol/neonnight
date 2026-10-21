@@ -54,7 +54,7 @@ Todas se leen **en runtime**: la misma imagen sirve para cualquier dominio y ent
 | --- | --- | --- |
 | `/` | dinámica | Hero con video, marquee de marcas (panel › Marcas: visibles y con productos), portadas de las líneas, selección mixta (6 piezas, una línea por turno), banda parallax, garantía, testimonios, "En movimiento", métodos de pago, redes |
 | `/coleccion` | dinámica | Toda la colección: pestañas de línea, filtros comunes (marca, precio, disponibilidad) y orden |
-| `/coleccion/[linea]` | dinámica, filtros por `searchParams` (`?categoria=`, `?marca=a,b`, `?orden=precio-asc`…) | Página indexable de cada línea: chips de categoría y facetas propias de su plantilla. Con filtros → `noindex, follow`. `/coleccion?categoria=x` redirige a la línea |
+| `/coleccion/[linea]` | dinámica, filtros por `searchParams` (`?categoria=`, `?marca=a,b`, `?precio=20000000-60000000`, `?orden=precio-asc`…) | Página indexable de cada línea: chips de categoría y facetas propias de su plantilla, construidas con los productos reales (ADR 0011): rango de precio con tramos sugeridos y campos desde/hasta (sin JS), tamaños y materiales que salen de los datos. Con filtros → `noindex, follow`. `/coleccion?categoria=x` redirige a la línea |
 | `/reloj`, `/joya`, `/perfume`, `/producto` + `/[slug]` | dinámica | Detalle según la plantilla: hero, sub-nav sticky, descripción, notas olfativas (perfume), galería, banda, ficha, selector de presentación y cantidad, relacionados. JSON-LD `Product` (`AggregateOffer` con variantes), OG image dinámica |
 | `/checkout` | dinámica, sin indexar | Resumen verificado en el servidor, datos del comprador, aceptación de términos y privacidad (versión vigente) y pago: Bold, pedido manual o aviso (ADR 0012) |
 | `/gracias` | dinámica | Estado del pedido; con Bold pendiente se refresca sola; en pedido manual, instrucciones y WhatsApp |
@@ -101,7 +101,7 @@ Un solo administrador entra con `ADMIN_PASSWORD`. La sesión es una cookie firma
 
 - **Catálogo:**
   - **Líneas** (Relojería, Joyería, Perfumería…): se crean con nombre y plantilla (`reloj`, `joya`, `perfume` o `general`), con portada y frase para la home. La plantilla decide la ficha técnica y los filtros, y no cambia después (ADR 0005).
-  - **Productos:** alta por línea, edición y baja. La marca se elige de la lista de Marcas (o se crea al vuelo). Incluyen identidad, ficha según la plantilla, presentaciones con precio y stock, categoría, disponibilidad, condición, destacado y textos.
+  - **Productos:** alta por línea, edición y baja. La marca se elige de la lista de Marcas (o se crea al vuelo). En relojes y joyas, el material de la caja y el metal se eligen además de una lista canónica (para los filtros de la tienda); la lista se sugiere sola a partir del texto de la ficha. Incluyen identidad, ficha según la plantilla, presentaciones con precio y stock, categoría, disponibilidad, condición, destacado y textos.
   - **Fotos:** una sola biblioteca por pieza (se suben varias a la vez). Cada foto se asigna a uno o varios usos: portada, segunda vista, fondo del hero, imagen final y galería (ADR 0007).
   - Categorías agrupadas por línea, editables en línea.
   - Los cambios se publican en la tienda al guardar.

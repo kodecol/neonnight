@@ -3,6 +3,7 @@ import { SORT_OPTIONS, type CatalogResultDto } from "@/application/dto/catalog.d
 import type { SiteContent } from "@/application/dto/site-content.dto";
 import { fill } from "@/application/lib/template";
 import { Disclosure } from "@/presentation/components/primitives/Disclosure";
+import { CloseDetailsButton } from "@/presentation/components/primitives/CloseDetailsButton";
 import { catalogHref, toggleValue, withoutValue } from "@/presentation/lib/catalog-href";
 import { cn } from "@/presentation/lib/cn";
 
@@ -25,7 +26,7 @@ export function CatalogToolbar({ result, base, content }: { result: CatalogResul
           {count === 1 ? content.resultsOne : fill(content.resultsTemplate, { count })}
         </p>
         <div className="flex h-full items-center gap-6 text-label uppercase md:gap-10">
-          {result.facets.length > 0 && (
+          {(result.facets.length > 0 || result.price) && (
             <Disclosure
               testId="filter-panel"
               summary={
@@ -72,47 +73,141 @@ export function CatalogToolbar({ result, base, content }: { result: CatalogResul
   );
 }
 
-function FilterPanel({ result, base, content }: { result: CatalogResultDto; base: string; content: Content }) {
+const optionCls = (selected: boolean) => cn("group/opt flex items-center gap-3 py-1.5 text-small normal-case tracking-normal transition-colors", selected ? "text-ink" : "text-ink-2 hover:text-ink");
+
+function Mark({ selected, round }: { selected: boolean; round: boolean }) {
   return (
-    <div className="absolute inset-x-0 top-full max-h-[calc(100vh-132px)] overflow-y-auto border-b border-divider bg-surface-elevated px-page pb-10 pt-8">
-      <div className="grid grid-cols-1 gap-x-12 gap-y-9 sm:grid-cols-2 lg:grid-cols-4">
-        {result.facets.map((f) => (
-          <fieldset key={f.key} className="m-0 min-w-0 border-0 p-0">
-            <legend className="mb-4 p-0 text-kicker uppercase text-ink-3">{f.label}</legend>
-            <ul className="m-0 flex list-none flex-col gap-1 p-0">
-              {f.options.map((o) => (
-                <li key={o.value}>
-                  <Link
-                    href={catalogHref(base, toggleValue(result.query, f.key, o.value, f.multi), result.sort)}
-                    scroll={false}
-                    data-testid={`facet-${f.key}-${o.value}`}
-                    className={cn("group/opt flex items-center gap-3 py-1.5 text-small normal-case tracking-normal transition-colors", o.selected ? "text-ink" : "text-ink-2 hover:text-ink")}
-                  >
-                    <span
-                      aria-hidden="true"
-                      className={cn(
-                        "flex h-4 w-4 shrink-0 items-center justify-center border transition-colors",
-                        o.selected ? "border-ink bg-ink" : "border-border group-hover/opt:border-ink",
-                        !f.multi && "[border-radius:50%]",
-                      )}
-                    >
-                      {o.selected && <span className={cn("h-1.5 w-1.5 bg-bg", !f.multi && "[border-radius:50%]")} />}
-                    </span>
-                    <span className="sr-only">{o.selected ? "Quitar filtro:" : "Filtrar por:"}</span>
-                    <span className="flex-1">{o.label}</span>
-                    <span className="text-legal tabular-nums text-ink-3">{o.count}</span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </fieldset>
-        ))}
-      </div>
-      {result.active.length > 0 && (
-        <Link href={catalogHref(base, {}, result.sort)} scroll={false} className="mt-9 inline-block border-b border-accent pb-1 text-label uppercase text-ink hover:text-accent">
-          {content.clearLabel}
-        </Link>
+    <span
+      aria-hidden="true"
+      className={cn(
+        "flex h-4 w-4 shrink-0 items-center justify-center border transition-colors",
+        selected ? "border-ink bg-ink" : "border-border group-hover/opt:border-ink",
+        round && "[border-radius:50%]",
       )}
+    >
+      {selected && <span className={cn("h-1.5 w-1.5 bg-bg", round && "[border-radius:50%]")} />}
+    </span>
+  );
+}
+
+const digits = (n: number | null | undefined) => (n === null || n === undefined ? "" : new Intl.NumberFormat("es-CO", { maximumFractionDigits: 0 }).format(n));
+
+/**
+ * Precio: tramos sugeridos (enlaces) y un rango libre con dos campos. El
+ * formulario es GET, así que funciona sin JS y deja el filtro en la URL.
+ */
+function PriceBlock({ result, base }: { result: CatalogResultDto; base: string }) {
+  const price = result.price!;
+  const rest = Object.entries(result.query).filter(([k]) => k !== "precio");
+  return (
+    <fieldset className="m-0 min-w-0 border-0 p-0 md:col-span-2" data-testid="price-filter">
+      <legend className="mb-4 p-0 text-kicker uppercase text-ink-3">Precio</legend>
+      <p className="m-0 mb-3 text-legal normal-case tracking-normal text-ink-3" data-testid="price-range">
+        En esta vista: {price.minLabel} – {price.maxLabel}
+      </p>
+      {price.options.length > 0 && (
+        <ul className="m-0 mb-5 grid list-none grid-cols-1 gap-x-8 p-0 md:grid-cols-2">
+          {price.options.map((o) => {
+            const next = { ...result.query };
+            if (o.selected) delete next.precio;
+            else next.precio = [o.value];
+            return (
+              <li key={o.value}>
+                <Link href={catalogHref(base, next, result.sort)} scroll={false} data-testid={`price-${o.value}`} className={optionCls(o.selected)}>
+                  <Mark selected={o.selected} round />
+                  <span className="sr-only">{o.selected ? "Quitar filtro:" : "Filtrar por:"}</span>
+                  <span className="flex-1">{o.label}</span>
+                  <span className="text-legal tabular-nums text-ink-3">{o.count}</span>
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+      <form method="get" action={base} className="flex flex-wrap items-end gap-3 normal-case tracking-normal" aria-label="Rango de precio">
+        {rest.map(([k, v]) => (
+          <input key={k} type="hidden" name={k} value={v.join(",")} />
+        ))}
+        {result.sort !== "novedades" && <input type="hidden" name="orden" value={result.sort} />}
+        <label className="flex min-w-[140px] flex-1 flex-col gap-1.5">
+          <span className="text-label-sm uppercase text-ink-3">Desde</span>
+          <input
+            name="precio_min"
+            inputMode="numeric"
+            defaultValue={digits(price.selected?.min)}
+            placeholder={digits(price.min)}
+            aria-describedby="price-range-hint"
+            className="border border-border bg-transparent px-3 py-2.5 text-small tabular-nums text-ink outline-none placeholder:text-ink-3 focus:border-ink"
+            data-testid="price-min"
+          />
+        </label>
+        <label className="flex min-w-[140px] flex-1 flex-col gap-1.5">
+          <span className="text-label-sm uppercase text-ink-3">Hasta</span>
+          <input
+            name="precio_max"
+            inputMode="numeric"
+            defaultValue={digits(price.selected?.max)}
+            placeholder={digits(price.max)}
+            aria-describedby="price-range-hint"
+            className="border border-border bg-transparent px-3 py-2.5 text-small tabular-nums text-ink outline-none placeholder:text-ink-3 focus:border-ink"
+            data-testid="price-max"
+          />
+        </label>
+        <button type="submit" className="cursor-pointer border border-border-strong px-4 py-2.5 text-label-sm uppercase text-ink transition-colors hover:border-ink" data-testid="price-apply">
+          Aplicar
+        </button>
+        <span id="price-range-hint" className="sr-only">
+          En pesos colombianos. Deja un campo vacío para no poner límite por ese lado.
+        </span>
+      </form>
+    </fieldset>
+  );
+}
+
+function FilterPanel({ result, base, content }: { result: CatalogResultDto; base: string; content: Content }) {
+  const count = result.products.length;
+  return (
+    <div className="absolute inset-x-0 top-full flex max-h-[calc(100dvh-132px)] flex-col border-b border-divider bg-surface-elevated">
+      <div className="overflow-y-auto px-page pb-8 pt-8">
+        <div className="grid grid-cols-1 gap-x-12 gap-y-9 md:grid-cols-2 lg:grid-cols-4">
+          {result.price && <PriceBlock result={result} base={base} />}
+          {result.facets.map((f) => (
+            <fieldset key={f.key} className="m-0 min-w-0 border-0 p-0">
+              <legend className="mb-4 p-0 text-kicker uppercase text-ink-3">{f.label}</legend>
+              <ul className="m-0 flex list-none flex-col gap-1 p-0">
+                {f.options.map((o) => (
+                  <li key={o.value}>
+                    <Link
+                      href={catalogHref(base, toggleValue(result.query, f.key, o.value, f.multi), result.sort)}
+                      scroll={false}
+                      data-testid={`facet-${f.key}-${o.value}`}
+                      className={optionCls(o.selected)}
+                    >
+                      <Mark selected={o.selected} round={!f.multi} />
+                      <span className="sr-only">{o.selected ? "Quitar filtro:" : "Filtrar por:"}</span>
+                      <span className="flex-1">{o.label}</span>
+                      <span className="text-legal tabular-nums text-ink-3">{o.count}</span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </fieldset>
+          ))}
+        </div>
+      </div>
+      {/* Pie fijo del panel: en móvil es la forma cómoda de volver a los resultados. */}
+      <div className="flex items-center justify-between gap-4 border-t border-divider bg-surface-elevated px-page py-4">
+        {result.active.length > 0 ? (
+          <Link href={catalogHref(base, {}, result.sort)} scroll={false} className="border-b border-accent pb-1 text-label uppercase text-ink hover:text-accent" data-testid="filters-clear">
+            {content.clearLabel}
+          </Link>
+        ) : (
+          <span />
+        )}
+        <CloseDetailsButton className="cursor-pointer bg-ink px-5 py-3 text-label uppercase text-bg transition-colors hover:bg-ink-2" testId="filters-done">
+          {count === 1 ? "Ver 1 pieza" : `Ver ${count} piezas`}
+        </CloseDetailsButton>
+      </div>
     </div>
   );
 }

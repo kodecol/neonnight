@@ -1,6 +1,7 @@
 import type { Money } from "../value-objects/money";
 import type { Slug } from "../value-objects/slug";
 import type { Reference } from "../value-objects/reference";
+import type { CaseMaterialKey, JewelryMetalKey } from "../services/materials";
 
 export type ProductId = string & { readonly __brand: "ProductId" };
 export const productId = (value: string): ProductId => value as ProductId;
@@ -20,14 +21,20 @@ export interface WatchSpecs {
   readonly movement: string;
   readonly powerReserveHours: number | null;
   readonly caseMm: number;
+  /** Texto que se muestra en la ficha ("Oystersteel", "Oro Everose 18 k"). */
   readonly caseMaterial: string;
+  /** Material canónico para filtrar (ver `services/materials.ts`). Ausente en datos antiguos: se deduce del texto. */
+  readonly caseMaterialKey?: CaseMaterialKey;
   readonly crystal: string;
   readonly waterResistanceM: number | null;
 }
 
 export interface JewelrySpecs {
   readonly kind: "joya";
+  /** Texto que se muestra en la ficha ("Oro rosa 18 k"). */
   readonly metal: string;
+  /** Metal canónico para filtrar. Ausente en datos antiguos: se deduce del texto. */
+  readonly metalKey?: JewelryMetalKey;
   readonly stones: string | null;
   readonly caratTotal: number | null;
   readonly weightGrams: number | null;

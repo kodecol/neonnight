@@ -2,6 +2,7 @@ import { productId, type Product, type ProductCondition, type ProductImage, type
 import { Money } from "@/domain/value-objects/money";
 import { Slug } from "@/domain/value-objects/slug";
 import { Reference } from "@/domain/value-objects/reference";
+import { inferCaseMaterial, inferJewelryMetal } from "@/domain/services/materials";
 import { withLibrary } from "@/domain/services/media-library";
 
 /**
@@ -57,6 +58,13 @@ export interface SeedProductInput {
   featured?: boolean;
 }
 
+/** El seed escribe el material como texto; la clave canónica para filtrar se deduce aquí. */
+function withMaterialKeys(specs: ProductSpecs): ProductSpecs {
+  if (specs.kind === "reloj" && !specs.caseMaterialKey) return { ...specs, caseMaterialKey: inferCaseMaterial(specs.caseMaterial) ?? "acero" };
+  if (specs.kind === "joya" && !specs.metalKey) return { ...specs, metalKey: inferJewelryMetal(specs.metal) ?? "otro" };
+  return specs;
+}
+
 export function buildProduct(i: SeedProductInput): Product {
   return {
     id: productId(i.id),
@@ -69,7 +77,7 @@ export function buildProduct(i: SeedProductInput): Product {
     condition: i.condition,
     subtitle: i.subtitle,
     description: i.description,
-    specs: i.specs,
+    specs: withMaterialKeys(i.specs),
     variants: i.variants.map((v) => ({
       id: v.id ?? (v.label ? Slug.fromText(v.label).value : "unica"),
       label: v.label,
