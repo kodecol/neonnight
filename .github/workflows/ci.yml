@@ -54,3 +54,6 @@ jobs:
       - run: scripts/smoke-standalone.sh
         env:
           MONGODB_URI: mongodb://127.0.0.1:27017
+      - run: scripts/smoke-standalone-multi.sh
+        env:
+          MONGODB_URI: mongodb://127.0.0.1:27017

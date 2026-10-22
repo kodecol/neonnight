@@ -3,6 +3,10 @@ import { notFound } from "next/navigation";
 import { createContainer, getContainer, type Container } from "@/infrastructure/container";
 import { tenancy, type InstanceConfig } from "@/infrastructure/config/instance";
 import { demoHost } from "@/infrastructure/tenancy/demo-host";
+import { InMemoryProductRepository } from "@/infrastructure/repositories/in-memory-product-repository";
+import { InMemoryLineRepository } from "@/infrastructure/repositories/in-memory-line-repository";
+import { InMemoryCategoryRepository } from "@/infrastructure/repositories/in-memory-category-repository";
+import { InMemoryBrandRepository } from "@/infrastructure/repositories/in-memory-brand-repository";
 
 /**
  * El contenedor de la tienda de ESTA petición. En modo single es el de
@@ -52,7 +56,11 @@ function neutralContainer(): Container {
     media: { dir: "/nonexistent", cloudinary: false, folders: { site: "demos/_", catalogUploads: "demos/_" } },
     demo: { expiresAt: new Date(0), banner: false, mediaQuotaMb: 0 },
   };
-  return (g.__nnNeutral ??= createContainer({}, config));
+  // Sin catálogo: el contenedor neutro solo pinta el 404 (nada del seed de ninguna tienda).
+  return (g.__nnNeutral ??= createContainer(
+    { products: new InMemoryProductRepository([]), lines: new InMemoryLineRepository([]), categories: new InMemoryCategoryRepository([]), brands: new InMemoryBrandRepository([]) },
+    config,
+  ));
 }
 
 /** URL pública de la tienda de esta petición (canonical, OG, JSON-LD, sitemap). */
