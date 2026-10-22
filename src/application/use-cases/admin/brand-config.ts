@@ -34,7 +34,7 @@ const NETWORK_COPY: Record<SocialNetworkKey, string> = {
   instagram: "Llegadas nuevas y detalles de cada pieza",
   facebook: "Novedades y lo que pasa detrás de cámaras",
   tiktok: "Videos cortos de las piezas en uso",
-  youtube: "Reseñas y presentaciones paso a paso",
+  youtube: "Reseñas y verificaciones paso a paso",
 };
 
 /** `https://www.instagram.com/joyeria.aurora/` → `@joyeria.aurora` (en YouTube y Facebook, sin @). */
@@ -68,8 +68,9 @@ export class ApplyBrandConfig {
 
     const isotype = brand.isotipo_url ? await this.deps.resolveAsset(brand.isotipo_url, `Isotipo de ${brand.name}`) : null;
     const logo = brand.logo_url ? await this.deps.resolveAsset(brand.logo_url, brand.name) : null;
+    const lightLogo = brand.logo_light_url ? await this.deps.resolveAsset(brand.logo_light_url, brand.name) : null;
     const { clock } = this.deps;
-    await new ApplyIdentity({ identity: this.deps.identity, clock }).execute(brandIdentity(brand, { isotype, logo }));
+    await new ApplyIdentity({ identity: this.deps.identity, clock }).execute(brandIdentity(brand, { isotype, logo, lightLogo }));
     await new ApplyAppearance({ appearance: this.deps.appearance, clock }).execute(appearance);
     await new SaveCompanySettings({ companySettings: this.deps.companySettings, clock }).execute(company);
     const applied = ["identidad", "apariencia", "empresa"];

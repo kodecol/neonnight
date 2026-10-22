@@ -16,6 +16,8 @@ export interface CompanySettings {
   /** Transportadora y página de rastreo (null: las del código). */
   readonly carrier: string | null;
   readonly trackingUrl: string | null;
+  /** Año de fundación (JSON-LD, Nosotros). null o ausente: el del código. */
+  readonly foundingYear?: number | null;
   readonly updatedAt: Date;
 }
 
@@ -38,6 +40,7 @@ export function mergeCompany(base: CompanyInfo, s: CompanySettings | null): Comp
     email: s.email,
     privacyEmail: s.privacyEmail,
     hours: s.hours,
+    foundingYear: s.foundingYear ?? base.foundingYear,
   };
 }
 

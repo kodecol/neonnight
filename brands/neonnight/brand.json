@@ -19,7 +19,9 @@
   },
   "font": "archivo",
   "isotipo_url": "/assets/brands/neonnight/isotipo-dark.png",
+  "logo_light_url": "/assets/brands/neonnight/isotipo-color.png",
   "company": {
+    "founding_year": 2025,
     "legal_name": "NEON NIGHT",
     "tax_id": "3812180",
     "legal_form": "Establecimiento de comercio",

@@ -46,6 +46,7 @@ export const CompanyInputSchema = z
     privacyEmail: z.string().trim().email("Correo no válido.").regex(ONE_LINE, ONE_LINE_MSG),
     hours: line(2, 120),
     carrier: line(2, 60),
+    foundingYear: z.number().int().min(1900).max(2100).nullable().optional(),
     trackingUrl: z
       .string()
       .trim()

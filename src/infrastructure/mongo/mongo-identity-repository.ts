@@ -17,6 +17,7 @@ const clean = (s: StoreIdentity): StoreIdentity => ({
   description: s.description,
   isotype: s.isotype,
   logo: s.logo,
+  ...(s.lightLogo ? { lightLogo: s.lightLogo } : {}),
   updatedAt: s.updatedAt,
 });
 

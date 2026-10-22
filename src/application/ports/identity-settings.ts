@@ -24,12 +24,12 @@ export interface IdentitySettingsRepository {
 /** La marca que usa el sitio: la del código con la identidad editada encima. */
 export function mergeIdentity(base: SiteContent["brand"], s: StoreIdentityInput | null): SiteContent["brand"] {
   if (!s) return base;
-  return { ...base, name: s.name, wordmark: s.wordmark, tagline: s.tagline, titleSuffix: s.titleSuffix || base.titleSuffix, description: s.description, isotype: s.isotype, logoWide: s.logo };
+  return { ...base, name: s.name, wordmark: s.wordmark, tagline: s.tagline, titleSuffix: s.titleSuffix || base.titleSuffix, description: s.description, isotype: s.isotype, logoWide: s.logo, logo: { ...base.logo, color: s.lightLogo?.src ?? s.isotype?.src ?? base.logo.color } };
 }
 
 /** La identidad del código como entrada del editor. */
 export function identityOf(brand: SiteContent["brand"]): StoreIdentityInput {
-  return { name: brand.name, wordmark: brand.wordmark, tagline: brand.tagline, titleSuffix: brand.titleSuffix, description: brand.description, isotype: brand.isotype ?? null, logo: brand.logoWide ?? null };
+  return { name: brand.name, wordmark: brand.wordmark, tagline: brand.tagline, titleSuffix: brand.titleSuffix, description: brand.description, isotype: brand.isotype ?? null, logo: brand.logoWide ?? null, lightLogo: null };
 }
 
 /**

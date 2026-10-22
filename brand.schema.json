@@ -173,9 +173,28 @@
         }
       ]
     },
+    "logo_light_url": {
+      "description": "Isotipo o logo para fondo claro: el que muestran los buscadores. Sin él, el isotipo.",
+      "anyOf": [
+        {
+          "type": "string",
+          "maxLength": 500
+        },
+        {
+          "type": "string",
+          "pattern": "^\\/assets\\/[\\w./-]+\\.(png|webp|avif|svg)$"
+        }
+      ]
+    },
     "company": {
       "type": "object",
       "properties": {
+        "founding_year": {
+          "description": "Año de fundación (Nosotros y buscadores). Por defecto, el actual.",
+          "type": "integer",
+          "minimum": 1900,
+          "maximum": 2100
+        },
         "legal_name": {
           "type": "string",
           "minLength": 2,

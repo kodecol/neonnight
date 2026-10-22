@@ -65,7 +65,9 @@ export const BrandConfigSchema = z
       .describe("Una fuente del catálogo para todo, o una para títulos y otra para el cuerpo."),
     logo_url: assetRef.optional().describe("Logo horizontal para fondo oscuro (SVG, PNG, WebP o AVIF transparente)."),
     isotipo_url: assetRef.optional().describe("Isotipo cuadrado para fondo oscuro: favicon, íconos y barra."),
+    logo_light_url: assetRef.optional().describe("Isotipo o logo para fondo claro: el que muestran los buscadores. Sin él, el isotipo."),
     company: z.object({
+      founding_year: z.number().int().min(1900).max(2100).optional().describe("Año de fundación (Nosotros y buscadores). Por defecto, el actual."),
       legal_name: text(2, 60).describe("Nombre del establecimiento o razón social, como figura en la matrícula."),
       tax_id: text(1, 20).describe("NIT o número de matrícula mercantil."),
       legal_form: text(2, 60).optional(),
@@ -155,7 +157,7 @@ const NICHE_COPY: Record<Niche, { title: string; tagline: string; description: s
 };
 
 /** Identidad para Ajustes › Identidad (isotipo y logo los resuelve quien sube las imágenes). */
-export function brandIdentity(b: BrandConfig, assets: { isotype: StoreIdentityInput["isotype"]; logo: StoreIdentityInput["logo"] }): StoreIdentityInput {
+export function brandIdentity(b: BrandConfig, assets: { isotype: StoreIdentityInput["isotype"]; logo: StoreIdentityInput["logo"]; lightLogo?: StoreIdentityInput["lightLogo"] }): StoreIdentityInput {
   const copy = NICHE_COPY[b.niche];
   return { name: b.name, wordmark: b.wordmark ?? b.name.toUpperCase(), tagline: b.tagline ?? copy.tagline, titleSuffix: b.seo_title ?? copy.title, description: b.description ?? copy.description, ...assets };
 }
@@ -181,5 +183,6 @@ export function brandCompany(b: BrandConfig): CompanyInput {
     hours: c.hours ?? "Lunes a sábado, de 9:00 a. m. a 6:00 p. m. (hora de Colombia)",
     carrier: c.carrier ?? "Interrapidísimo",
     trackingUrl: c.tracking_url ?? "https://www.interrapidisimo.com/",
+    foundingYear: c.founding_year ?? null,
   };
 }

@@ -238,6 +238,8 @@ export class SaveCompanySettings {
 
   async execute(raw: unknown): Promise<void> {
     const input = CompanyInputSchema.parse(raw);
-    await this.deps.companySettings.save({ ...input, updatedAt: this.deps.clock.now() });
+    // El formulario del panel no edita el año de fundación: se conserva el guardado.
+    const foundingYear = input.foundingYear ?? (await this.deps.companySettings.get())?.foundingYear ?? null;
+    await this.deps.companySettings.save({ ...input, foundingYear, updatedAt: this.deps.clock.now() });
   }
 }

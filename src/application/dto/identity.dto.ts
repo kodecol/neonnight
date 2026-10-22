@@ -31,5 +31,7 @@ export const StoreIdentitySchema = z.object({
   isotype: IdentityAssetSchema.nullable(),
   /** Logo horizontal; si existe, reemplaza isotipo + wordmark en la barra y el pie. */
   logo: IdentityAssetSchema.nullable(),
+  /** Isotipo o logo para fondo CLARO: el que muestran los buscadores (JSON-LD). Sin él, el isotipo. */
+  lightLogo: IdentityAssetSchema.nullable().optional(),
 });
 export type StoreIdentityInput = z.infer<typeof StoreIdentitySchema>;
