@@ -5,6 +5,7 @@ import { createContainer } from "../container";
 import { mongoDb, mongoDbName } from "../mongo/client";
 import { MongoBrandFingerprint } from "./brand-fingerprint";
 import { resolveBrandAsset } from "./brand-assets";
+import { BUNDLED_BRAND_PACKS } from "./bundled-packs";
 
 /**
  * `STORE_BRAND_PACK=brands/<slug>/brand.json`: al arrancar, si la base nunca
@@ -12,8 +13,8 @@ import { resolveBrandAsset } from "./brand-assets";
  * plantilla sin ventana en la que se vea "Tu tienda"). Si ya hay una marca
  * aplicada, no hace nada: lo editado en el panel manda (para reaplicar a
  * propósito: `lifecycle.mjs brand:apply --file … --force`).
- * Si el pack falla, el arranque falla: mejor un despliegue que no pasa el
- * health que una tienda con la marca equivocada.
+ * Si el pack falla, el arranque sigue y el error queda en el log (y en
+ * /api/health como brand_pack: "error"): una tienda caída es peor.
  */
 export async function applyBrandPackOnBoot(env = process.env): Promise<{ status: "omitido" | "ya-aplicada" | "aplicada"; applied?: string[] }> {
   const file = env.STORE_BRAND_PACK?.trim();
@@ -22,7 +23,8 @@ export async function applyBrandPackOnBoot(env = process.env): Promise<{ status:
   const db = mongoDb(uri, mongoDbName());
   const fingerprint = new MongoBrandFingerprint(db);
   if (await fingerprint.get()) return { status: "ya-aplicada" };
-  const raw: unknown = JSON.parse(await readFile(resolve(process.cwd(), file), "utf8"));
+  // Primero el pack empaquetado en el build (la salida standalone no trae brands/); si no, el archivo.
+  const raw: unknown = BUNDLED_BRAND_PACKS[file.replace(/^\.\//, "")] ?? JSON.parse(await readFile(resolve(process.cwd(), file), "utf8"));
   const c = createContainer();
   const result = await new ApplyBrandConfig({
     identity: c.identity,

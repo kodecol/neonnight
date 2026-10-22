@@ -2,6 +2,9 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   output: "standalone",
+  // El hosting corre la salida standalone: lo que se lee del disco en runtime tiene que ir en ella.
+  // (Los brand packs también van importados en el bundle; esto cubre sus imágenes e íconos.)
+  outputFileTracingIncludes: { "/*": ["./brands/**/*", "./public/assets/brands/**/*"] },
   poweredByHeader: false,
   // Ni la tienda ni el panel se muestran dentro de otros sitios (clickjacking).
   async headers() {

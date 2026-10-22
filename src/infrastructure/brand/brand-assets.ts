@@ -19,8 +19,12 @@ export async function resolveBrandAsset(ref: string, alt: string, uploader: Medi
   if (ref.startsWith("/assets/")) {
     const file = normalize(join(publicDir, ref));
     if (!file.startsWith(join(publicDir, "assets"))) throw new Error(`Ruta fuera del sitio: ${ref}`);
-    const meta = await sharp(await readFile(file)).metadata();
-    return { src: ref, alt, ratio: ratioOf(meta.width, meta.height) };
+    // Si el archivo no viaja en este build (salida standalone sin public/), se usa igual:
+    // lo sirve el hosting; solo se pierde la proporción exacta.
+    const meta = await readFile(file)
+      .then((b) => sharp(b).metadata())
+      .catch((e: unknown) => (console.warn(`[brand] no se pudo leer ${ref} para medirlo: ${String(e)}`), null));
+    return { src: ref, alt, ratio: ratioOf(meta?.width, meta?.height) };
   }
   const res = await fetch(ref, { signal: AbortSignal.timeout(5_000), redirect: "follow" });
   if (!res.ok) throw new Error(`No se pudo descargar ${ref} (HTTP ${res.status}).`);

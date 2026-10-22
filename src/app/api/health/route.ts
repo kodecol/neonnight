@@ -14,7 +14,9 @@ export const dynamic = "force-dynamic";
 export async function GET(req: Request) {
   const sha = process.env.APP_VERSION || "dev";
   const db = process.env.MONGODB_URI ? "mongodb" : "memoria";
-  const base = { sha, version: sha, template: TEMPLATE, schema_version: SCHEMA_VERSION, db };
+  // Resultado del brand pack del arranque (solo si STORE_BRAND_PACK está puesta): aplicada | ya-aplicada | error.
+  const brandPack = (globalThis as unknown as { __nnBrandPack?: string }).__nnBrandPack;
+  const base = { sha, version: sha, template: TEMPLATE, schema_version: SCHEMA_VERSION, db, ...(brandPack ? { brand_pack: brandPack } : {}) };
   const headers = { "Cache-Control": "no-store" };
   if (new URL(req.url).searchParams.get("deep") !== "1") {
     return NextResponse.json({ status: "ok", ...base }, { headers });
