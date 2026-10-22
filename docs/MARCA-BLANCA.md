@@ -96,3 +96,35 @@ Sin nada publicado, la plantilla se ve así:
 - no muestra redes ni testimonios: sus bloques no aparecen hasta que haya redes, o testimonios reales y autorizados.
 
 Todo lo de una marca real va en su `brand.json` o se edita en el panel.
+
+## Demo host (`TENANCY=multi`, desde 1.1.0)
+
+La misma imagen puede servir **muchas demos** en un solo proceso. Es el modo del servidor de demos de Kode: cada demo es `<slug>.<DEMO_ZONE>`, con un solo nivel de subdominio.
+
+- **Resolución:** cada petición busca su demo por el host en `demo_registry.tenants`, con una caché de 30 s.
+  - Un host desconocido da 404, sin consultar la base si no es de la zona.
+  - Una demo vencida da 404 con «Esta demo terminó».
+  - `/api/health` responde en cualquier host.
+- **Aislamiento:** cada demo tiene:
+  - su base (`demo_<slug con _>`) sobre una sola conexión compartida;
+  - su URL;
+  - su clave de sesión, derivada de `DEMO_MASTER_SECRET` con HKDF: la cookie de una demo no abre otra;
+  - sus medios en Cloudinary, bajo `demos/<slug>/`.
+- **Modo demo:**
+  - Bold siempre apagado, sin llaves ni webhooks: los pedidos son manuales, con el prefijo `DEMO-`;
+  - sin analítica;
+  - `noindex`, `robots.txt` con `Disallow: /` y sin sitemap;
+  - freno de 240 peticiones por minuto por IP y host, y 1.200 por host.
+- **Contrato con Kode:** `/api/_kode/tenants` (GET) y `/api/_kode/tenants/:slug` (PUT y DELETE), con firma HMAC: ver `template.manifest.json` › `multi` y la §11 del plan en `kodecol/kode`.
+  - **PUT** crea o actualiza la demo. Al crear exige `admin_password` y siembra el nicho; siempre aplica `brand:apply`, que es idempotente.
+  - **DELETE** borra la base (o sus colecciones, si el usuario no tiene `dbAdmin`), solo `demos/<slug>/` en Cloudinary, y el registro.
+- **El modo single no cambia:** Neon Night y cualquier instancia propia siguen igual, con todo del entorno.
+
+Pendiente, para versiones siguientes:
+- franja «Demo de Kodecol»;
+- cuota de medios por demo;
+- caché de datos por demo;
+- tope de páginas renderizándose a la vez;
+- exportar y convertir una demo en instancia;
+- CLI por `docker exec`;
+- medios y reenlace para importar demos con datos.
