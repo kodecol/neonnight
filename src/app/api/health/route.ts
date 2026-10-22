@@ -26,16 +26,19 @@ export async function GET(req: Request) {
   if (new URL(req.url).searchParams.get("deep") !== "1") {
     return NextResponse.json({ status: "ok", ...base }, { headers });
   }
+  // Solo en deep: el hosting no expone métricas, Kode vigila el RSS por aquí.
+  const mem = process.memoryUsage();
+  const memory = { rss_mb: Math.round(mem.rss / 1048576), heap_used_mb: Math.round(mem.heapUsed / 1048576) };
   try {
     const timeout = new Promise<never>((_, reject) => setTimeout(() => reject(new Error("timeout")), 5000));
     if (mode === "multi") {
       const tenants = await Promise.race([demoHost().registry.ping(), timeout]);
-      return NextResponse.json({ status: "ok", ...base, tenants }, { headers });
+      return NextResponse.json({ status: "ok", ...base, tenants, memory }, { headers });
     }
     const categories = await Promise.race([getContainer().categories.list(), timeout]);
-    return NextResponse.json({ status: "ok", ...base, categories: categories.length }, { headers });
+    return NextResponse.json({ status: "ok", ...base, categories: categories.length, memory }, { headers });
   } catch (e) {
     console.error("[health]", e);
-    return NextResponse.json({ status: "error", ...base }, { status: 503, headers });
+    return NextResponse.json({ status: "error", ...base, memory }, { status: 503, headers });
   }
 }
