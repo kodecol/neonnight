@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
-import { getContainer } from "@/infrastructure/container";
 import { GetOrderStatus } from "@/application/use-cases/get-order-status";
 import { Button } from "@/presentation/components/primitives/Button";
 import { Kicker } from "@/presentation/components/primitives/Kicker";
 import { AutoRefresh } from "@/presentation/components/checkout/AutoRefresh";
 import { TrackPurchase } from "@/presentation/components/seo/TrackEvent";
 import { ROUTES } from "@/presentation/lib/site";
+import { container } from "@/app/_lib/tenant";
 
 export const metadata: Metadata = { title: "Pedido recibido", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
@@ -24,7 +24,7 @@ const COPY = {
  */
 export default async function ThanksPage({ searchParams }: { searchParams: Promise<{ orden?: string }> }) {
   const { orden } = await searchParams;
-  const { orders, paymentSettings, whatsapp } = getContainer();
+  const { orders, paymentSettings, whatsapp } = (await container());
   const [order, settings] = await Promise.all([orden ? new GetOrderStatus(orders).execute(orden) : null, paymentSettings.get()]);
 
   if (!order) {

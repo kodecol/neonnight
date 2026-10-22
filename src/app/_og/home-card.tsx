@@ -1,5 +1,5 @@
 import { ImageResponse } from "next/og";
-import { getContainer } from "@/infrastructure/container";
+import { container as currentContainer } from "@/app/_lib/tenant";
 import { ListLines } from "@/application/use-cases/list-lines";
 import { ogColors, ogFonts, ogIsotype, ogIsotypeHeight, ogPhoto } from "./brand";
 
@@ -7,7 +7,7 @@ import { ogColors, ogFonts, ogIsotype, ogIsotypeHeight, ogPhoto } from "./brand"
 const SIZE = { width: 1200, height: 630 };
 
 export async function homeCard(lineSlug: string | null): Promise<ImageResponse | null> {
-  const container = getContainer();
+  const container = (await currentContainer());
   const [site, lines, products, fonts, C] = await Promise.all([container.content.get(), new ListLines(container).execute(), container.products.findAll(), ogFonts(), ogColors()]);
   const iso = await ogIsotype(site.brand.isotype);
   const line = lineSlug ? (lines.find((l) => l.slug === lineSlug) ?? null) : null;

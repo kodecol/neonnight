@@ -9,6 +9,11 @@ import { SESSION_COOKIE, adminSecret, verifySessionToken } from "@/infrastructur
  */
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
+  // Demo host: la clave de sesión es de cada tenant y aquí no hay tenant; cada
+  // página y action del panel verifica la sesión con la suya (requireAdmin).
+  if (process.env.TENANCY === "multi") {
+    return pathname === "/admin" || pathname === "/admin/" ? NextResponse.redirect(new URL("/admin/catalogo", req.url)) : NextResponse.next();
+  }
   const secret = adminSecret();
   const authed = secret ? await verifySessionToken(req.cookies.get(SESSION_COOKIE)?.value, secret) : false;
 

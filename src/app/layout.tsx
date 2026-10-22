@@ -3,22 +3,22 @@ import "@/presentation/styles/globals.css";
 import { fontVariables } from "./fonts";
 import { GetActiveAppearance } from "@/application/use-cases/admin/appearance";
 import { ThemeStyle } from "@/presentation/components/seo/ThemeStyle";
-import { getContainer } from "@/infrastructure/container";
-import { absoluteUrl, siteUrl } from "@/presentation/lib/site";
+import { absoluteUrl } from "@/presentation/lib/site";
 import { versioned } from "@/application/use-cases/brand-assets";
 import { brandAssets } from "./_icons/render";
-import { storeSlug } from "@/infrastructure/config/store";
+import { container as currentContainer, siteBaseUrl } from "@/app/_lib/tenant";
 
 export async function generateMetadata(): Promise<Metadata> {
-  const [{ brand }, { version }] = await Promise.all([getContainer().content.get(), brandAssets()]);
+  const siteBase = await siteBaseUrl();
+  const [{ brand }, { version }] = await Promise.all([(await currentContainer()).content.get(), brandAssets()]);
   const v = (path: string) => versioned(path, version);
   const google = process.env.GOOGLE_SITE_VERIFICATION?.trim();
   const meta = process.env.META_DOMAIN_VERIFICATION?.trim();
   // Vista previa general; las fichas y las líneas ponen la suya.
-  const url = absoluteUrl(v("/og/inicio.jpg"));
+  const url = absoluteUrl(v("/og/inicio.jpg"), siteBase);
   const image = { url, secureUrl: url, width: 1200, height: 630, alt: `${brand.name} — relojes, joyas y perfumes de las grandes casas`, type: "image/jpeg" };
   return {
-    metadataBase: siteUrl(),
+    metadataBase: new URL(siteBase),
     title: { default: `${brand.name} — ${brand.titleSuffix}`, template: `%s — ${brand.name}` },
     description: brand.description,
     applicationName: brand.name,
@@ -43,16 +43,16 @@ export async function generateMetadata(): Promise<Metadata> {
 
 /** Color de la barra del navegador: el fondo del tema publicado (o el negro de fábrica). */
 export async function generateViewport(): Promise<Viewport> {
-  const appearance = await new GetActiveAppearance(getContainer().appearance).execute();
+  const appearance = await new GetActiveAppearance((await currentContainer()).appearance).execute();
   return { themeColor: appearance?.colors.bg ?? "#000000", colorScheme: "dark" };
 }
 
 /** Raíz mínima: la tienda pone su chrome en `(store)/layout.tsx` y el panel el suyo en `admin/`. */
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const container = getContainer();
+  const container = (await currentContainer());
   const [site, appearance] = await Promise.all([container.content.get(), new GetActiveAppearance(container.appearance).execute()]);
   return (
-    <html lang={site.brand.locale} className={fontVariables} data-store={storeSlug()}>
+    <html lang={site.brand.locale} className={fontVariables} data-store={(await currentContainer()).config.slug}>
       <head>
         <ThemeStyle appearance={appearance} />
       </head>

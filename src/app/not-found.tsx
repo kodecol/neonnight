@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { connection } from "next/server";
-import { getContainer } from "@/infrastructure/container";
 import { NotFoundView } from "@/presentation/components/blocks/NotFoundView";
+import { container } from "@/app/_lib/tenant";
 
 /**
  * Next ya agrega `<meta name="robots" content="noindex">` a todo 404: aquí el
@@ -13,6 +13,6 @@ export const metadata: Metadata = { title: "Página no encontrada", robots: { go
 /** 404 fuera de la tienda: se pinta en cada petición para tomar la identidad vigente. */
 export default async function NotFound() {
   await connection();
-  const { brand } = await getContainer().content.get();
+  const { brand } = await (await container()).content.get();
   return <NotFoundView brand={brand} standalone />;
 }

@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { notFound, permanentRedirect } from "next/navigation";
 import { cache } from "react";
-import { getContainer } from "@/infrastructure/container";
 import { GetProductBySlug } from "@/application/use-cases/get-product-by-slug";
 import { ListRelatedProducts } from "@/application/use-cases/list-related-products";
 import type { ProductDetailDto } from "@/application/dto/product.dto";
@@ -23,11 +22,12 @@ import { TrackEvent } from "@/presentation/components/seo/TrackEvent";
 import { WhatsAppMessage } from "@/presentation/components/chrome/WhatsAppFab";
 import { merchantReturnPolicy, shippingDetails } from "@/presentation/lib/structured-data";
 import { ROUTES, absoluteUrl } from "@/presentation/lib/site";
+import { container, siteBaseUrl } from "@/app/_lib/tenant";
 
 /** Metadata, imagen OG y página comparten una consulta por petición. */
 export const loadProduct = cache(async (slug: string): Promise<ProductDetailDto | null> => {
   try {
-    return await new GetProductBySlug(getContainer().products).execute(slug);
+    return await new GetProductBySlug((await container()).products).execute(slug);
   } catch (e) {
     if (e instanceof ProductNotFoundError) return null;
     throw e;
@@ -35,13 +35,14 @@ export const loadProduct = cache(async (slug: string): Promise<ProductDetailDto 
 });
 
 export async function productMetadata(slug: string): Promise<Metadata> {
+  const siteBase = await siteBaseUrl();
   const product = await loadProduct(slug);
   if (!product) return { title: "Pieza no encontrada" };
-  const { brand, brand: { locale } } = await getContainer().content.get();
+  const { brand, brand: { locale } } = await (await container()).content.get();
   const ref = product.reference ? ` ref. ${product.reference}` : "";
   const price = `${product.priceFrom ? "desde " : ""}${product.price.formatted}`;
   const description = `${product.name}${ref} · ${product.subtitle} · ${price}. Verificado en mano, con garantía y envío asegurado.`;
-  const url = absoluteUrl(ROUTES.product(product.kind, product.slug));
+  const url = absoluteUrl(ROUTES.product(product.kind, product.slug), siteBase);
   return {
     title: product.name,
     description,
@@ -66,15 +67,16 @@ const SCHEMA_CONDITION = { nuevo: "https://schema.org/NewCondition", "como-nuevo
  * finas y delegan aquí; si el slug pertenece a otra plantilla, redirige a su URL.
  */
 export async function ProductPage({ slug, kind }: { slug: string; kind: ProductKind }) {
+  const siteBase = await siteBaseUrl();
   const product = await loadProduct(slug);
   if (!product) notFound();
   if (product.kind !== kind) permanentRedirect(ROUTES.product(product.kind, product.slug));
 
-  const { whatsapp, analytics, content, products, lines } = getContainer();
+  const { whatsapp, analytics, content, products, lines } = (await container());
   const [site, related, allLines] = await Promise.all([content.get(), new ListRelatedProducts(products).execute(product.slug), lines.list()]);
   const line = allLines.find((l) => l.slug === product.line) ?? null;
   const copy = site.product.byKind[product.kind];
-  const canonical = absoluteUrl(ROUTES.product(product.kind, product.slug));
+  const canonical = absoluteUrl(ROUTES.product(product.kind, product.slug), siteBase);
   const whatsappUrl = whatsapp.forProduct({ name: product.name, reference: product.reference, canonicalUrl: canonical });
   void analytics.track({ name: "view_item", productId: product.id, slug: product.slug, priceCents: product.price.cents });
   const trackItem = { id: product.id, name: product.name, brand: product.brand, category: line?.label, priceCents: product.price.cents };
@@ -92,7 +94,7 @@ export async function ProductPage({ slug, kind }: { slug: string; kind: ProductK
     itemCondition: SCHEMA_CONDITION[product.condition],
     seller: { "@type": "Organization", name: site.brand.name },
     shippingDetails: shippingDetails(site),
-    hasMerchantReturnPolicy: merchantReturnPolicy(site),
+    hasMerchantReturnPolicy: merchantReturnPolicy(site, siteBase),
   };
   // Una oferta por presentación: Google la necesita así para mostrar precio y envío.
   const offers = product.variants.map((v) => ({
@@ -117,7 +119,7 @@ export async function ProductPage({ slug, kind }: { slug: string; kind: ProductK
               brand: { "@type": "Brand", name: product.brand },
               ...(line ? { category: line.label } : {}),
               description: product.description.join(" "),
-              image: [...new Set(images)].map((s) => absoluteUrl(s)),
+              image: [...new Set(images)].map((s) => absoluteUrl(s, siteBase)),
               url: canonical,
               additionalProperty: product.specs.map((s) => ({ "@type": "PropertyValue", name: s.label, value: s.value })),
               offers: offers.length === 1 ? offers[0] : offers,
@@ -125,8 +127,8 @@ export async function ProductPage({ slug, kind }: { slug: string; kind: ProductK
             {
               "@type": "BreadcrumbList",
               itemListElement: [
-                { "@type": "ListItem", position: 1, name: site.collection.breadcrumbHome, item: absoluteUrl(ROUTES.home) },
-                ...(line ? [{ "@type": "ListItem", position: 2, name: line.label, item: absoluteUrl(ROUTES.line(line.slug)) }] : []),
+                { "@type": "ListItem", position: 1, name: site.collection.breadcrumbHome, item: absoluteUrl(ROUTES.home, siteBase) },
+                ...(line ? [{ "@type": "ListItem", position: 2, name: line.label, item: absoluteUrl(ROUTES.line(line.slug), siteBase) }] : []),
                 { "@type": "ListItem", position: line ? 3 : 2, name: product.name, item: canonical },
               ],
             },

@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { cache } from "react";
 import { notFound, permanentRedirect } from "next/navigation";
-import { getContainer } from "@/infrastructure/container";
 import { BrowseCatalog, type RawParams } from "@/application/use-cases/browse-catalog";
 import { LineNotFoundError } from "@/domain/errors";
 import { Breadcrumb } from "@/presentation/components/blocks/Breadcrumb";
@@ -14,11 +13,12 @@ import { TrackEvent } from "@/presentation/components/seo/TrackEvent";
 import { OG_PATHS, ogImage, shareMetadata } from "../_info/og";
 import { catalogHref } from "@/presentation/lib/catalog-href";
 import { ROUTES, absoluteUrl } from "@/presentation/lib/site";
+import { container, siteBaseUrl } from "@/app/_lib/tenant";
 
 /** Metadata y página comparten una sola consulta por petición. */
 const browseCached = cache(async (line: string | null, paramsKey: string) => {
   try {
-    return await new BrowseCatalog(getContainer()).execute({ line, params: JSON.parse(paramsKey) as RawParams });
+    return await new BrowseCatalog((await container())).execute({ line, params: JSON.parse(paramsKey) as RawParams });
   } catch (e) {
     if (e instanceof LineNotFoundError) notFound();
     throw e;
@@ -27,17 +27,18 @@ const browseCached = cache(async (line: string | null, paramsKey: string) => {
 const browse = (line: string | null, params: RawParams) => browseCached(line, JSON.stringify(params));
 
 export async function catalogMetadata(line: string | null, params: RawParams): Promise<Metadata> {
-  const [result, site] = await Promise.all([browse(line, params), getContainer().content.get()]);
+  const siteBase = await siteBaseUrl();
+  const [result, site] = await Promise.all([browse(line, params), (await container()).content.get()]);
   const filtered = Object.keys(params).length > 0;
   const base = result.line ? ROUTES.line(result.line.slug) : ROUTES.collection;
   return {
     title: result.line?.label ?? site.collection.title,
     description: result.line ? `${result.line.label} en ${site.brand.name}. ${result.line.description}` : site.brand.description,
-    alternates: { canonical: absoluteUrl(base) },
+    alternates: { canonical: absoluteUrl(base, siteBase) },
     ...shareMetadata({
       title: `${result.line?.label ?? site.collection.title} — ${site.brand.name}`,
       description: result.line ? `${result.line.label} en ${site.brand.name}. ${result.line.description}` : site.brand.description,
-      url: absoluteUrl(base),
+      url: absoluteUrl(base, siteBase),
       siteName: site.brand.name,
       locale: site.brand.locale,
       image: await ogImage(result.line ? OG_PATHS.line(result.line.slug) : OG_PATHS.home, `${result.line?.label ?? site.collection.title} — ${site.brand.name}`),
@@ -49,7 +50,8 @@ export async function catalogMetadata(line: string | null, params: RawParams): P
 
 /** Colección completa (`line` null) o de una línea. Los filtros llegan por searchParams. */
 export async function CatalogPage({ line, params }: { line: string | null; params: RawParams }) {
-  const { categories, content } = getContainer();
+  const siteBase = await siteBaseUrl();
+  const { categories, content } = (await container());
 
   // Enlaces antiguos `/coleccion?categoria=gmt` → la línea de esa categoría.
   if (line === null && typeof params.categoria === "string") {
@@ -73,12 +75,12 @@ export async function CatalogPage({ line, params }: { line: string | null; param
           "@graph": [
             {
               "@type": "BreadcrumbList",
-              itemListElement: crumbs.map((c, i) => ({ "@type": "ListItem", position: i + 1, name: c.label, item: absoluteUrl(c.href ?? base) })),
+              itemListElement: crumbs.map((c, i) => ({ "@type": "ListItem", position: i + 1, name: c.label, item: absoluteUrl(c.href ?? base, siteBase) })),
             },
             {
               "@type": "ItemList",
               name: `${title} ${site.brand.name}`,
-              itemListElement: result.products.map((p, i) => ({ "@type": "ListItem", position: i + 1, url: absoluteUrl(ROUTES.product(p.kind, p.slug)), name: p.name })),
+              itemListElement: result.products.map((p, i) => ({ "@type": "ListItem", position: i + 1, url: absoluteUrl(ROUTES.product(p.kind, p.slug), siteBase), name: p.name })),
             },
           ],
         }}

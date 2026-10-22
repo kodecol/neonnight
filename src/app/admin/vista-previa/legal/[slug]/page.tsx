@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getContainer } from "@/infrastructure/container";
 import { GetLegalPreview } from "@/application/use-cases/admin/legal";
 import { INFO_PAGE_SLUGS, type InfoPageSlug } from "@/application/dto/info-page.dto";
 import StoreLayout from "../../../../(store)/layout";
 import { InfoRoute } from "../../../../(store)/_info/render-info";
 import { requireAdmin } from "../../../_lib/auth";
+import { container } from "@/app/_lib/tenant";
 
 export const metadata: Metadata = { title: "Vista previa de página legal", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
@@ -21,7 +21,7 @@ export default async function LegalPreviewPage({ params }: { params: Params }) {
   await requireAdmin();
   const { slug } = await params;
   if (!(INFO_PAGE_SLUGS as readonly string[]).includes(slug)) notFound();
-  const c = getContainer();
+  const c = (await container());
   const preview = await new GetLegalPreview({ legalPages: c.legalPages, companySettings: c.companySettings, content: c.content, whatsappLabel: c.whatsappLabel }).execute(slug as InfoPageSlug);
   if (!preview) notFound();
   return (

@@ -1,5 +1,4 @@
 import { Fragment, type ReactNode } from "react";
-import { getContainer } from "@/infrastructure/container";
 import type { StoreIdentityInput } from "@/application/dto/identity.dto";
 import { ListProducts } from "@/application/use-cases/list-products";
 import { GetFeaturedProduct } from "@/application/use-cases/get-featured-product";
@@ -22,6 +21,7 @@ import { JsonLd } from "@/presentation/components/seo/JsonLd";
 import { TrackEvent } from "@/presentation/components/seo/TrackEvent";
 import { onlineStore, whatsappPhone } from "@/presentation/lib/structured-data";
 import { absoluteUrl } from "@/presentation/lib/site";
+import { container as currentContainer, siteBaseUrl } from "@/app/_lib/tenant";
 
 /**
  * Cuerpo de la home. Los bloques salen en el orden y con la visibilidad del
@@ -29,7 +29,8 @@ import { absoluteUrl } from "@/presentation/lib/site";
  * pinta /admin/vista-previa y nunca la tienda pública.
  */
 export async function HomeView({ preview = false, identity }: { preview?: boolean; identity?: StoreIdentityInput }) {
-  const container = getContainer();
+  const siteBase = await siteBaseUrl();
+  const container = (await currentContainer());
   const { products, whatsapp, content } = container;
   const base = await content.get({ identity });
   const [selection, total, featured, brands, lines, custom] = await Promise.all([
@@ -73,8 +74,8 @@ export async function HomeView({ preview = false, identity }: { preview?: boolea
           data={{
             "@context": "https://schema.org",
             "@graph": [
-              onlineStore(site, { telephone: whatsappPhone(whatsapp.generic()) }),
-              { "@type": "WebSite", name: site.brand.name, url: absoluteUrl("/"), description: site.brand.description, inLanguage: site.brand.locale, publisher: { "@id": absoluteUrl("/#tienda") } },
+              onlineStore(site, { telephone: whatsappPhone(whatsapp.generic()), siteBase }),
+              { "@type": "WebSite", name: site.brand.name, url: absoluteUrl("/", siteBase), description: site.brand.description, inLanguage: site.brand.locale, publisher: { "@id": absoluteUrl("/#tienda", siteBase) } },
             ],
           }}
         />

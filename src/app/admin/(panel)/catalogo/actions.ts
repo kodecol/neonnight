@@ -1,6 +1,5 @@
 "use server";
 import { revalidatePath } from "next/cache";
-import { getContainer } from "@/infrastructure/container";
 import { SaveProduct } from "@/application/use-cases/admin/save-product";
 import { DeleteProduct } from "@/application/use-cases/admin/delete-product";
 import { DeleteCategory, SaveCategory } from "@/application/use-cases/admin/categories";
@@ -10,6 +9,7 @@ import type { ActionResult, AdminProductInput, CategoryInput, LineInput } from "
 import type { StoredMedia } from "@/application/ports/media-uploader";
 import { requireAdmin } from "../../_lib/auth";
 import { toActionError } from "../../_lib/result";
+import { container } from "@/app/_lib/tenant";
 
 /** La tienda se renderiza por petición; esto limpia además cualquier caché de cliente/servidor. */
 const publish = () => revalidatePath("/", "layout");
@@ -17,7 +17,7 @@ const publish = () => revalidatePath("/", "layout");
 export async function saveProductAction(input: AdminProductInput): Promise<ActionResult<{ id: string; slug: string }>> {
   await requireAdmin();
   try {
-    const data = await new SaveProduct(getContainer()).execute(input);
+    const data = await new SaveProduct((await container())).execute(input);
     publish();
     return { ok: true, data };
   } catch (e) {
@@ -28,7 +28,7 @@ export async function saveProductAction(input: AdminProductInput): Promise<Actio
 export async function deleteProductAction(id: string): Promise<ActionResult> {
   await requireAdmin();
   try {
-    await new DeleteProduct(getContainer().products).execute(id);
+    await new DeleteProduct((await container()).products).execute(id);
     publish();
     return { ok: true, data: undefined };
   } catch (e) {
@@ -42,7 +42,7 @@ export async function uploadImageAction(fd: FormData): Promise<ActionResult<Stor
   // Se valida por Blob (File hereda de Blob): no depende de cómo el runtime reconstruya el archivo.
   if (!(file instanceof Blob) || file.size === 0) return { ok: false, error: "No llegó ningún archivo." };
   try {
-    const data = await new UploadImage(getContainer().media).execute({
+    const data = await new UploadImage((await container()).media).execute({
       bytes: new Uint8Array(await file.arrayBuffer()),
       contentType: file.type,
       filename: "name" in file && typeof file.name === "string" ? file.name : "foto",
@@ -58,7 +58,7 @@ export async function uploadImageAction(fd: FormData): Promise<ActionResult<Stor
 export async function saveCategoryAction(input: CategoryInput): Promise<ActionResult<{ slug: string }>> {
   await requireAdmin();
   try {
-    const data = await new SaveCategory(getContainer()).execute(input);
+    const data = await new SaveCategory((await container())).execute(input);
     publish();
     return { ok: true, data };
   } catch (e) {
@@ -69,7 +69,7 @@ export async function saveCategoryAction(input: CategoryInput): Promise<ActionRe
 export async function deleteCategoryAction(slug: string): Promise<ActionResult> {
   await requireAdmin();
   try {
-    await new DeleteCategory(getContainer()).execute(slug);
+    await new DeleteCategory((await container())).execute(slug);
     publish();
     return { ok: true, data: undefined };
   } catch (e) {
@@ -80,7 +80,7 @@ export async function deleteCategoryAction(slug: string): Promise<ActionResult> 
 export async function saveLineAction(input: LineInput): Promise<ActionResult<{ slug: string }>> {
   await requireAdmin();
   try {
-    const data = await new SaveLine(getContainer()).execute(input);
+    const data = await new SaveLine((await container())).execute(input);
     publish();
     return { ok: true, data };
   } catch (e) {
@@ -91,7 +91,7 @@ export async function saveLineAction(input: LineInput): Promise<ActionResult<{ s
 export async function deleteLineAction(slug: string): Promise<ActionResult> {
   await requireAdmin();
   try {
-    await new DeleteLine(getContainer()).execute(slug);
+    await new DeleteLine((await container())).execute(slug);
     publish();
     return { ok: true, data: undefined };
   } catch (e) {

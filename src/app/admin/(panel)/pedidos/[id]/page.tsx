@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { getContainer } from "@/infrastructure/container";
 import { GetAdminOrder } from "@/application/use-cases/admin/orders";
 import { DOCUMENT_LABEL } from "@/application/dto/checkout.dto";
 import { AdminPageHeader } from "@/presentation/components/admin/AdminShell";
@@ -8,6 +7,7 @@ import { OrderActions, OrderReviewNotice } from "@/presentation/components/admin
 import { Button } from "@/presentation/components/primitives/Button";
 import { deleteOrdersAction, markOrderReviewedAction, purgeOrderAction, restoreOrderAction, updateOrderStatusAction } from "../actions";
 import { requireAdmin } from "../../../_lib/auth";
+import { container } from "@/app/_lib/tenant";
 
 export const metadata: Metadata = { title: "Pedido" };
 export const dynamic = "force-dynamic";
@@ -30,7 +30,7 @@ function Facts({ items }: { items: Array<[string, React.ReactNode]> }) {
 export default async function OrderPage({ params }: { params: Promise<{ id: string }> }) {
   await requireAdmin(); // el layout no basta: una petición RSC puede renderizar solo esta página
   const { id } = await params;
-  const o = await new GetAdminOrder(getContainer()).execute(id);
+  const o = await new GetAdminOrder((await container())).execute(id);
   if (!o) notFound();
   const c = o.customerDetail;
   return (

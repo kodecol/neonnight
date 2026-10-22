@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { ZodError } from "zod";
-import { getContainer } from "@/infrastructure/container";
+import { container as currentContainer, siteBaseUrl } from "@/app/_lib/tenant";
 import { Checkout, GetLegalVersions } from "@/application/use-cases/checkout";
 import { FieldValidationError } from "@/application/lib/errors";
 import { DomainError } from "@/domain/errors";
@@ -13,8 +13,9 @@ export const dynamic = "force-dynamic";
 const clientIp = (req: Request) => req.headers.get("x-real-ip")?.trim() || req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "desconocida";
 
 export async function POST(req: Request) {
+  const siteBase = await siteBaseUrl();
   // Freno al abuso: cada pedido crea un registro y, con Bold, un link de pago.
-  const throttle = getContainer().checkoutThrottle;
+  const throttle = (await currentContainer()).checkoutThrottle;
   const ip = clientIp(req);
   const now = Date.now();
   const wait = throttle.retryAfter(ip, now);
@@ -28,9 +29,9 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Cuerpo inválido." }, { status: 400 });
   }
   try {
-    const c = getContainer();
+    const c = (await currentContainer());
     const legal = await new GetLegalVersions(c.content).execute();
-    const result = await new Checkout(c).execute(body, { returnUrl: absoluteUrl(ROUTES.thanks), legal });
+    const result = await new Checkout(c).execute(body, { returnUrl: absoluteUrl(ROUTES.thanks, siteBase), legal });
     return NextResponse.json(result, { status: 200 });
   } catch (e) {
     if (e instanceof ZodError) {

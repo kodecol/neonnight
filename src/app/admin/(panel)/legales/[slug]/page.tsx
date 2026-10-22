@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { getContainer } from "@/infrastructure/container";
 import { GetLegalEditor } from "@/application/use-cases/admin/legal";
 import { INFO_PAGE_SLUGS, type InfoPageSlug } from "@/application/dto/info-page.dto";
 import { AdminPageHeader } from "@/presentation/components/admin/AdminShell";
@@ -8,6 +7,7 @@ import { LegalEditor } from "@/presentation/components/admin/LegalEditor";
 import { Button } from "@/presentation/components/primitives/Button";
 import { discardLegalDraftAction, resetLegalPageAction, saveLegalPageAction } from "../actions";
 import { requireAdmin } from "../../../_lib/auth";
+import { container } from "@/app/_lib/tenant";
 
 export const dynamic = "force-dynamic";
 
@@ -23,7 +23,7 @@ export default async function LegalEditPage({ params }: { params: Params }) {
   await requireAdmin(); // el layout no basta: una petición RSC puede renderizar solo esta página
   const { slug } = await params;
   if (!isSlug(slug)) notFound();
-  const c = getContainer();
+  const c = (await container());
   const editor = await new GetLegalEditor({ legalPages: c.legalPages, companySettings: c.companySettings, content: c.content, whatsappLabel: c.whatsappLabel }).execute(slug);
   return (
     <>

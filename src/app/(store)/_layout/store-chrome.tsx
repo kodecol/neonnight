@@ -1,5 +1,4 @@
 import { Suspense } from "react";
-import { getContainer } from "@/infrastructure/container";
 import type { StoreIdentityInput } from "@/application/dto/identity.dto";
 import { ListLines } from "@/application/use-cases/list-lines";
 import { ROUTES } from "@/presentation/lib/site";
@@ -12,13 +11,14 @@ import { SiteEffects } from "@/presentation/components/chrome/SiteEffects";
 import { WhatsAppProvider } from "@/presentation/components/chrome/WhatsAppFab";
 import { ConsentBanner } from "@/presentation/components/chrome/ConsentBanner";
 import { Tracking } from "@/presentation/components/chrome/Tracking";
+import { container as currentContainer } from "@/app/_lib/tenant";
 
 /**
  * Armazón de la tienda: barra, menú, pie, bolsa, WhatsApp y medición.
  * `identity`: una identidad en borrador para la vista previa del panel.
  */
 export async function StoreChrome({ children, identity }: { children: React.ReactNode; identity?: StoreIdentityInput }) {
-  const container = getContainer();
+  const container = (await currentContainer());
   const { whatsapp, content, tracking } = container;
   const [site, lines] = await Promise.all([content.get({ identity }), new ListLines(container).execute()]);
   // El menú abre con las líneas del catálogo (administrables) y sigue con los enlaces fijos.

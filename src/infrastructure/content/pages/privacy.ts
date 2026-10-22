@@ -1,6 +1,5 @@
 import type { InfoPage } from "@/application/dto/info-page.dto";
 import { LEGAL_EFFECTIVE_DATE, LEGAL_VERSION, type PageContext } from "./context";
-import { storeSlug } from "../../config/store";
 
 /** Fecha de vigencia en texto: "20 de octubre de 2026". */
 function longDate(iso: string): string {
@@ -191,8 +190,8 @@ export function privacyPage(ctx: PageContext): InfoPage {
             type: "table",
             head: ["Nombre", "Proveedor", "Para qué", "Duración", "Tipo"],
             rows: [
-              [`${storeSlug()}.cart.v2`, `${company.tradeName} (almacenamiento local)`, "Guarda tu bolsa", "Hasta que la vacíes", "Necesaria"],
-              [`${storeSlug()}.consent.v1`, `${company.tradeName} (almacenamiento local)`, "Recuerda tu elección de cookies", "12 meses", "Necesaria"],
+              [`${ctx.storeSlug}.cart.v2`, `${company.tradeName} (almacenamiento local)`, "Guarda tu bolsa", "Hasta que la vacíes", "Necesaria"],
+              [`${ctx.storeSlug}.consent.v1`, `${company.tradeName} (almacenamiento local)`, "Recuerda tu elección de cookies", "12 meses", "Necesaria"],
               ["_ga, _ga_<ID>", "Google Analytics", "Distingue visitas y sesiones para medir el uso del sitio", "2 años", "Analítica"],
               ["_fbp", "Meta", "Mide el resultado de las campañas y anuncios", "3 meses", "Publicidad"],
             ],

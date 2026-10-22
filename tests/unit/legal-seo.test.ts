@@ -149,7 +149,7 @@ describe("Consentimiento y medición", () => {
 
 describe("Datos estructurados y contacto", () => {
   it("devoluciones y envío salen de las políticas", () => {
-    expect(merchantReturnPolicy(SITE_CONTENT)).toMatchObject({ merchantReturnDays: SITE_CONTENT.policies.returnDays, applicableCountry: "CO" });
+    expect(merchantReturnPolicy(SITE_CONTENT, "https://tienda.example")).toMatchObject({ merchantReturnDays: SITE_CONTENT.policies.returnDays, applicableCountry: "CO" });
     expect(shippingDetails(SITE_CONTENT)).toMatchObject({ shippingRate: { value: 0, currency: "COP" }, shippingDestination: { addressCountry: "CO" } });
   });
 

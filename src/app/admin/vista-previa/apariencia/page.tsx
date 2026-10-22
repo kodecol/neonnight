@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { getContainer } from "@/infrastructure/container";
 import { GetActiveAppearance } from "@/application/use-cases/admin/appearance";
 import { ThemeStyle } from "@/presentation/components/seo/ThemeStyle";
 import { StoreChrome } from "../../../(store)/_layout/store-chrome";
 import { HomeView } from "../../../(store)/_home/render-home";
 import { requireAdmin } from "../../_lib/auth";
+import { container } from "@/app/_lib/tenant";
 
 export const metadata: Metadata = { title: "Vista previa de Apariencia", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
@@ -16,7 +16,7 @@ export const dynamic = "force-dynamic";
  */
 export default async function AppearancePreviewPage() {
   await requireAdmin();
-  const draft = await new GetActiveAppearance(getContainer().appearance).execute({ preview: true });
+  const draft = await new GetActiveAppearance((await container()).appearance).execute({ preview: true });
   return (
     <StoreChrome>
       <ThemeStyle appearance={draft} />

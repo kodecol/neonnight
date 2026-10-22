@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { getContainer } from "@/infrastructure/container";
 import { emptyAdminProductForm } from "@/application/use-cases/admin/get-admin-product";
 import { TEMPLATE_LABEL } from "@/application/dto/admin.dto";
 import { AdminPageHeader } from "@/presentation/components/admin/AdminShell";
@@ -8,6 +7,7 @@ import { ProductForm } from "@/presentation/components/admin/ProductForm";
 import { ensureBrandAction } from "../../marcas/actions";
 import { saveProductAction, uploadImageAction } from "../actions";
 import { requireAdmin } from "../../../_lib/auth";
+import { container } from "@/app/_lib/tenant";
 
 export const metadata: Metadata = { title: "Nuevo producto" };
 
@@ -15,7 +15,7 @@ export const metadata: Metadata = { title: "Nuevo producto" };
 export default async function NewProductPage({ searchParams }: { searchParams: Promise<{ linea?: string }> }) {
   await requireAdmin(); // el layout no basta: una petición RSC puede renderizar solo esta página
   const { linea } = await searchParams;
-  const { lines, categories, brands } = getContainer();
+  const { lines, categories, brands } = (await container());
   const [allLines, cats, brandList] = await Promise.all([lines.list(), categories.list(), brands.list()]);
   const line = allLines.find((l) => l.slug === linea);
 

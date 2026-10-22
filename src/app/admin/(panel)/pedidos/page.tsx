@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { getContainer } from "@/infrastructure/container";
 import { ListAdminOrders, ORDER_STATUS_LABEL, orderFiltersQuery, parseAdminOrderFilters, type AdminOrderFilters } from "@/application/use-cases/admin/orders";
 import { ORDER_TRASH_DAYS, type OrderStatus } from "@/domain/entities/order";
 import { AdminPageHeader } from "@/presentation/components/admin/AdminShell";
@@ -10,6 +9,7 @@ import { Button } from "@/presentation/components/primitives/Button";
 import { cn } from "@/presentation/lib/cn";
 import { deleteOrdersAction, purgeOrderAction, restoreOrderAction } from "./actions";
 import { requireAdmin } from "../../_lib/auth";
+import { container } from "@/app/_lib/tenant";
 
 export const metadata: Metadata = { title: "Pedidos" };
 export const dynamic = "force-dynamic";
@@ -35,7 +35,7 @@ function emptyText(f: AdminOrderFilters): string {
 export default async function OrdersPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   await requireAdmin(); // el layout no basta: una petición RSC puede renderizar solo esta página
   const f = parseAdminOrderFilters(await searchParams);
-  const list = await new ListAdminOrders(getContainer()).execute(f);
+  const list = await new ListAdminOrders((await container())).execute(f);
   // Las pestañas conservan la búsqueda y las fechas; vuelven a la página 1.
   const href = (over: Partial<AdminOrderFilters>) => `/admin/pedidos${orderFiltersQuery({ ...f, page: 1, review: false, ...over })}`;
   const csv = `/admin/pedidos/exportar${orderFiltersQuery({ ...f, page: 1 })}`;

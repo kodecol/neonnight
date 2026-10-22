@@ -6,6 +6,8 @@ export interface PageContext {
   policies: StorePolicies;
   /** WhatsApp con formato legible ("+57 300 000 0000") o null si no está configurado. */
   whatsapp: string | null;
+  /** Slug de la tienda: prefijo de sus claves en el navegador (tabla de cookies). */
+  storeSlug: string;
 }
 
 /** Vigencia de los textos legales (AAAA-MM-DD) y su versión. */

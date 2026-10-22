@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { getContainer } from "@/infrastructure/container";
 import { ListAdminProducts } from "@/application/use-cases/admin/list-admin-products";
 import { ListCategories } from "@/application/use-cases/admin/categories";
 import { ListAdminLines } from "@/application/use-cases/admin/lines";
@@ -12,6 +11,7 @@ import { Button } from "@/presentation/components/primitives/Button";
 import { cn } from "@/presentation/lib/cn";
 import { deleteCategoryAction, deleteLineAction, saveCategoryAction, saveLineAction, uploadImageAction } from "./actions";
 import { requireAdmin } from "../../_lib/auth";
+import { container as currentContainer } from "@/app/_lib/tenant";
 
 export const metadata: Metadata = { title: "Catálogo" };
 
@@ -19,7 +19,7 @@ export default async function CatalogPage({ searchParams }: { searchParams: Prom
   await requireAdmin(); // el layout no basta: una petición RSC puede renderizar solo esta página
   const { tab } = await searchParams;
   const view = tab === "lineas" || tab === "categorias" ? tab : "productos";
-  const container = getContainer();
+  const container = (await currentContainer());
   const [rows, categories, lines] = await Promise.all([new ListAdminProducts(container).execute(), new ListCategories(container).execute(), new ListAdminLines(container).execute()]);
   const available = rows.filter((r) => r.status.code === "disponible" || r.status.code === "ultimas").length;
 

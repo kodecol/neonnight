@@ -6,7 +6,7 @@ import { absoluteUrl } from "./site";
  * (fuente única: `SiteContent.policies`). Google los usa para mostrar envío y
  * devoluciones junto al precio en los resultados.
  */
-export function merchantReturnPolicy(site: Pick<SiteContent, "policies" | "company">) {
+export function merchantReturnPolicy(site: Pick<SiteContent, "policies" | "company">, siteBase: string) {
   return {
     "@type": "MerchantReturnPolicy",
     applicableCountry: site.company.countryCode,
@@ -15,7 +15,7 @@ export function merchantReturnPolicy(site: Pick<SiteContent, "policies" | "compa
     returnMethod: "https://schema.org/ReturnByMail",
     returnFees: "https://schema.org/ReturnShippingFees",
     refundType: "https://schema.org/FullRefund",
-    merchantReturnLink: absoluteUrl("/devoluciones"),
+    merchantReturnLink: absoluteUrl("/devoluciones", siteBase),
   };
 }
 
@@ -34,15 +34,16 @@ export function shippingDetails(site: Pick<SiteContent, "policies" | "company">)
 }
 
 /** La tienda como `OnlineStore`: identidad, contacto y políticas. */
-export function onlineStore(site: SiteContent, opts: { telephone: string | null }) {
+export function onlineStore(site: SiteContent, opts: { telephone: string | null; siteBase: string }) {
+  const { siteBase } = opts;
   return {
     "@type": "OnlineStore",
-    "@id": absoluteUrl("/#tienda"),
+    "@id": absoluteUrl("/#tienda", siteBase),
     name: site.brand.name,
     legalName: site.company.tradeName,
-    url: absoluteUrl("/"),
-    logo: absoluteUrl(site.brand.logo.color),
-    image: absoluteUrl("/og/inicio.jpg"),
+    url: absoluteUrl("/", siteBase),
+    logo: absoluteUrl(site.brand.logo.color, siteBase),
+    image: absoluteUrl("/og/inicio.jpg", siteBase),
     description: site.brand.description,
     foundingDate: String(site.company.foundingYear),
     email: site.company.email,
@@ -58,7 +59,7 @@ export function onlineStore(site: SiteContent, opts: { telephone: string | null 
       availableLanguage: ["es"],
     },
     sameAs: site.social.networks.map((n) => n.href),
-    hasMerchantReturnPolicy: merchantReturnPolicy(site),
+    hasMerchantReturnPolicy: merchantReturnPolicy(site, siteBase),
   };
 }
 

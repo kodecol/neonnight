@@ -1,4 +1,4 @@
-import { getContainer } from "@/infrastructure/container";
+import { container } from "@/app/_lib/tenant";
 import { GetActiveAppearance } from "@/application/use-cases/admin/appearance";
 import { DEFAULT_APPEARANCE } from "@/application/dto/appearance.dto";
 import { hexToRgb } from "@/application/lib/contrast";
@@ -55,7 +55,8 @@ export async function isotypeBytes(src: string): Promise<Buffer | null> {
       const res = await fetch(remote, { signal: AbortSignal.timeout(5000) });
       return res.ok ? Buffer.from(await res.arrayBuffer()) : null;
     }
-    if (src.startsWith("/api/media/")) return (await readLocalMedia(src.slice("/api/media/".length)))?.bytes ?? null;
+    // Subidas en disco: la carpeta es la de la tienda de esta petición (en el demo host, la del tenant).
+    if (src.startsWith("/api/media/")) return (await readLocalMedia(src.slice("/api/media/".length), (await container()).config.media.dir))?.bytes ?? null;
     const file = normalize(join(PUBLIC, src));
     return file.startsWith(ASSETS) ? await readFile(file) : null;
   } catch {
@@ -84,7 +85,7 @@ export interface OgColors {
 
 /** Colores de las vistas previas: los del tema publicado (Ajustes › Apariencia) o los de fábrica. */
 export async function ogColors(): Promise<OgColors> {
-  const a = await new GetActiveAppearance(getContainer().appearance).execute();
+  const a = await new GetActiveAppearance((await container()).appearance).execute();
   const c = (a ?? DEFAULT_APPEARANCE).colors;
   const [r, g, b] = hexToRgb(c.divider);
   return { bg: c.bg, surface: c.surface, ink: c.ink, ink2: c.ink2, ink3: c.ink3, accent: c.accent, divider: `rgba(${r},${g},${b},0.3)` };

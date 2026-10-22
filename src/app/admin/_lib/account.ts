@@ -1,12 +1,13 @@
 import { cookies, headers } from "next/headers";
-import { getContainer } from "@/infrastructure/container";
 import { checkAdminPassword } from "@/infrastructure/auth/password";
 import { SESSION_COOKIE, SESSION_TTL_SECONDS, createSessionToken } from "@/infrastructure/auth/session";
 import { AdminAccount } from "@/application/use-cases/admin/account";
+import { container } from "@/app/_lib/tenant";
 
-export function adminAccount(): AdminAccount {
-  const { adminCredentials, passwordHasher, clock, loginThrottles } = getContainer();
-  return new AdminAccount({ credentials: adminCredentials, hasher: passwordHasher, clock, checkEnvPassword: (p) => checkAdminPassword(p), throttles: loginThrottles });
+export async function adminAccount(): Promise<AdminAccount> {
+  const { adminCredentials, passwordHasher, clock, loginThrottles, config } = await container();
+  // ADMIN_PASSWORD (solo modo single) vale mientras la base no tenga contraseña; en el demo host la pone Kode.
+  return new AdminAccount({ credentials: adminCredentials, hasher: passwordHasher, clock, checkEnvPassword: (p) => checkAdminPassword(p, config.adminPassword ?? ""), throttles: loginThrottles });
 }
 
 /**
