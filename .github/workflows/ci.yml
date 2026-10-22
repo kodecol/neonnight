@@ -1,0 +1,48 @@
+# CI de Neon Night (plantilla jewelry-store): verifica cada PR y cada push a main.
+# No despliega: producción se publica con Kode (`kode deploy neonnight`), ver docs/DEPLOY.md.
+name: ci
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: neonnight-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  # El título del PR sigue gitmoji (docs/GITHUB.md §3).
+  pr-title:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - name: Validar título gitmoji
+        env:
+          TITLE: ${{ github.event.pull_request.title }}
+        run: node scripts/check-commit-msg.mjs --text "$TITLE"
+
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
+      - run: npm run check
+
+  # Que compile como en producción (next build standalone); no publica nada.
+  build:
+    needs: check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
+      - run: npm run build

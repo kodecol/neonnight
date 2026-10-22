@@ -163,9 +163,9 @@ Ramas, commits con **gitmoji**, pull requests, CI, versiones y configuración de
 
 ## Despliegue
 
-Producción corre aislada en un VPS compartido, con límites de 1 CPU y 512 MB, y se publica con nginx-proxy-manager en `https://neonightonline.com`. La base de datos está en MongoDB Atlas y las fotos en Cloudinary. Cada push a `main` se despliega solo con GitHub Actions.
+Producción (`https://neonightonline.com`) corre como app Node.js en un hosting administrado y se publica con **Kode**, la plataforma de Kodecol: `kode deploy neonnight` construye `main` y lo publica. La base está en MongoDB Atlas y las fotos en Cloudinary. GitHub Actions solo verifica (tipos, lint, tests y build); no despliega.
 
-La guía completa está en **[`docs/DEPLOY.md`](docs/DEPLOY.md)**: infraestructura, primera instalación, despliegue de cada versión, rollback, dominio y operación.
+Guía: **[`docs/DEPLOY.md`](docs/DEPLOY.md)**.
 
 ## Pendientes de contenido (handoff §7)
 

@@ -123,21 +123,18 @@ La lista oficial está en <https://gitmoji.dev>. Si hace falta uno que no está,
 
 ---
 
-## 5. CI/CD (GitHub Actions)
+## 5. CI (GitHub Actions)
 
-Workflow: [`.github/workflows/deploy.yml`](../.github/workflows/deploy.yml).
+Workflow: [`.github/workflows/ci.yml`](../.github/workflows/ci.yml). Solo verifica: **no despliega** (eso lo hace Kode, ver `docs/DEPLOY.md`).
 
 | Job | Cuándo | Qué hace |
 | --- | --- | --- |
 | `pr-title` | PR | Valida el título con gitmoji |
 | `check` | PR y push a `main` | `npm ci`, typecheck, lint (incluye las fronteras de la arquitectura) y tests unitarios |
-| `build` | push a `main`, con `DEPLOY_ENABLED=true` | Imagen `ghcr.io/kodecol/neonnight-web:<sha7>` en GHCR |
-| `deploy` | push a `main`, con `DEPLOY_ENABLED=true` | Despliega en el VPS y comprueba que `https://neonightonline.com/api/health` sirva `<sha7>` |
-
-`build` y `deploy` están **apagados** hasta que exista la variable del repo `DEPLOY_ENABLED=true`. Se activa cuando ya estén los secretos del VPS (§8): `gh variable set DEPLOY_ENABLED --body true`. Mientras tanto, cada push y cada PR solo corren la verificación.
+| `build` | PR y push a `main`, después de `check` | `next build` como en producción; no publica nada |
 
 - Los e2e (`npm run e2e`) corren en local antes de abrir el PR. Necesitan navegador y build, y por eso no están en el CI.
-- El entorno `production` puede exigir una aprobación manual (Settings → Environments → production → *Required reviewers*).
+- El repo no tiene secretos de despliegue: no hacen falta.
 
 ---
 

@@ -1,8 +1,8 @@
 # syntax=docker/dockerfile:1
 # Imagen de producción multi-stage (output: "standalone").
 # La imagen es independiente del entorno: dominio, base de datos y secretos
-# llegan en runtime por variables de entorno (ver deploy/.env.example).
-# Se construye en CI (GitHub Actions) o en la máquina de desarrollo, nunca en el VPS.
+# llegan en runtime por variables de entorno (ver .env.example y template.manifest.json).
+# Se construye en la máquina de desarrollo o donde lo pida Kode (instancias de la plantilla).
 
 FROM node:22-alpine AS deps
 WORKDIR /app
