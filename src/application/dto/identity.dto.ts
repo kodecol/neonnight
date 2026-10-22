@@ -33,5 +33,10 @@ export const StoreIdentitySchema = z.object({
   logo: IdentityAssetSchema.nullable(),
   /** Isotipo o logo para fondo CLARO: el que muestran los buscadores (JSON-LD). Sin él, el isotipo. */
   lightLogo: IdentityAssetSchema.nullable().optional(),
+  /**
+   * Juego de íconos hecho a mano dentro del sitio (`/assets/brands/<slug>/icons`:
+   * favicon.ico, icon-512.png, apple-touch-icon.png). Sin él, se dibujan con el isotipo.
+   */
+  iconSet: z.string().regex(/^\/assets\/brands\/[a-z0-9-]+\/icons$/, "Juego de íconos no válido.").optional(),
 });
 export type StoreIdentityInput = z.infer<typeof StoreIdentitySchema>;

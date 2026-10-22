@@ -65,6 +65,11 @@ export const BrandConfigSchema = z
       .describe("Una fuente del catálogo para todo, o una para títulos y otra para el cuerpo."),
     logo_url: assetRef.optional().describe("Logo horizontal para fondo oscuro (SVG, PNG, WebP o AVIF transparente)."),
     isotipo_url: assetRef.optional().describe("Isotipo cuadrado para fondo oscuro: favicon, íconos y barra."),
+    icons_dir: z
+      .string()
+      .regex(/^\/assets\/brands\/[a-z0-9-]+\/icons$/)
+      .optional()
+      .describe("Íconos hechos a mano dentro del sitio (favicon.ico, icon-512.png, apple-touch-icon.png). Sin él, se dibujan con el isotipo."),
     logo_light_url: assetRef.optional().describe("Isotipo o logo para fondo claro: el que muestran los buscadores. Sin él, el isotipo."),
     company: z.object({
       founding_year: z.number().int().min(1900).max(2100).optional().describe("Año de fundación (Nosotros y buscadores). Por defecto, el actual."),
@@ -159,7 +164,7 @@ const NICHE_COPY: Record<Niche, { title: string; tagline: string; description: s
 /** Identidad para Ajustes › Identidad (isotipo y logo los resuelve quien sube las imágenes). */
 export function brandIdentity(b: BrandConfig, assets: { isotype: StoreIdentityInput["isotype"]; logo: StoreIdentityInput["logo"]; lightLogo?: StoreIdentityInput["lightLogo"] }): StoreIdentityInput {
   const copy = NICHE_COPY[b.niche];
-  return { name: b.name, wordmark: b.wordmark ?? b.name.toUpperCase(), tagline: b.tagline ?? copy.tagline, titleSuffix: b.seo_title ?? copy.title, description: b.description ?? copy.description, ...assets };
+  return { name: b.name, wordmark: b.wordmark ?? b.name.toUpperCase(), tagline: b.tagline ?? copy.tagline, titleSuffix: b.seo_title ?? copy.title, description: b.description ?? copy.description, ...assets, ...(b.icons_dir ? { iconSet: b.icons_dir } : {}) };
 }
 
 export function brandAppearance(b: BrandConfig): StoreAppearanceInput {

@@ -12,7 +12,6 @@ import { isotypeBytes } from "../_og/brand";
  * con el fondo de fábrica se sirven los archivos del sitio tal cual.
  */
 const PUBLIC = join(process.cwd(), "public");
-const FACTORY_DIR = join(PUBLIC, "assets/icons");
 const SITE_ISOTYPE = join(PUBLIC, "assets/isotipo-dark.png");
 
 /** Lado del cuadro y fracción que ocupa el isotipo (maskable: zona segura del 80 % en círculo). */
@@ -57,14 +56,15 @@ async function compose(brand: BrandAssets, size: number, fill: number): Promise<
 
 /** Dibuja un ícono (exportada para los tests). */
 export async function renderIcon(brand: BrandAssets, file: IconFile | "favicon.ico"): Promise<Buffer> {
-  const factory = brand.factoryIcons ? FACTORY_FILES[file] : undefined;
-  if (factory) return readFile(join(FACTORY_DIR, factory));
+  const dir = brand.iconsDir ? join(PUBLIC, brand.iconsDir) : null;
+  const factory = dir ? FACTORY_FILES[file] : undefined;
+  if (dir && factory) return readFile(join(dir, factory));
   if (file === "favicon.ico") {
     // A 16-48 px el isotipo va casi a sangre para que se distinga en la pestaña.
     const pngs = await Promise.all(FAVICON_SIZES.map(async (size) => ({ size, png: await compose(brand, size, 0.9) })));
     return Buffer.from(encodeIco(pngs));
   }
-  if (brand.factoryIcons && file === "icon-192.png") return sharp(join(FACTORY_DIR, "icon-512.png")).resize(192, 192).png().toBuffer();
+  if (dir && file === "icon-192.png") return sharp(join(dir, "icon-512.png")).resize(192, 192).png().toBuffer();
   const { size, fill } = ICON_FILES[file];
   return compose(brand, size, fill);
 }

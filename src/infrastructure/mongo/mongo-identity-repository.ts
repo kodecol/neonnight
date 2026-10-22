@@ -18,6 +18,7 @@ const clean = (s: StoreIdentity): StoreIdentity => ({
   isotype: s.isotype,
   logo: s.logo,
   ...(s.lightLogo ? { lightLogo: s.lightLogo } : {}),
+  ...(s.iconSet ? { iconSet: s.iconSet } : {}),
   updatedAt: s.updatedAt,
 });
 

@@ -15,6 +15,8 @@ export interface BrandAssets {
   version: string;
   /** true: sirven los íconos del sitio tal cual (sin isotipo propio y con el fondo de fábrica). */
   factoryIcons: boolean;
+  /** Carpeta del sitio con los íconos que se sirven tal cual (los de fábrica o los de un brand pack); null: se dibujan. */
+  iconsDir: string | null;
   name: string;
   /** Nombre bajo el ícono en la pantalla de inicio (12 caracteres como mucho). */
   shortName: string;
@@ -53,6 +55,7 @@ export class GetBrandAssets {
     return {
       version: published > 0 ? published.toString(36) : "",
       factoryIcons: !isotype && bg === DEFAULT_APPEARANCE.colors.bg.toLowerCase(),
+      iconsDir: identity?.iconSet ?? (!isotype && bg === DEFAULT_APPEARANCE.colors.bg.toLowerCase() ? "/assets/icons" : null),
       name: brand.name,
       shortName: shortNameOf(brand.name, brand.wordmark),
       description: brand.description,

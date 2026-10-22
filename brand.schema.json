@@ -173,6 +173,11 @@
         }
       ]
     },
+    "icons_dir": {
+      "description": "Íconos hechos a mano dentro del sitio (favicon.ico, icon-512.png, apple-touch-icon.png). Sin él, se dibujan con el isotipo.",
+      "type": "string",
+      "pattern": "^\\/assets\\/brands\\/[a-z0-9-]+\\/icons$"
+    },
     "logo_light_url": {
       "description": "Isotipo o logo para fondo claro: el que muestran los buscadores. Sin él, el isotipo.",
       "anyOf": [

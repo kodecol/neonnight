@@ -9,6 +9,7 @@ import type { BrandAssets } from "@/application/use-cases/brand-assets";
 const brand = (isotype: BrandAssets["isotype"]): BrandAssets => ({
   version: "v1",
   factoryIcons: false,
+  iconsDir: null,
   name: "Casa Prueba",
   shortName: "Casa Prueba",
   description: "Tienda de prueba.",
