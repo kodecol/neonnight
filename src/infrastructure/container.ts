@@ -21,7 +21,7 @@ import { InMemoryProductRepository } from "./repositories/in-memory-product-repo
 import { InMemoryLineRepository } from "./repositories/in-memory-line-repository";
 import { InMemoryOrderRepository } from "./repositories/in-memory-order-repository";
 import { InMemoryCategoryRepository } from "./repositories/in-memory-category-repository";
-import { InMemoryPaymentSettingsRepository } from "./repositories/in-memory-payment-settings-repository";
+import { DemoPaymentSettingsRepository, InMemoryPaymentSettingsRepository } from "./repositories/in-memory-payment-settings-repository";
 import { mongoDb } from "./mongo/client";
 import { singleInstanceConfig, type InstanceConfig } from "./config/instance";
 import { MongoProductRepository } from "./mongo/mongo-product-repository";
@@ -168,7 +168,10 @@ function persistence(config: InstanceConfig): Pick<Container, "products" | "line
 }
 
 export function createContainer(overrides: Partial<Container> = {}, config: InstanceConfig = overrides.config ?? singleInstanceConfig()): Container {
-  const base = { ...persistence(config), ...overrides };
+  const persisted = persistence(config);
+  // Demo: nunca hay pasarela (ni llaves guardadas, ni webhooks): pedido manual.
+  if (config.demo) persisted.paymentSettings = new DemoPaymentSettingsRepository();
+  const base = { ...persisted, ...overrides };
   const whatsappNumber = config.whatsappNumber;
   const staticContent = new StaticSiteContentRepository(SITE_CONTENT, whatsappNumber, config.slug);
   const cloud = config.media.cloudinary;
@@ -198,7 +201,7 @@ export function createContainer(overrides: Partial<Container> = {}, config: Inst
     siteUploader: overrides.siteUploader ?? (cloud ? new CloudinaryMediaUploader(folders.site) : disk()),
     videoSigner: overrides.videoSigner ?? (cloud ? new CloudinaryVideoSigner(folders.site) : new DisabledVideoSigner()),
     mediaRemover: overrides.mediaRemover ?? (cloud ? new CloudinaryMediaRemover(folders.site) : new NoopMediaRemover()),
-    payments: overrides.payments ?? new BoldPaymentGateway(base.paymentSettings, new NoopPaymentGateway()),
+    payments: overrides.payments ?? (config.demo ? new NoopPaymentGateway() : new BoldPaymentGateway(base.paymentSettings, new NoopPaymentGateway())),
     media: overrides.media ?? (cloud ? new CloudinaryMediaUploader(folders.catalogUploads) : disk()),
     analytics: overrides.analytics ?? new ConsoleAnalytics(),
     whatsapp:

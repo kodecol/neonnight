@@ -53,6 +53,13 @@ export function prefixFor(slug: string, explicit?: string): string {
 
 const folders = (slug: string) => ({ site: `${slug}/sitio`, catalogUploads: `${slug}/catalogo/subidas` });
 
+/** Prefijo de Cloudinary de una demo: lo ÚNICO que se borra al borrarla (con la barra final). */
+export const demoMediaPrefix = (slug: string) => {
+  if (!STORE_SLUG.test(slug)) throw new Error(`Slug no válido: ${slug}`);
+  return `demos/${slug}/`;
+};
+const demoFolders = (slug: string) => ({ site: `${demoMediaPrefix(slug)}sitio`, catalogUploads: `${demoMediaPrefix(slug)}catalogo` });
+
 /** Modo single: una tienda por proceso, todo del entorno (como siempre). */
 export function singleInstanceConfig(env: Env = process.env): InstanceConfig {
   const slug = validSlug(env.STORE_SLUG?.trim());
@@ -106,6 +113,7 @@ export function tenantInstanceConfig(t: TenantRecord, env: Env = process.env): I
   const master = env.DEMO_MASTER_SECRET ?? "";
   if (!uri) throw new Error("El demo host necesita MONGODB_URI.");
   if (master.length < 32) throw new Error("El demo host necesita DEMO_MASTER_SECRET (32+ caracteres).");
+  if (!env.CLOUDINARY_URL && !env.MEDIA_DIR) throw new Error("El demo host necesita CLOUDINARY_URL (o MEDIA_DIR en desarrollo).");
   return {
     slug: t.slug,
     siteUrl: `https://${t.hosts[0]}`,
@@ -115,7 +123,9 @@ export function tenantInstanceConfig(t: TenantRecord, env: Env = process.env): I
     adminPassword: null,
     whatsappNumber: t.whatsappNumber ?? undefined,
     tracking: { gaId: null, pixelId: null },
-    media: { dir: join(env.MEDIA_DIR || "/data/media", t.slug), cloudinary: false, folders: folders(t.slug) },
+    // Un deploy del hosting borra el disco del sitio: las demos guardan en Cloudinary,
+    // siempre bajo `demos/<slug>/` (la cuenta es compartida). MEDIA_DIR solo para desarrollo.
+    media: { dir: join(env.MEDIA_DIR || "/data/media", t.slug), cloudinary: Boolean(env.CLOUDINARY_URL), folders: demoFolders(t.slug) },
     demo: { expiresAt: t.expiresAt, banner: t.banner, mediaQuotaMb: t.mediaQuotaMb },
   };
 }

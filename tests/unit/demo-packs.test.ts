@@ -182,13 +182,13 @@ describe("Catálogos de demo", () => {
     });
   }
 
-  it("solo el CLI del ciclo de vida importa los demos (no llegan al bundle de la tienda)", () => {
+  it("solo el ciclo de vida y el alta de demos importan los catálogos de demo", () => {
     const offenders: string[] = [];
     const walk = (dir: string) => {
       for (const name of readdirSync(dir)) {
         const path = join(dir, name);
         if (statSync(path).isDirectory()) {
-          if (path !== join("src", "infrastructure", "cms", "demo") && path !== join("src", "cli")) walk(path);
+          if (path !== join("src", "infrastructure", "cms", "demo") && path !== join("src", "cli") && path !== join("src", "infrastructure", "tenancy")) walk(path);
         } else if (/\.(ts|tsx)$/.test(name) && /cms\/demo["/]/.test(readFileSync(path, "utf8"))) offenders.push(path);
       }
     };

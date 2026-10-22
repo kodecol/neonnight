@@ -1,5 +1,6 @@
 import { createContainer, type Container } from "../container";
-import { fingerprint, tenantInstanceConfig, type Env, type TenantRecord } from "../config/instance";
+import { fingerprint, tenantDbName, tenantInstanceConfig, type Env, type TenantRecord } from "../config/instance";
+import { mongoClient } from "../mongo/client";
 import { TtlLru } from "./lru";
 import { MongoTenantRegistry, type TenantRegistry } from "./registry";
 
@@ -33,6 +34,8 @@ export class DemoHost {
     readonly registry: TenantRegistry,
     private readonly env: Env = process.env,
     private readonly now: () => Date = () => new Date(),
+    /** ¿El usuario del host puede leer la base de este tenant? (Kode retira permisos al borrar). */
+    private readonly canRead: (t: TenantRecord) => Promise<boolean> = async () => true,
   ) {}
 
   get zone(): string {
@@ -50,6 +53,8 @@ export class DemoHost {
     let tenant = this.hosts.get(host);
     if (tenant === undefined) {
       tenant = await this.registry.findByHost(host);
+      // Registrado pero sin permisos sobre su base (demo borrada a medias): como si no existiera.
+      if (tenant && !(await this.canRead(tenant).catch(() => false))) tenant = null;
       this.hosts.set(host, tenant);
     }
     if (!tenant) return { kind: "not-found" };
@@ -87,7 +92,18 @@ export function demoHost(): DemoHost {
   if (!g.__nnDemoHost) {
     const uri = process.env.MONGODB_URI?.trim();
     if (!uri) throw new Error("El demo host necesita MONGODB_URI.");
-    g.__nnDemoHost = new DemoHost(new MongoTenantRegistry(uri));
+    g.__nnDemoHost = new DemoHost(new MongoTenantRegistry(uri), process.env, () => new Date(), async (t) => {
+      try {
+        await (await mongoClient(uri)).db(tenantDbName(t.slug)).listCollections({}, { nameOnly: true }).toArray();
+        return true;
+      } catch (e) {
+        if (/not authorized|unauthorized/i.test(String(e))) {
+          console.warn(`[demo-host] sin permisos sobre la base de ${t.slug}: no se sirve`);
+          return false;
+        }
+        throw e;
+      }
+    });
   }
   return g.__nnDemoHost;
 }

@@ -6,11 +6,14 @@ import { ThemeStyle } from "@/presentation/components/seo/ThemeStyle";
 import { absoluteUrl } from "@/presentation/lib/site";
 import { versioned } from "@/application/use-cases/brand-assets";
 import { brandAssets } from "./_icons/render";
-import { container as currentContainer, siteBaseUrl } from "@/app/_lib/tenant";
+import { requestContainer, siteBaseUrl } from "@/app/_lib/tenant";
 
 export async function generateMetadata(): Promise<Metadata> {
   const siteBase = await siteBaseUrl();
-  const [{ brand }, { version }] = await Promise.all([(await currentContainer()).content.get(), brandAssets()]);
+  const { state, container } = await requestContainer();
+  const [{ brand }, { version }] = await Promise.all([container.content.get(), state === "ok" ? brandAssets() : { version: "" }]);
+  // Las demos nunca se indexan (y un host que no es de una demo, tampoco).
+  const indexable = !container.config.demo;
   const v = (path: string) => versioned(path, version);
   const google = process.env.GOOGLE_SITE_VERIFICATION?.trim();
   const meta = process.env.META_DOMAIN_VERIFICATION?.trim();
@@ -34,7 +37,9 @@ export async function generateMetadata(): Promise<Metadata> {
     manifest: v("/manifest.webmanifest"),
     openGraph: { type: "website", siteName: brand.name, locale: brand.locale.replace("-", "_"), images: [image] },
     twitter: { card: "summary_large_image", images: [{ url: image.url, alt: image.alt }] },
-    robots: { index: true, follow: true, googleBot: { index: true, follow: true, "max-image-preview": "large", "max-snippet": -1 } },
+    robots: indexable
+      ? { index: true, follow: true, googleBot: { index: true, follow: true, "max-image-preview": "large", "max-snippet": -1 } }
+      : { index: false, follow: false, googleBot: { index: false, follow: false } },
     formatDetection: { telephone: false },
     // Search Console y Meta Business verifican el dominio con estas etiquetas (variables de entorno).
     verification: { ...(google ? { google } : {}), ...(meta ? { other: { "facebook-domain-verification": meta } } : {}) },
@@ -43,16 +48,16 @@ export async function generateMetadata(): Promise<Metadata> {
 
 /** Color de la barra del navegador: el fondo del tema publicado (o el negro de fábrica). */
 export async function generateViewport(): Promise<Viewport> {
-  const appearance = await new GetActiveAppearance((await currentContainer()).appearance).execute();
+  const appearance = await new GetActiveAppearance((await requestContainer()).container.appearance).execute();
   return { themeColor: appearance?.colors.bg ?? "#000000", colorScheme: "dark" };
 }
 
 /** Raíz mínima: la tienda pone su chrome en `(store)/layout.tsx` y el panel el suyo en `admin/`. */
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const container = (await currentContainer());
+  const { container } = await requestContainer();
   const [site, appearance] = await Promise.all([container.content.get(), new GetActiveAppearance(container.appearance).execute()]);
   return (
-    <html lang={site.brand.locale} className={fontVariables} data-store={(await currentContainer()).config.slug}>
+    <html lang={site.brand.locale} className={fontVariables} data-store={container.config.slug}>
       <head>
         <ThemeStyle appearance={appearance} />
       </head>

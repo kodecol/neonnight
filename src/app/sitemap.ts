@@ -3,10 +3,12 @@ import { ListLines } from "@/application/use-cases/list-lines";
 import { INFO_PAGE_SLUGS } from "@/application/dto/info-page.dto";
 import { ROUTES, absoluteUrl } from "@/presentation/lib/site";
 import { container as currentContainer, siteBaseUrl } from "@/app/_lib/tenant";
+import { tenancy } from "@/infrastructure/config/instance";
 
 export const dynamic = "force-dynamic";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  if (tenancy() === "multi") return []; // las demos no se indexan
   const siteBase = await siteBaseUrl();
   const container = (await currentContainer());
   const [products, lines] = await Promise.all([container.products.findAll(), new ListLines(container).execute()]);

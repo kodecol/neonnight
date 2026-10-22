@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import { isAdminConfigured } from "@/infrastructure/auth/password";
 import { LoginForm } from "@/presentation/components/admin/LoginForm";
 import { loginAction } from "../_lib/session-actions";
 import { adminAccount } from "../_lib/account";
@@ -12,6 +11,9 @@ export const dynamic = "force-dynamic";
 
 export default async function LoginPage() {
   if (await isAdmin()) redirect("/admin/catalogo");
-  const [{ brand }, account] = await Promise.all([(await container()).content.get(), (await adminAccount()).view()]);
-  return <LoginForm wordmark={brand.wordmark} isotype={brand.isotype} login={loginAction} configured={isAdminConfigured(account.stored)} />;
+  const c = await container();
+  const [{ brand }, account] = await Promise.all([c.content.get(), (await adminAccount()).view()]);
+  // Configurado: hay clave de sesión y una contraseña (la de la base o, solo en single, la inicial del entorno).
+  const configured = Boolean(c.config.adminSecret) && (account.stored || Boolean(c.config.adminPassword));
+  return <LoginForm wordmark={brand.wordmark} isotype={brand.isotype} login={loginAction} configured={configured} />;
 }
