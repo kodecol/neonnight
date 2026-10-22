@@ -1,46 +1,213 @@
 {
   "name": "jewelry-store",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "schema_version": 2,
+  "tenancy": [
+    "single",
+    "multi"
+  ],
   "description": "Tienda de relojes, joyas y perfumes con panel de administración, pagos Bold opcionales y pedidos por WhatsApp.",
   "image": "kodecol/jewelry-store",
   "port": 3000,
   "health": "/api/health",
   "brand_schema": "brand.schema.json",
-  "niches": ["relojeria", "joyeria", "perfumeria", "ecommerce", "vacio"],
-  "services": ["mongodb", "media"],
+  "niches": [
+    "relojeria",
+    "joyeria",
+    "perfumeria",
+    "ecommerce",
+    "vacio"
+  ],
+  "services": [
+    "mongodb",
+    "media"
+  ],
   "runtime": {
     "read_only_root": true,
-    "writable_paths": ["/app/.next/cache", "/data/media"],
+    "writable_paths": [
+      "/app/.next/cache",
+      "/data/media"
+    ],
     "memory_mb": 320,
     "user": "nextjs"
   },
   "env": [
-    { "name": "STORE_SLUG", "required": true, "secret": false, "description": "Slug de la instancia: claves del navegador y carpetas de medios. Igual al slug del brand.json." },
-    { "name": "SITE_URL", "required": true, "secret": false, "description": "URL pública https, sin barra final (canonical, OG, webhook de Bold)." },
-    { "name": "MONGODB_URI", "required": true, "secret": true, "description": "Conexión a MongoDB." },
-    { "name": "MONGODB_DB", "required": true, "secret": false, "description": "Base de la instancia (una por tienda)." },
-    { "name": "ADMIN_PASSWORD", "required": true, "secret": true, "description": "Contraseña inicial del panel /admin (luego se cambia en Ajustes › Seguridad)." },
-    { "name": "ADMIN_SECRET", "required": true, "secret": true, "description": "32+ caracteres aleatorios: firma la sesión y cifra la llave secreta de Bold. No rotarlo sin reingresar esa llave." },
-    { "name": "MEDIA_DIR", "required": false, "secret": false, "description": "Carpeta escribible para fotos subidas cuando no hay Cloudinary (volumen por instancia, p. ej. /data/media)." },
-    { "name": "CLOUDINARY_URL", "required": false, "secret": true, "description": "cloudinary://key:secret@nube. Sin ella, las fotos van a MEDIA_DIR y no hay subida de video." },
-    { "name": "PORT", "required": false, "secret": false, "description": "Puerto HTTP del contenedor (3000 por defecto)." },
-    { "name": "WHATSAPP_NUMBER", "required": false, "secret": false, "description": "WhatsApp con indicativo, solo dígitos (company.whatsapp del brand.json)." },
-    { "name": "GA_MEASUREMENT_ID", "required": false, "secret": false, "description": "Google Analytics 4 (G-XXXX). Solo carga con consentimiento." },
-    { "name": "META_PIXEL_ID", "required": false, "secret": false, "description": "Píxel de Meta. Solo carga con consentimiento." },
-    { "name": "GOOGLE_SITE_VERIFICATION", "required": false, "secret": false, "description": "Token de Search Console." },
-    { "name": "META_DOMAIN_VERIFICATION", "required": false, "secret": false, "description": "Token de verificación de dominio de Meta." }
+    {
+      "name": "STORE_SLUG",
+      "required": true,
+      "secret": false,
+      "description": "Slug de la instancia: claves del navegador y carpetas de medios. Igual al slug del brand.json."
+    },
+    {
+      "name": "SITE_URL",
+      "required": true,
+      "secret": false,
+      "description": "URL pública https, sin barra final (canonical, OG, webhook de Bold)."
+    },
+    {
+      "name": "MONGODB_URI",
+      "required": true,
+      "secret": true,
+      "description": "Conexión a MongoDB."
+    },
+    {
+      "name": "MONGODB_DB",
+      "required": true,
+      "secret": false,
+      "description": "Base de la instancia (una por tienda)."
+    },
+    {
+      "name": "ADMIN_PASSWORD",
+      "required": true,
+      "secret": true,
+      "description": "Contraseña inicial del panel /admin (luego se cambia en Ajustes › Seguridad)."
+    },
+    {
+      "name": "ADMIN_SECRET",
+      "required": true,
+      "secret": true,
+      "description": "32+ caracteres aleatorios: firma la sesión y cifra la llave secreta de Bold. No rotarlo sin reingresar esa llave."
+    },
+    {
+      "name": "MEDIA_DIR",
+      "required": false,
+      "secret": false,
+      "description": "Carpeta escribible para fotos subidas cuando no hay Cloudinary (volumen por instancia, p. ej. /data/media)."
+    },
+    {
+      "name": "CLOUDINARY_URL",
+      "required": false,
+      "secret": true,
+      "description": "cloudinary://key:secret@nube. Sin ella, las fotos van a MEDIA_DIR y no hay subida de video."
+    },
+    {
+      "name": "PORT",
+      "required": false,
+      "secret": false,
+      "description": "Puerto HTTP del contenedor (3000 por defecto)."
+    },
+    {
+      "name": "WHATSAPP_NUMBER",
+      "required": false,
+      "secret": false,
+      "description": "WhatsApp con indicativo, solo dígitos (company.whatsapp del brand.json)."
+    },
+    {
+      "name": "GA_MEASUREMENT_ID",
+      "required": false,
+      "secret": false,
+      "description": "Google Analytics 4 (G-XXXX). Solo carga con consentimiento."
+    },
+    {
+      "name": "META_PIXEL_ID",
+      "required": false,
+      "secret": false,
+      "description": "Píxel de Meta. Solo carga con consentimiento."
+    },
+    {
+      "name": "GOOGLE_SITE_VERIFICATION",
+      "required": false,
+      "secret": false,
+      "description": "Token de Search Console."
+    },
+    {
+      "name": "META_DOMAIN_VERIFICATION",
+      "required": false,
+      "secret": false,
+      "description": "Token de verificación de dominio de Meta."
+    },
+    {
+      "name": "TENANCY",
+      "required": false,
+      "secret": false,
+      "description": "single (por defecto: una tienda por proceso) o multi (demo host: muchas demos por dominio)."
+    },
+    {
+      "name": "DEMO_ZONE",
+      "required": false,
+      "secret": false,
+      "description": "Solo multi: zona de las demos (p. ej. kodecol.co). Cada demo es <slug>.<zona>, un solo nivel."
+    },
+    {
+      "name": "DEMO_MASTER_SECRET",
+      "required": false,
+      "secret": true,
+      "description": "Solo multi: 32+ caracteres. De él sale, por HKDF, la clave de sesión de cada demo."
+    },
+    {
+      "name": "KODE_HOST_KEY",
+      "required": false,
+      "secret": true,
+      "description": "Solo multi: 32+ caracteres. Firma HMAC de /api/_kode/* (contrato con Kode)."
+    },
+    {
+      "name": "STORE_BRAND_PACK",
+      "required": false,
+      "secret": false,
+      "description": "Solo single: brand pack que se aplica al arrancar si la base no tiene marca (p. ej. brands/neonnight/brand.json)."
+    },
+    {
+      "name": "STORE_ORDER_PREFIX",
+      "required": false,
+      "secret": false,
+      "description": "Solo single: prefijo del número de pedido (1–4 letras). Por defecto, las iniciales del slug."
+    }
   ],
   "lifecycle": {
-    "migrate": ["node", "lifecycle.mjs", "migrate"],
-    "brand_apply": ["node", "lifecycle.mjs", "brand:apply", "--file", "{brand_file}"],
-    "seed": ["node", "lifecycle.mjs", "seed", "--niche", "{niche}"],
-    "info": ["node", "lifecycle.mjs", "info"],
-    "order": ["migrate", "brand_apply", "seed"],
+    "migrate": [
+      "node",
+      "lifecycle.mjs",
+      "migrate"
+    ],
+    "brand_apply": [
+      "node",
+      "lifecycle.mjs",
+      "brand:apply",
+      "--file",
+      "{brand_file}"
+    ],
+    "seed": [
+      "node",
+      "lifecycle.mjs",
+      "seed",
+      "--niche",
+      "{niche}"
+    ],
+    "info": [
+      "node",
+      "lifecycle.mjs",
+      "info"
+    ],
+    "order": [
+      "migrate",
+      "brand_apply",
+      "seed"
+    ],
     "output": "Una línea JSON en stdout; exit 0 éxito, 1 error de validación u operación, 2 uso incorrecto. Idempotentes."
   },
   "notes": [
     "Bold es opcional: sin llaves en Ajustes › Pagos, el checkout registra el pedido y coordina el pago por WhatsApp.",
     "La cookie de sesión del panel es Secure: el panel exige HTTPS (salvo localhost)."
-  ]
+  ],
+  "multi": {
+    "api": "/api/_kode/tenants (GET) y /api/_kode/tenants/:slug (PUT, DELETE), firmadas: X-Kode-Timestamp, X-Kode-Nonce, X-Kode-Signature: v1=hex(HMAC_SHA256(KODE_HOST_KEY, METHOD\\nPATH\\nTIMESTAMP\\nNONCE\\nsha256hex(cuerpo))), ventana ±300 s.",
+    "health": "/api/health responde en cualquier host (también sin tenant).",
+    "required_env": [
+      "TENANCY",
+      "DEMO_ZONE",
+      "MONGODB_URI",
+      "DEMO_MASTER_SECRET",
+      "KODE_HOST_KEY",
+      "CLOUDINARY_URL"
+    ],
+    "not_used_env": [
+      "STORE_SLUG",
+      "SITE_URL",
+      "MONGODB_DB",
+      "ADMIN_PASSWORD",
+      "ADMIN_SECRET"
+    ],
+    "media": "Cloudinary bajo demos/<slug>/ (al borrar una demo solo se toca ese prefijo).",
+    "database": "Una base por demo (demo_<slug con _>) y demo_registry para el registro y los nonces."
+  }
 }

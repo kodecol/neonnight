@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { absoluteUrl } from "@/presentation/lib/site";
 import { versioned } from "@/application/use-cases/brand-assets";
 import { brandAssets } from "../../_icons/render";
+import { siteBaseUrl } from "@/app/_lib/tenant";
 
 /**
  * Vistas previas al compartir (1200 × 630, JPEG) con URLs estables: una
@@ -20,7 +21,8 @@ export const OG_PATHS = {
  * nombre, el isotipo o los colores, las redes piden la imagen nueva.
  */
 export async function ogImage(path: string, alt: string) {
-  const url = absoluteUrl(versioned(path, (await brandAssets()).version));
+  const siteBase = await siteBaseUrl();
+  const url = absoluteUrl(versioned(path, (await brandAssets()).version), siteBase);
   return { url, secureUrl: url, ...OG_IMAGE_SIZE, alt, type: "image/jpeg" };
 }
 

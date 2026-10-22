@@ -98,18 +98,11 @@ describe("brand:apply", () => {
 
 describe("Prefijo del número de pedido", () => {
   it("sale de STORE_ORDER_PREFIX o de las iniciales del slug", async () => {
-    const { orderPrefix } = await import("@/infrastructure/config/store");
+    const { singleInstanceConfig, prefixFor } = await import("@/infrastructure/config/instance");
     const { newOrderId } = await import("@/domain/entities/order");
-    const env = { ...process.env };
-    try {
-      process.env.STORE_SLUG = "aurora-joyeria";
-      delete process.env.STORE_ORDER_PREFIX;
-      expect(orderPrefix()).toBe("AJ");
-      process.env.STORE_ORDER_PREFIX = "nn";
-      expect(orderPrefix()).toBe("NN");
-    } finally {
-      process.env = env;
-    }
+    expect(singleInstanceConfig({ STORE_SLUG: "aurora-joyeria" }).orderPrefix).toBe("AJ");
+    expect(singleInstanceConfig({ STORE_SLUG: "aurora-joyeria", STORE_ORDER_PREFIX: "nn" }).orderPrefix).toBe("NN");
+    expect(prefixFor("tienda")).toBe("T");
     expect(newOrderId(new Date("2026-10-21T12:00:00Z"), "abc12", "AJ")).toBe("AJ-261021-ABC12");
   });
 });

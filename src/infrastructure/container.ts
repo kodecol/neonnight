@@ -16,14 +16,14 @@ import type { HomeSettingsRepository } from "@/application/ports/home-settings";
 import type { LegalPagesRepository } from "@/application/ports/legal-pages";
 import type { CompanySettingsRepository } from "@/application/ports/company-settings";
 import type { AdminCredentialsRepository, LoginThrottle, PasswordHasher } from "@/application/ports/admin-credentials";
-import { trackingIds, type TrackingIds } from "@/application/lib/tracking-ids";
+import type { TrackingIds } from "@/application/lib/tracking-ids";
 import { InMemoryProductRepository } from "./repositories/in-memory-product-repository";
 import { InMemoryLineRepository } from "./repositories/in-memory-line-repository";
 import { InMemoryOrderRepository } from "./repositories/in-memory-order-repository";
 import { InMemoryCategoryRepository } from "./repositories/in-memory-category-repository";
-import { InMemoryPaymentSettingsRepository } from "./repositories/in-memory-payment-settings-repository";
-import { mongoDb, mongoDbName } from "./mongo/client";
-import { orderPrefix } from "./config/store";
+import { DemoPaymentSettingsRepository, InMemoryPaymentSettingsRepository } from "./repositories/in-memory-payment-settings-repository";
+import { mongoDb } from "./mongo/client";
+import { singleInstanceConfig, type InstanceConfig } from "./config/instance";
 import { MongoProductRepository } from "./mongo/mongo-product-repository";
 import { MongoLineRepository } from "./mongo/mongo-line-repository";
 import { MongoOrderRepository } from "./mongo/mongo-order-repository";
@@ -37,12 +37,11 @@ import { MongoHomeSettingsRepository, MongoSiteMediaRepository } from "./mongo/m
 import { InMemoryHomeSettingsRepository, InMemorySiteMediaRepository } from "./repositories/in-memory-site-content-repositories";
 import { InMemoryCompanySettingsRepository, InMemoryLegalPagesRepository } from "./repositories/in-memory-legal-repositories";
 import { MongoCompanySettingsRepository, MongoLegalPagesRepository } from "./mongo/mongo-legal-repositories";
-import { CloudinaryMediaRemover, CloudinaryVideoSigner, DisabledVideoSigner, NoopMediaRemover, siteFolder } from "./media/cloudinary-site-media";
+import { CloudinaryMediaRemover, CloudinaryVideoSigner, DisabledVideoSigner, NoopMediaRemover } from "./media/cloudinary-site-media";
 import { NoopPaymentGateway } from "./payments/noop-payment-gateway";
 import { BoldPaymentGateway } from "./payments/bold-payment-gateway";
 import { LocalDiskMediaUploader } from "./media/local-disk-uploader";
 import { CloudinaryMediaUploader } from "./media/cloudinary-uploader";
-import { adminSecret } from "./auth/session";
 import { ScryptPasswordHasher } from "./auth/password";
 import { InMemoryLoginThrottle, createLoginThrottles } from "./auth/login-throttle";
 import { MongoAdminCredentialsRepository } from "./mongo/mongo-admin-credentials-repository";
@@ -117,6 +116,8 @@ export interface Container {
   content: SiteContentRepository;
   /** IDs de Google Analytics y del píxel de Meta (runtime, ya validados). */
   tracking: TrackingIds;
+  /** La tienda de este contenedor: del entorno (single) o del tenant (demo host). */
+  config: InstanceConfig;
 }
 
 /**
@@ -128,9 +129,8 @@ export interface Container {
 const g: { __nnContainer?: Container | null } =
   process.env.NODE_ENV === "production" ? (globalThis as unknown as { __nnContainer?: Container | null }) : {};
 
-function persistence(): Pick<Container, "products" | "lines" | "categories" | "brands" | "brandsCopy" | "orders" | "paymentSettings" | "siteMedia" | "homeSettings" | "legalPages" | "companySettings" | "identity" | "appearance" | "adminCredentials"> {
-  const uri = process.env.MONGODB_URI;
-  if (!uri) {
+function persistence(config: InstanceConfig): Pick<Container, "products" | "lines" | "categories" | "brands" | "brandsCopy" | "orders" | "paymentSettings" | "siteMedia" | "homeSettings" | "legalPages" | "companySettings" | "identity" | "appearance" | "adminCredentials"> {
+  if (!config.db) {
     return {
       products: new InMemoryProductRepository(SEED_PRODUCTS),
       lines: new InMemoryLineRepository(SEED_LINES),
@@ -148,7 +148,7 @@ function persistence(): Pick<Container, "products" | "lines" | "categories" | "b
       adminCredentials: new InMemoryAdminCredentialsRepository(),
     };
   }
-  const db = mongoDb(uri, mongoDbName());
+  const db = mongoDb(config.db.uri, config.db.name);
   return {
     products: new MongoProductRepository(db),
     lines: new MongoLineRepository(db),
@@ -156,7 +156,7 @@ function persistence(): Pick<Container, "products" | "lines" | "categories" | "b
     brands: new MongoBrandRepository(db),
     brandsCopy: new MongoBrandsCopyRepository(db),
     orders: new MongoOrderRepository(db),
-    paymentSettings: new MongoPaymentSettingsRepository(db, adminSecret),
+    paymentSettings: new MongoPaymentSettingsRepository(db, () => config.adminSecret),
     siteMedia: new MongoSiteMediaRepository(db),
     homeSettings: new MongoHomeSettingsRepository(db),
     legalPages: new MongoLegalPagesRepository(db),
@@ -167,17 +167,23 @@ function persistence(): Pick<Container, "products" | "lines" | "categories" | "b
   };
 }
 
-export function createContainer(overrides: Partial<Container> = {}): Container {
-  const base = { ...persistence(), ...overrides };
-  const whatsappNumber = process.env.WHATSAPP_NUMBER || process.env.NEXT_PUBLIC_WHATSAPP_NUMBER;
-  const staticContent = new StaticSiteContentRepository(SITE_CONTENT, whatsappNumber);
+export function createContainer(overrides: Partial<Container> = {}, config: InstanceConfig = overrides.config ?? singleInstanceConfig()): Container {
+  const persisted = persistence(config);
+  // Demo: nunca hay pasarela (ni llaves guardadas, ni webhooks): pedido manual.
+  if (config.demo) persisted.paymentSettings = new DemoPaymentSettingsRepository();
+  const base = { ...persisted, ...overrides };
+  const whatsappNumber = config.whatsappNumber;
+  const staticContent = new StaticSiteContentRepository(SITE_CONTENT, whatsappNumber, config.slug);
+  const cloud = config.media.cloudinary;
+  const { folders } = config.media;
+  const disk = () => new LocalDiskMediaUploader(config.media.dir);
   return {
     products: base.products,
     lines: base.lines,
     categories: base.categories,
     brands: base.brands,
     brandsCopy: base.brandsCopy,
-    brandUploader: overrides.brandUploader ?? (process.env.CLOUDINARY_URL ? new CloudinaryMediaUploader(`${siteFolder()}/marcas`) : new LocalDiskMediaUploader()),
+    brandUploader: overrides.brandUploader ?? (cloud ? new CloudinaryMediaUploader(`${folders.site}/marcas`) : disk()),
     orders: base.orders,
     paymentSettings: base.paymentSettings,
     siteMedia: base.siteMedia,
@@ -186,17 +192,17 @@ export function createContainer(overrides: Partial<Container> = {}): Container {
     companySettings: base.companySettings,
     identity: base.identity,
     appearance: base.appearance,
-    identityUploader: overrides.identityUploader ?? (process.env.CLOUDINARY_URL ? new CloudinaryMediaUploader(`${siteFolder()}/identidad`) : new LocalDiskMediaUploader()),
+    identityUploader: overrides.identityUploader ?? (cloud ? new CloudinaryMediaUploader(`${folders.site}/identidad`) : disk()),
     adminCredentials: base.adminCredentials,
     passwordHasher: overrides.passwordHasher ?? new ScryptPasswordHasher(),
     loginThrottles: overrides.loginThrottles ?? createLoginThrottles(),
     checkoutThrottle: overrides.checkoutThrottle ?? new InMemoryLoginThrottle(Number(process.env.CHECKOUT_RATE_LIMIT) || 10, 60_000),
     whatsappLabel: staticContent.whatsapp,
-    siteUploader: overrides.siteUploader ?? (process.env.CLOUDINARY_URL ? new CloudinaryMediaUploader(siteFolder()) : new LocalDiskMediaUploader()),
-    videoSigner: overrides.videoSigner ?? (process.env.CLOUDINARY_URL ? new CloudinaryVideoSigner() : new DisabledVideoSigner()),
-    mediaRemover: overrides.mediaRemover ?? (process.env.CLOUDINARY_URL ? new CloudinaryMediaRemover() : new NoopMediaRemover()),
-    payments: overrides.payments ?? new BoldPaymentGateway(base.paymentSettings, new NoopPaymentGateway()),
-    media: overrides.media ?? (process.env.CLOUDINARY_URL ? new CloudinaryMediaUploader() : new LocalDiskMediaUploader()),
+    siteUploader: overrides.siteUploader ?? (cloud ? new CloudinaryMediaUploader(folders.site) : disk()),
+    videoSigner: overrides.videoSigner ?? (cloud ? new CloudinaryVideoSigner(folders.site) : new DisabledVideoSigner()),
+    mediaRemover: overrides.mediaRemover ?? (cloud ? new CloudinaryMediaRemover(folders.site) : new NoopMediaRemover()),
+    payments: overrides.payments ?? (config.demo ? new NoopPaymentGateway() : new BoldPaymentGateway(base.paymentSettings, new NoopPaymentGateway())),
+    media: overrides.media ?? (cloud ? new CloudinaryMediaUploader(folders.catalogUploads) : disk()),
     analytics: overrides.analytics ?? new ConsoleAnalytics(),
     whatsapp:
       overrides.whatsapp ??
@@ -207,7 +213,7 @@ export function createContainer(overrides: Partial<Container> = {}): Container {
       }),
     clock: overrides.clock ?? new SystemClock(),
     ids: overrides.ids ?? new RandomIdGenerator(),
-    orderPrefix: overrides.orderPrefix ?? orderPrefix(),
+    orderPrefix: overrides.orderPrefix ?? config.orderPrefix,
     content:
       overrides.content ??
       new ManagedSiteContentRepository(staticContent, base.homeSettings, {
@@ -217,7 +223,8 @@ export function createContainer(overrides: Partial<Container> = {}): Container {
         whatsapp: staticContent.whatsapp,
       }, base.identity),
     codeContent: staticContent,
-    tracking: overrides.tracking ?? trackingIds({ ga: process.env.GA_MEASUREMENT_ID, pixel: process.env.META_PIXEL_ID }),
+    tracking: overrides.tracking ?? config.tracking,
+    config,
   };
 }
 

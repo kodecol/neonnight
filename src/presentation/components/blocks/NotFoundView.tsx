@@ -5,7 +5,7 @@ import { Kicker } from "@/presentation/components/primitives/Kicker";
 import { ROUTES } from "@/presentation/lib/site";
 
 /** 404 con la identidad vigente (isotipo y nombre). `standalone`: fuera del armazón de la tienda. */
-export function NotFoundView({ brand, standalone = false }: { brand: SiteContent["brand"]; standalone?: boolean }) {
+export function NotFoundView({ brand, standalone = false, ended = false }: { brand: SiteContent["brand"]; standalone?: boolean; ended?: boolean }) {
   return (
     <main className="flex min-h-screen flex-col justify-center px-page pt-header" data-testid="not-found">
       {standalone && (
@@ -15,8 +15,10 @@ export function NotFoundView({ brand, standalone = false }: { brand: SiteContent
         </a>
       )}
       <Kicker>404 · {brand.name}</Kicker>
-      <h1 className="mb-4 mt-4 text-display-fluid uppercase">Pieza no encontrada</h1>
-      <p className="m-0 max-w-[48ch] text-lead text-ink-2">Esta página no existe o la pieza ya no está en la colección.</p>
+      <h1 className="mb-4 mt-4 text-display-fluid uppercase">{ended ? "Esta demo terminó" : "Pieza no encontrada"}</h1>
+      <p className="m-0 max-w-[48ch] text-lead text-ink-2">
+        {ended ? "La tienda de demostración ya no está disponible. Escríbenos si quieres la tuya." : "Esta página no existe o la pieza ya no está en la colección."}
+      </p>
       <div className="mt-9">
         <Button href={ROUTES.collection}>Ver la colección</Button>
       </div>

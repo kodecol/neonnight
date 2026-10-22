@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { getContainer } from "@/infrastructure/container";
 import { StoreChrome } from "../../../(store)/_layout/store-chrome";
 import { HomeView } from "../../../(store)/_home/render-home";
 import { requireAdmin } from "../../_lib/auth";
+import { container } from "@/app/_lib/tenant";
 
 export const metadata: Metadata = { title: "Vista previa de Identidad", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
 /** La tienda con la identidad en borrador (nombre, wordmark, isotipo, logo). Solo con sesión del panel. */
 export default async function IdentityPreviewPage() {
   await requireAdmin();
-  const { identity } = getContainer();
+  const { identity } = (await container());
   const draft = (await identity.getDraft()) ?? (await identity.get()) ?? undefined;
   return (
     <StoreChrome identity={draft}>

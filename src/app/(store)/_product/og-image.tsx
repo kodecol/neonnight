@@ -1,5 +1,5 @@
 import { ImageResponse } from "next/og";
-import { getContainer } from "@/infrastructure/container";
+import { container as currentContainer } from "@/app/_lib/tenant";
 import { ogColors, ogFonts, ogIsotype, ogIsotypeHeight, ogPhoto } from "../../_og/brand";
 import { loadProduct } from "./render-product";
 
@@ -7,7 +7,7 @@ export const OG_SIZE = { width: 1200, height: 630 };
 
 /** Tarjeta OG de un producto: marca, nombre, precio y la foto recortada de la pieza. */
 export async function productOgImage(slug: string): Promise<ImageResponse | null> {
-  const [p, fonts, site, C] = await Promise.all([loadProduct(slug), ogFonts(), getContainer().content.get(), ogColors()]);
+  const [p, fonts, site, C] = await Promise.all([loadProduct(slug), ogFonts(), (await currentContainer()).content.get(), ogColors()]);
   const iso = await ogIsotype(site.brand.isotype);
   if (!p) return null;
   const name = p?.model ?? site.brand.name;

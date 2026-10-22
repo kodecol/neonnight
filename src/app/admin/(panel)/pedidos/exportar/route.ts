@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getContainer } from "@/infrastructure/container";
+import { container as currentContainer } from "@/app/_lib/tenant";
 import { ExportOrdersCsv, parseAdminOrderFilters } from "@/application/use-cases/admin/orders";
 import { isAdmin } from "../../../_lib/auth";
 
@@ -13,7 +13,7 @@ export const dynamic = "force-dynamic";
 export async function GET(req: Request) {
   if (!(await isAdmin())) return NextResponse.json({ error: "No autorizado." }, { status: 401 });
   const filters = parseAdminOrderFilters(Object.fromEntries(new URL(req.url).searchParams));
-  const csv = await new ExportOrdersCsv(getContainer().orders).execute(filters);
+  const csv = await new ExportOrdersCsv((await currentContainer()).orders).execute(filters);
   const stamp = new Date().toISOString().slice(0, 10);
   return new Response(csv, {
     headers: {

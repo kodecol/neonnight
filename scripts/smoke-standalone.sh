@@ -13,8 +13,9 @@ mkdir -p "$DIR/.next" && cp -r .next/static "$DIR/.next/static"
 rm -rf "$DIR/brands"   # el pack debe salir del bundle, no del disco
 
 run() { # $1 = base, $2 = pack, $3 = puerto
+  # exec: el PID que se guarda es el del servidor (si no, `kill` deja el node vivo).
   (cd "$DIR" && MONGODB_DB="$1" STORE_SLUG=neonnight STORE_ORDER_PREFIX=NN STORE_BRAND_PACK="$2" SITE_URL=http://localhost:$3 \
-    ADMIN_PASSWORD=smoke-standalone-123 ADMIN_SECRET=smoke-standalone-secret-0000000000000 PORT=$3 HOSTNAME=127.0.0.1 node server.js > "$DIR/log-$3" 2>&1) &
+    ADMIN_PASSWORD=smoke-standalone-123 ADMIN_SECRET=smoke-standalone-secret-0000000000000 PORT=$3 HOSTNAME=127.0.0.1 exec node server.js > "$DIR/log-$3" 2>&1) &
   PID=$!
   for _ in $(seq 1 60); do curl -fs "http://127.0.0.1:$3/api/health" >/dev/null && return 0; sleep 1; done
   cat "$DIR/log-$3"; return 1

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { connection } from "next/server";
-import { getContainer } from "@/infrastructure/container";
 import { NotFoundView } from "@/presentation/components/blocks/NotFoundView";
+import { requestContainer } from "@/app/_lib/tenant";
 
 /**
  * Next ya agrega `<meta name="robots" content="noindex">` a todo 404: aquí el
@@ -12,6 +12,8 @@ export const metadata: Metadata = { title: "Página no encontrada", robots: { go
 
 export default async function NotFound() {
   await connection();
-  const { brand } = await getContainer().content.get();
-  return <NotFoundView brand={brand} />;
+  const { state, container } = await requestContainer();
+  const { brand } = await container.content.get();
+  // Demo vencida: el host existe, pero la demo ya no se sirve.
+  return <NotFoundView brand={brand} ended={state === "expired"} />;
 }

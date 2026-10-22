@@ -1,14 +1,12 @@
 import type { ProductKind } from "@/domain/entities/product";
 
-export function siteUrl(): URL {
-  // SITE_URL se lee en runtime (la misma imagen sirve para cualquier dominio);
-  // NEXT_PUBLIC_SITE_URL queda como respaldo para desarrollo local.
-  const raw = process.env.SITE_URL || process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
-  return new URL(raw);
-}
-
-export function absoluteUrl(path: string): string {
-  return new URL(path, siteUrl()).toString();
+/**
+ * URL absoluta de una ruta de la tienda. `base` es la URL pública de la tienda
+ * de esta petición (`config.siteUrl`: SITE_URL en modo single, el host del
+ * tenant en el demo host): nunca se lee del entorno aquí.
+ */
+export function absoluteUrl(path: string, base: string): string {
+  return new URL(path, base.endsWith("/") ? base : `${base}/`).toString();
 }
 
 /** Segmento de URL del detalle según la plantilla: /reloj, /joya, /perfume o /producto. */

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
-import { getContainer } from "@/infrastructure/container";
+import { container as currentContainer } from "@/app/_lib/tenant";
 import { verifyBoldWebhook } from "@/infrastructure/payments/bold-signature";
 import { ConfirmPayment } from "@/application/use-cases/confirm-payment";
 import { webhookSecret } from "@/application/ports/payment-settings";
@@ -14,7 +14,7 @@ export const dynamic = "force-dynamic";
  */
 export async function POST(req: Request) {
   const raw = await req.text();
-  const container = getContainer();
+  const container = (await currentContainer());
   const secret = webhookSecret(await container.paymentSettings.get());
   if (secret === null || !verifyBoldWebhook(raw, req.headers.get("x-bold-signature"), secret)) {
     return NextResponse.json({ error: "Firma inválida." }, { status: 401 });

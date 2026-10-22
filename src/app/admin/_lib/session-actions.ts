@@ -1,14 +1,15 @@
 "use server";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { SESSION_COOKIE, adminSecret } from "@/infrastructure/auth/session";
+import { SESSION_COOKIE } from "@/infrastructure/auth/session";
 import type { LoginState } from "@/presentation/components/admin/LoginForm";
 import { adminAccount, clientIp, setSessionCookie } from "./account";
+import { container } from "@/app/_lib/tenant";
 
 export async function loginAction(_prev: LoginState, fd: FormData): Promise<LoginState> {
-  const secret = adminSecret();
+  const secret = (await container()).config.adminSecret;
   if (!secret) return { error: "El panel no está configurado." };
-  const result = await adminAccount().login(String(fd.get("password") ?? ""), await clientIp());
+  const result = await (await adminAccount()).login(String(fd.get("password") ?? ""), await clientIp());
   if (!result.ok) {
     if (result.reason === "throttled") {
       const minutes = Math.ceil(result.retryAfter / 60);

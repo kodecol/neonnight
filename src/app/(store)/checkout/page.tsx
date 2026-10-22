@@ -1,16 +1,16 @@
 import type { Metadata } from "next";
-import { getContainer } from "@/infrastructure/container";
 import { GetLegalVersions } from "@/application/use-cases/checkout";
 import { paymentModeOf } from "@/application/ports/payment-settings";
 import { Breadcrumb } from "@/presentation/components/blocks/Breadcrumb";
 import { CheckoutView } from "@/presentation/components/checkout/CheckoutView";
 import { ROUTES } from "@/presentation/lib/site";
+import { container } from "@/app/_lib/tenant";
 
 export const metadata: Metadata = { title: "Finalizar compra", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
 
 export default async function CheckoutPage() {
-  const c = getContainer();
+  const c = (await container());
   const [site, settings, legal] = await Promise.all([c.content.get(), c.paymentSettings.get(), new GetLegalVersions(c.content).execute()]);
   const { policies } = site;
   return (

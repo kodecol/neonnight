@@ -1,7 +1,8 @@
 import sharp from "sharp";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
-import { getContainer } from "@/infrastructure/container";
+import { container } from "@/app/_lib/tenant";
+import { TtlLru } from "@/infrastructure/tenancy/lru";
 import { GetBrandAssets, type BrandAssets } from "@/application/use-cases/brand-assets";
 import { encodeIco } from "@/application/lib/ico";
 import { isotypeBytes } from "../_og/brand";
@@ -32,7 +33,7 @@ const FACTORY_FILES: Partial<Record<IconFile | "favicon.ico", string>> = {
 };
 const FAVICON_SIZES = [16, 32, 48] as const;
 
-export const brandAssets = () => new GetBrandAssets(getContainer()).execute();
+export const brandAssets = async () => new GetBrandAssets(await container()).execute();
 
 /** El isotipo a la medida del cuadro. Si sharp no puede leer el de Identidad (un video, un archivo dañado), el del sitio. */
 async function glyphOf(brand: BrandAssets, box: number): Promise<Buffer> {
@@ -69,17 +70,18 @@ export async function renderIcon(brand: BrandAssets, file: IconFile | "favicon.i
   return compose(brand, size, fill);
 }
 
-// Se dibujan una vez por versión publicada; al publicar cambia la versión y se descartan.
-let cache: { version: string; files: Map<string, Promise<Buffer>> } = { version: "", files: new Map() };
+// Se dibujan una vez por tienda y versión publicada; al publicar cambia la versión y la
+// entrada vieja sale sola de la LRU (tope: 300 íconos ≈ 60 tiendas × 5 archivos).
+const cache = new TtlLru<string, Promise<Buffer>>(300, 0);
 
 export async function iconResponse(file: IconFile | "favicon.ico", requested: string | null): Promise<Response> {
   const brand = await brandAssets();
-  if (cache.version !== brand.version) cache = { version: brand.version, files: new Map() };
-  let bytes = cache.files.get(file);
+  const key = `${(await container()).config.slug}:${brand.version}:${file}`;
+  let bytes = cache.get(key);
   if (!bytes) {
     bytes = renderIcon(brand, file);
-    cache.files.set(file, bytes);
-    bytes.catch(() => cache.files.delete(file));
+    cache.set(key, bytes);
+    bytes.catch(() => cache.delete(key));
   }
   const body = await bytes;
   return new Response(new Uint8Array(body), {

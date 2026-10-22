@@ -8,7 +8,7 @@ export const metadata: Metadata = { title: "Seguridad · Ajustes" };
 
 export default async function SecurityPage() {
   await requireAdmin(); // el layout no basta: una petición RSC puede renderizar solo esta página
-  const view = await adminAccount().view();
+  const view = await (await adminAccount()).view();
   return (
     <AccountSecurity initial={view} changePassword={changePasswordAction} revokeSessions={revokeSessionsAction} />
   );

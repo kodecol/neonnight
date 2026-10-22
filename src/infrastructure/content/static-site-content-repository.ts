@@ -21,16 +21,17 @@ export class StaticSiteContentRepository implements SiteContentRepository {
   constructor(
     private readonly content: SiteContent = SITE_CONTENT,
     whatsappNumber: string | null = null,
+    private readonly storeSlug = "tienda",
   ) {
     this.whatsapp = formatWhatsapp(whatsappNumber);
-    this.pages = buildInfoPages({ company: content.company, policies: content.policies, whatsapp: this.whatsapp });
+    this.pages = buildInfoPages({ company: content.company, policies: content.policies, whatsapp: this.whatsapp, storeSlug });
   }
 
   /** Las páginas de código redactadas con otros datos de empresa o de envío (los editados en el panel). */
   pagesFor(company: CompanyInfo, policies: StorePolicies = this.content.policies): Record<InfoPageSlug, InfoPage> {
     const key = JSON.stringify([company, policies]);
     if (key === JSON.stringify([this.content.company, this.content.policies])) return this.pages;
-    if (this.memo?.key !== key) this.memo = { key, pages: buildInfoPages({ company, policies, whatsapp: this.whatsapp }) };
+    if (this.memo?.key !== key) this.memo = { key, pages: buildInfoPages({ company, policies, whatsapp: this.whatsapp, storeSlug: this.storeSlug }) };
     return this.memo.pages;
   }
 

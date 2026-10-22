@@ -36,7 +36,7 @@ const eslintConfig = [
     settings: {
       "boundaries/include": ["src/**/*"],
       // El middleware de Next vive suelto en src/ (actúa como capa `app`: protege /admin).
-      "boundaries/ignore": ["src/middleware.ts", "src/instrumentation.ts"],
+      "boundaries/ignore": ["src/middleware.ts", "src/instrumentation.ts", "src/instrumentation-node.ts"],
       "boundaries/elements": [
         { type: "domain", pattern: "src/domain" },
         { type: "application", pattern: "src/application" },
