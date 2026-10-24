@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { revalidatePath } from "next/cache";
 import { getContainer } from "@/infrastructure/container";
 import { GetOrderStatus } from "@/application/use-cases/get-order-status";
 import { ReconcilePayment } from "@/application/use-cases/confirm-payment";
@@ -30,8 +29,8 @@ async function reconcile(id: string): Promise<void> {
   lastLookup.set(id, now);
   if (lastLookup.size > 500) lastLookup.delete(lastLookup.keys().next().value!);
   try {
-    const r = await new ReconcilePayment(getContainer()).execute(id);
-    if (r.handled && r.gateway === "pagada") revalidatePath("/", "layout");
+    // Sin revalidatePath: no se permite durante el render, y la tienda es dinámica (lee el stock en cada visita).
+    await new ReconcilePayment(getContainer()).execute(id);
   } catch (e) {
     console.error("[gracias] verificación con Bold", e);
   }
