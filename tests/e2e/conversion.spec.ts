@@ -36,7 +36,10 @@ test.describe("Caminos de conversión", () => {
     await form.getByLabel("Celular").fill("300 123 4567");
     await form.getByLabel("Dirección").fill("Calle 93 # 11-20");
     await form.getByLabel("Ciudad o municipio").fill("Bogotá");
-    await form.getByLabel("Departamento").selectOption("Bogotá D.C.");
+    // Selector propio: se escribe para filtrar (sin tildes) y se elige de la lista.
+    await form.getByLabel("Departamento").fill("bogo");
+    await page.getByRole("option", { name: "Bogotá D.C." }).click();
+    await expect(form.getByLabel("Departamento")).toHaveValue("Bogotá D.C.");
     await page.getByTestId("checkout-submit").click();
     await expect(page.getByText("Debes aceptar los términos y la política de privacidad.")).toBeVisible();
 
@@ -47,11 +50,25 @@ test.describe("Caminos de conversión", () => {
     await expect(page.getByText(/celular colombiano/)).toBeVisible();
 
     await form.getByLabel("Celular").fill("300 123 4567");
+    await page.getByTestId("checkout-remember").locator("input").check();
     await page.getByTestId("checkout-submit").click();
     await expect(page).toHaveURL(/\/gracias\?orden=NN-\d{6}-[A-Z0-9]{5}$/);
     await expect(page.getByTestId("order-pendiente")).toBeVisible();
     await expect(page.getByTestId("order-whatsapp")).toHaveAttribute("href", /wa\.me\/573000000000\?text=.*NN-/);
     await expect(page.locator("[data-testid=cart-count]")).toHaveText("0");
+
+    // "Recordar mis datos": la próxima compra llega completa; "Olvidar" la vacía y borra lo guardado.
+    await page.goto("/reloj/rolex-cosmograph-daytona-126500ln");
+    await page.locator("[data-testid=add-rolex-cosmograph-daytona-126500ln]").click();
+    await page.locator("[data-testid=checkout-button]").click();
+    await expect(page.getByTestId("checkout-saved")).toBeVisible();
+    await expect(form.getByLabel("Nombre completo")).toHaveValue("Ana Pérez");
+    await expect(form.getByLabel("Departamento")).toHaveValue("Bogotá D.C.");
+    await expect(form.getByLabel("Notas para la entrega (opcional)")).toHaveValue("");
+    await page.getByTestId("checkout-forget").click();
+    await expect(form.getByLabel("Nombre completo")).toHaveValue("");
+    await page.reload();
+    await expect(page.getByTestId("checkout-saved")).toHaveCount(0);
   });
 
   test("el checkout rechaza importes manipulados, piezas inexistentes y datos incompletos", async ({ request }) => {

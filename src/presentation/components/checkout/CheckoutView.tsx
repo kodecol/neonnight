@@ -8,6 +8,8 @@ import { track } from "@/presentation/analytics/track";
 import { Button } from "@/presentation/components/primitives/Button";
 import { Kicker } from "@/presentation/components/primitives/Kicker";
 import { QuantityStepper } from "@/presentation/components/primitives/QuantityStepper";
+import { SelectMenu } from "@/presentation/components/primitives/SelectMenu";
+import { forgetCustomer, loadSavedCustomer, saveCustomer } from "@/presentation/lib/saved-customer";
 import { ROUTES } from "@/presentation/lib/site";
 import { cn } from "@/presentation/lib/cn";
 
@@ -28,6 +30,9 @@ interface Customer {
 const withoutKey = (o: Record<string, string>, key: string) => Object.fromEntries(Object.entries(o).filter(([k]) => k !== key));
 
 const EMPTY: Customer = { name: "", documentType: "CC", documentNumber: "", email: "", phone: "", address: "", city: "", department: "", notes: "" };
+
+const DOCUMENT_OPTIONS = Object.entries(DOCUMENT_LABEL).map(([value, label]) => ({ value, label }));
+const DEPARTMENT_OPTIONS = DEPARTMENTS.map((d) => ({ value: d, label: d }));
 
 const control = "block w-full border bg-transparent px-4 py-3.5 text-meta text-ink outline-none transition-colors placeholder:text-ink-3 focus:border-ink";
 
@@ -76,6 +81,9 @@ export function CheckoutView({
   const [quoteError, setQuoteError] = useState<string | null>(null);
   const [customer, setCustomer] = useState<Customer>(EMPTY);
   const [accepted, setAccepted] = useState(false);
+  // "Recordar mis datos": solo en este navegador (localStorage), y solo si el comprador lo marca.
+  const [remember, setRemember] = useState(false);
+  const [usingSaved, setUsingSaved] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -83,6 +91,21 @@ export function CheckoutView({
   const [focusInvalid, setFocusInvalid] = useState(0);
   const formRef = useRef<HTMLFormElement>(null);
   const tracked = useRef(false);
+
+  useEffect(() => {
+    const saved = loadSavedCustomer();
+    if (!saved) return;
+    setCustomer((c) => ({ ...c, ...saved }));
+    setRemember(true);
+    setUsingSaved(true);
+  }, []);
+
+  const forget = () => {
+    forgetCustomer();
+    setCustomer(EMPTY);
+    setRemember(false);
+    setUsingSaved(false);
+  };
 
   useEffect(() => {
     if (focusInvalid) formRef.current?.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus();
@@ -157,6 +180,8 @@ export function CheckoutView({
         setFocusInvalid((n) => n + 1);
         return;
       }
+      if (remember) saveCustomer(customer);
+      else forgetCustomer();
       cart.clear();
       // La pasarela (checkout.bold.co) es otro origen: navegación completa.
       window.location.assign(data.redirectUrl);
@@ -199,17 +224,19 @@ export function CheckoutView({
           <legend className="mb-6 p-0 text-label-lg uppercase text-ink">
             <span className="mr-4 text-ink-3">01</span>Tus datos
           </legend>
+          {usingSaved && (
+            <p className="m-0 flex flex-wrap items-center justify-between gap-x-6 gap-y-2 border-l-2 border-accent bg-surface px-5 py-3.5 text-small text-ink-2 md:col-span-2" role="status" data-testid="checkout-saved">
+              Completamos tus datos guardados en este dispositivo.
+              <button type="button" onClick={forget} className="cursor-pointer border-0 bg-transparent p-0 text-label-sm uppercase text-ink underline decoration-accent underline-offset-4 hover:text-accent" data-testid="checkout-forget">
+                Olvidar mis datos
+              </button>
+            </p>
+          )}
           <Field label="Nombre completo" error={err("name")} className="md:col-span-2" id="checkout-name">
             <input {...describe("name")} className={cn(control, err("name") ? "border-accent" : "border-border")} value={customer.name} onChange={(e) => set("name", e.target.value)} autoComplete="name" required maxLength={80} />
           </Field>
           <Field label="Tipo de documento">
-            <select className={cn(control, "border-border bg-bg")} value={customer.documentType} onChange={(e) => set("documentType", e.target.value as Customer["documentType"])}>
-              {Object.entries(DOCUMENT_LABEL).map(([v, l]) => (
-                <option key={v} value={v}>
-                  {l}
-                </option>
-              ))}
-            </select>
+            <SelectMenu id="checkout-documentType" value={customer.documentType} options={DOCUMENT_OPTIONS} onChange={(v) => set("documentType", v as Customer["documentType"])} />
           </Field>
           <Field label="Número de documento" error={err("documentNumber")} hint="Para la factura y la entrega." id="checkout-documentNumber">
             <input {...describe("documentNumber", true)} className={cn(control, err("documentNumber") ? "border-accent" : "border-border")} value={customer.documentNumber} onChange={(e) => set("documentNumber", e.target.value)} inputMode={customer.documentType === "PP" ? "text" : "numeric"} maxLength={20} />
@@ -233,18 +260,29 @@ export function CheckoutView({
             <input {...describe("city")} className={cn(control, err("city") ? "border-accent" : "border-border")} value={customer.city} onChange={(e) => set("city", e.target.value)} autoComplete="address-level2" maxLength={60} />
           </Field>
           <Field label="Departamento" error={err("department")} id="checkout-department">
-            <select {...describe("department")} className={cn(control, "bg-bg", err("department") ? "border-accent" : "border-border")} value={customer.department} onChange={(e) => set("department", e.target.value)} autoComplete="address-level1">
-              <option value="">Elige el departamento</option>
-              {DEPARTMENTS.map((d) => (
-                <option key={d} value={d}>
-                  {d}
-                </option>
-              ))}
-            </select>
+            <SelectMenu
+              id="checkout-department-input"
+              searchable
+              value={customer.department}
+              options={DEPARTMENT_OPTIONS}
+              onChange={(v) => set("department", v)}
+              placeholder="Escribe o elige el departamento"
+              invalid={!!err("department")}
+              describedBy={describe("department")["aria-describedby"]}
+              autoComplete="address-level1"
+              name="department"
+            />
           </Field>
           <Field label="Notas para la entrega (opcional)" className="md:col-span-2">
             <textarea className={cn(control, "border-border")} rows={3} value={customer.notes} onChange={(e) => set("notes", e.target.value)} maxLength={300} placeholder="Horario, portería, persona autorizada para recibir…" />
           </Field>
+          <label className="flex cursor-pointer items-start gap-3.5 md:col-span-2" data-testid="checkout-remember">
+            <input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} className="mt-1 h-4 w-4 shrink-0 cursor-pointer accent-accent" />
+            <span className="flex flex-col gap-1">
+              <span className="text-small text-ink">Recordar mis datos en este dispositivo</span>
+              <span className="text-legal text-ink-3 [text-wrap:pretty]">Para completarlos solos en tu próxima compra. Se guardan solo en este navegador, no en nuestros servidores; puedes borrarlos cuando quieras.</span>
+            </span>
+          </label>
         </fieldset>
 
         <fieldset className="m-0 flex flex-col gap-6 border-0 p-0">

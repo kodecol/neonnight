@@ -248,6 +248,14 @@
   html {
     background: var(--color-bg);
     scroll-behavior: smooth;
+    /* Los temas son oscuros: menús nativos, calendarios y autocompletado del sistema también. */
+    color-scheme: dark;
+  }
+  /* El menú nativo de un <select> no hereda el fondo en todos los sistemas: sin esto sale blanco sobre blanco. */
+  select option,
+  select optgroup {
+    background-color: var(--color-surface-elevated);
+    color: var(--color-ink);
   }
   body {
     margin: 0;
