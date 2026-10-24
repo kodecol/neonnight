@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
+import { revalidatePath } from "next/cache";
 import { getContainer } from "@/infrastructure/container";
 import { GetOrderStatus } from "@/application/use-cases/get-order-status";
+import { ReconcilePayment } from "@/application/use-cases/confirm-payment";
 import { Button } from "@/presentation/components/primitives/Button";
 import { Kicker } from "@/presentation/components/primitives/Kicker";
 import { AutoRefresh } from "@/presentation/components/checkout/AutoRefresh";
@@ -17,14 +19,33 @@ const COPY = {
   cancelada: { kicker: "Pedido cancelado", title: "Pedido cancelado", body: "Este pedido fue cancelado. Escríbenos si necesitas ayuda." },
 } as const;
 
+/** Última consulta a Bold por pedido: la página se refresca cada 4 s, Bold se consulta como mucho cada 10 s. */
+const lastLookup = new Map<string, number>();
+const LOOKUP_EVERY_MS = 10_000;
+
+/** Si el webhook no llegó, le pregunta a Bold. Nunca rompe la página. */
+async function reconcile(id: string): Promise<void> {
+  const now = Date.now();
+  if (now - (lastLookup.get(id) ?? 0) < LOOKUP_EVERY_MS) return;
+  lastLookup.set(id, now);
+  if (lastLookup.size > 500) lastLookup.delete(lastLookup.keys().next().value!);
+  try {
+    const r = await new ReconcilePayment(getContainer()).execute(id);
+    if (r.handled && r.gateway === "pagada") revalidatePath("/", "layout");
+  } catch (e) {
+    console.error("[gracias] verificación con Bold", e);
+  }
+}
+
 /**
- * Confirmación del pedido. Bold: muestra el estado que llega por webhook y se
- * refresca mientras está pendiente. Sin pasarela (pedido manual): muestra las
+ * Confirmación del pedido. Bold: muestra el estado que llega por webhook (o
+ * por verificación directa con Bold) y se refresca mientras está pendiente. Sin pasarela (pedido manual): muestra las
  * instrucciones del panel › Pagos y el botón para coordinar por WhatsApp.
  */
 export default async function ThanksPage({ searchParams }: { searchParams: Promise<{ orden?: string }> }) {
   const { orden } = await searchParams;
   const { orders, paymentSettings, whatsapp } = getContainer();
+  if (orden && orden.length <= 64) await reconcile(orden);
   const [order, settings] = await Promise.all([orden ? new GetOrderStatus(orders).execute(orden) : null, paymentSettings.get()]);
 
   if (!order) {

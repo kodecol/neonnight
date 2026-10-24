@@ -31,7 +31,7 @@ export const ORDER_EVENT_LABEL: Record<OrderEventType, string> = {
   revisado: "Marcado como revisado",
 };
 
-export const ORDER_ACTOR_LABEL: Record<OrderEventActor, string> = { admin: "Panel", webhook: "Bold (webhook)", cliente: "Cliente" };
+export const ORDER_ACTOR_LABEL: Record<OrderEventActor, string> = { admin: "Panel", webhook: "Bold (webhook)", verificacion: "Bold (verificación)", cliente: "Cliente" };
 
 export const ORDER_PAGE_SIZE = 25;
 /** Tope de filas del CSV: la tienda vende piezas de lujo, no miles de pedidos al día. */
@@ -141,6 +141,8 @@ export interface AdminOrderDto extends AdminOrderRowDto {
   events: Array<{ at: string; type: OrderEventType; label: string; by: string; note: string | null }>;
   /** Acciones disponibles: solo los pedidos manuales se cambian a mano (Bold llega por webhook). */
   canMarkPaid: boolean;
+  /** Pedido de Bold pendiente: el panel puede preguntarle a Bold por el pago. */
+  canVerifyPayment: boolean;
   canCancel: boolean;
   /** En la papelera: restaurar o purgar. */
   canRestore: boolean;
@@ -205,7 +207,8 @@ export class GetAdminOrder {
       customerDetail: o.customer,
       consent: o.consent ? { ...o.consent, acceptedAt: o.consent.acceptedAt.toISOString() } : null,
       events: o.events.map((e) => ({ at: e.at.toISOString(), type: e.type, label: ORDER_EVENT_LABEL[e.type], by: ORDER_ACTOR_LABEL[e.by], note: e.note ?? null })),
-      canMarkPaid: active && o.paymentMethod === "manual" && o.status === "pendiente",
+      canMarkPaid: active && o.status === "pendiente",
+      canVerifyPayment: active && o.paymentMethod === "bold" && o.status === "pendiente" && !!o.paymentReference,
       canCancel: active && o.status === "pendiente",
       canRestore: !active,
     };
@@ -224,8 +227,9 @@ async function load(orders: OrderRepository, id: unknown): Promise<Order> {
 }
 
 /**
- * Cambia a mano el estado de un pedido pendiente: "pagada" (solo pedidos
- * manuales; descuenta stock) o "cancelada". Devuelve las piezas que quedaron
+ * Cambia a mano el estado de un pedido pendiente: "pagada" (descuenta stock)
+ * o "cancelada". Un pedido de Bold se puede marcar pagado a mano si el pago
+ * está aprobado en el panel de Bold y no llegó por webhook ni por verificación. Devuelve las piezas que quedaron
  * sin stock suficiente, para revisarlas.
  */
 export class UpdateOrderStatus {
@@ -238,8 +242,8 @@ export class UpdateOrderStatus {
     if (o.status !== "pendiente") throw new FieldValidationError("status", `El pedido ya está ${ORDER_STATUS_LABEL[o.status].toLowerCase()}.`);
     const at = this.deps.clock.now();
     if (next === "pagada") {
-      if (o.paymentMethod !== "manual") throw new FieldValidationError("status", "Los pagos con Bold se confirman solos por el webhook.");
-      return { short: await markOrderPaid(o, this.deps, "admin", at) };
+      const note = o.paymentMethod === "bold" ? "Confirmado a mano en el panel (pago con Bold)." : undefined;
+      return { short: await markOrderPaid(o, this.deps, "admin", at, note) };
     }
     // Atómico: si el pago llegó mientras tanto, no se pisa.
     if (!(await this.deps.orders.transition(withEvents({ ...o, status: "cancelada" }, { at, type: "cancelado", by: "admin" }), ["pendiente"]))) {

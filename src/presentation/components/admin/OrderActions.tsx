@@ -6,29 +6,35 @@ import { Button } from "@/presentation/components/primitives/Button";
 import { deleteOrdersQuestion, purgeOrderQuestion } from "@/presentation/lib/order-confirm";
 
 /**
- * Acciones de un pedido. Pendiente: marcar pagado (solo manuales; descuenta
- * stock), cancelar o eliminar (va a Eliminados). En Eliminados: restaurar o
+ * Acciones de un pedido. Pendiente: verificar con Bold (pedidos de Bold),
+ * marcar pagado (descuenta stock), cancelar o eliminar (va a Eliminados). En Eliminados: restaurar o
  * purgar definitivamente.
  */
 export function OrderActions({
   id,
+  bold,
   canMarkPaid,
+  canVerifyPayment,
   canCancel,
   canDelete,
   canRestore,
   linkMayBeLive,
   update,
+  verify,
   remove,
   restore,
   purge,
 }: {
   id: string;
+  bold: boolean;
   canMarkPaid: boolean;
+  canVerifyPayment: boolean;
   canCancel: boolean;
   canDelete: boolean;
   canRestore: boolean;
   linkMayBeLive: boolean;
   update: (id: string, next: "pagada" | "cancelada") => Promise<ActionResult<{ short: string[] }>>;
+  verify: (id: string) => Promise<ActionResult<{ message: string }>>;
   remove: (ids: string[]) => Promise<ActionResult<{ deleted: string[] }>>;
   restore: (id: string) => Promise<ActionResult>;
   purge: (id: string) => Promise<ActionResult>;
@@ -36,7 +42,7 @@ export function OrderActions({
   const router = useRouter();
   const [pending, start] = useTransition();
   const [message, setMessage] = useState<string | null>(null);
-  if (!canMarkPaid && !canCancel && !canDelete && !canRestore) return null;
+  if (!canMarkPaid && !canVerifyPayment && !canCancel && !canDelete && !canRestore) return null;
 
   const run = (next: "pagada" | "cancelada", question: string) => {
     if (!window.confirm(question)) return;
@@ -47,6 +53,13 @@ export function OrderActions({
       router.refresh();
     });
   };
+
+  const check = () =>
+    start(async () => {
+      const res = await verify(id);
+      setMessage(res.ok ? res.data.message : res.error);
+      router.refresh();
+    });
 
   const act = (question: string, action: () => Promise<ActionResult<unknown>>, after: () => void) => {
     if (!window.confirm(question)) return;
@@ -60,9 +73,27 @@ export function OrderActions({
 
   return (
     <div className="flex flex-col gap-3 border border-divider p-5" data-testid="order-actions">
+      {canVerifyPayment && (
+        <Button onClick={check} disabled={pending} className="justify-center" data-testid="order-verify-payment">
+          Verificar pago con Bold
+        </Button>
+      )}
       {canMarkPaid && (
-        <Button onClick={() => run("pagada", "¿Confirmas que recibiste el pago? Se descuenta el stock de las piezas.")} disabled={pending} className="justify-center" data-testid="order-mark-paid">
-          Marcar como pagado
+        <Button
+          variant={bold ? "secondary" : "primary"}
+          onClick={() =>
+            run(
+              "pagada",
+              bold
+                ? "¿Confirmas que el pago aparece APROBADO en tu panel de Bold? Úsalo solo si «Verificar pago con Bold» no lo confirma. Se descuenta el stock de las piezas."
+                : "¿Confirmas que recibiste el pago? Se descuenta el stock de las piezas.",
+            )
+          }
+          disabled={pending}
+          className="justify-center"
+          data-testid="order-mark-paid"
+        >
+          {bold ? "Marcar pagado a mano" : "Marcar como pagado"}
         </Button>
       )}
       {canCancel && (

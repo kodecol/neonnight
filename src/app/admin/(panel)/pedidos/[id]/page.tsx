@@ -6,7 +6,7 @@ import { DOCUMENT_LABEL } from "@/application/dto/checkout.dto";
 import { AdminPageHeader } from "@/presentation/components/admin/AdminShell";
 import { OrderActions, OrderReviewNotice } from "@/presentation/components/admin/OrderActions";
 import { Button } from "@/presentation/components/primitives/Button";
-import { deleteOrdersAction, markOrderReviewedAction, purgeOrderAction, restoreOrderAction, updateOrderStatusAction } from "../actions";
+import { deleteOrdersAction, markOrderReviewedAction, purgeOrderAction, restoreOrderAction, updateOrderStatusAction, verifyBoldPaymentAction } from "../actions";
 import { requireAdmin } from "../../../_lib/auth";
 
 export const metadata: Metadata = { title: "Pedido" };
@@ -127,12 +127,15 @@ export default async function OrderPage({ params }: { params: Promise<{ id: stri
         <aside className="flex flex-col gap-8 self-start">
           <OrderActions
             id={o.id}
+            bold={o.paymentMethod === "bold"}
             canMarkPaid={o.canMarkPaid}
+            canVerifyPayment={o.canVerifyPayment}
             canCancel={o.canCancel}
             canDelete={o.canDelete}
             canRestore={o.canRestore}
             linkMayBeLive={o.linkMayBeLive}
             update={updateOrderStatusAction}
+            verify={verifyBoldPaymentAction}
             remove={deleteOrdersAction}
             restore={restoreOrderAction}
             purge={purgeOrderAction}

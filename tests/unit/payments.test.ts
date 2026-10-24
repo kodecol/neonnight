@@ -7,7 +7,8 @@ import { NoopPaymentGateway } from "@/infrastructure/payments/noop-payment-gatew
 import { BoldGatewayError, BoldPaymentGateway } from "@/infrastructure/payments/bold-payment-gateway";
 import { boldWebhookSignature, verifyBoldWebhook } from "@/infrastructure/payments/bold-signature";
 import { SEED_PRODUCTS } from "@/infrastructure/cms/seed";
-import { ConfirmPayment } from "@/application/use-cases/confirm-payment";
+import { ConfirmPayment, ReconcilePayment } from "@/application/use-cases/confirm-payment";
+import type { GatewayPaymentStatus, PaymentGateway } from "@/application/ports/payment-gateway";
 import { orderId, type Order } from "@/domain/entities/order";
 import { productId } from "@/domain/entities/product";
 import { productStatus } from "@/domain/services/availability";
@@ -192,5 +193,91 @@ describe("BoldPaymentGateway", () => {
     await expect(gw.createSession(order(), "http://localhost:3000/gracias")).rejects.toBeInstanceOf(BoldGatewayError);
     const [, init] = fetchImpl.mock.calls[0] as unknown as [string, RequestInit];
     expect(JSON.parse(String(init.body)).callback_url).toBeUndefined();
+  });
+});
+
+describe("ReconcilePayment: verificar con Bold si el webhook no llega", () => {
+  const setup = (o = order(), found: GatewayPaymentStatus | null = { status: "pagada", totalUnits: 16_900_000, detail: "NEQUI · transacción T1" }) => {
+    const orders = new InMemoryOrderRepository();
+    const products = new InMemoryProductRepository(SEED_PRODUCTS);
+    void orders.save(o);
+    const lookup = vi.fn(async () => found);
+    const payments: PaymentGateway = { createSession: vi.fn(), lookup };
+    return { orders, products, lookup, uc: new ConfirmPayment({ orders, products, clock: { now: () => new Date() } }), reconcile: new ReconcilePayment({ orders, products, clock: { now: () => new Date() }, payments }) };
+  };
+  const get = (orders: InMemoryOrderRepository) => orders.findById(orderId("nn-abc12345"));
+
+  it("Bold dice pagado: el pedido queda pagado, descuenta stock y anota la transacción", async () => {
+    const { reconcile, orders, products, lookup } = setup();
+    expect(await reconcile.execute("nn-abc12345")).toMatchObject({ handled: true, status: "pagada", gateway: "pagada" });
+    expect(lookup).toHaveBeenCalledWith("LNK_TEST");
+    expect((await get(orders))?.events.at(-1)).toMatchObject({ type: "pagado", by: "verificacion", note: "NEQUI · transacción T1" });
+    expect((await products.findById("w-03"))?.variants[0]?.stock).toBe(0);
+  });
+
+  it("es idempotente con el webhook: si llegan los dos, se cobra una vez", async () => {
+    const { reconcile, uc, orders } = setup();
+    await Promise.all([reconcile.execute("nn-abc12345"), uc.execute({ type: "SALE_APPROVED", data: { amount: { total: 16_900_000 }, metadata: { reference: "nn-abc12345" } } }), reconcile.execute("nn-abc12345")]);
+    expect((await get(orders))?.events.filter((e) => e.type === "pagado")).toHaveLength(1);
+  });
+
+  it("pendiente en Bold o sin respuesta: no cambia nada", async () => {
+    const pending = setup(order(), { status: "pendiente", totalUnits: 16_900_000, detail: null });
+    expect(await pending.reconcile.execute("nn-abc12345")).toMatchObject({ handled: true, status: "pendiente", gateway: "pendiente" });
+    const down = setup(order(), null);
+    expect(await down.reconcile.execute("nn-abc12345")).toMatchObject({ handled: false, reason: "Bold no respondió" });
+    expect((await get(down.orders))?.status).toBe("pendiente");
+  });
+
+  it("rechazado en Bold: pendiente pasa a fallida; monto distinto no se cobra", async () => {
+    const rejected = setup(order(), { status: "fallida", totalUnits: null, detail: null });
+    await rejected.reconcile.execute("nn-abc12345");
+    expect((await get(rejected.orders))?.status).toBe("fallida");
+    const wrong = setup(order(), { status: "pagada", totalUnits: 1_000, detail: null });
+    expect(await wrong.reconcile.execute("nn-abc12345")).toMatchObject({ handled: false });
+    expect((await get(wrong.orders))?.status).toBe("pendiente");
+  });
+
+  it("no consulta a Bold por pedidos manuales ni ya pagados", async () => {
+    const manual = setup(order({ paymentMethod: "manual", paymentReference: null }));
+    expect(await manual.reconcile.execute("nn-abc12345")).toMatchObject({ handled: false });
+    const paid = setup(order({ status: "pagada" }));
+    await paid.reconcile.execute("nn-abc12345");
+    expect(manual.lookup).not.toHaveBeenCalled();
+    expect(paid.lookup).not.toHaveBeenCalled();
+  });
+
+  it("el panel puede marcar pagado a mano un pedido de Bold, con nota", async () => {
+    const { orders, products } = setup();
+    await new UpdateOrderStatus({ orders, products, clock: { now: () => new Date() } }).execute("nn-abc12345", "pagada");
+    expect((await get(orders))?.events.at(-1)).toMatchObject({ type: "pagado", by: "admin", note: expect.stringMatching(/Bold/) });
+  });
+});
+
+describe("BoldPaymentGateway.lookup", () => {
+  const active = () => new InMemoryPaymentSettingsRepository({ enabled: true, mode: "produccion", identityKey: "pk_live", secretKey: "sk", manual: DEFAULT_PAYMENT_SETTINGS.manual, updatedAt: null });
+  const reply = (body: unknown, status = 200) => vi.fn(async () => new Response(JSON.stringify(body), { status }));
+
+  it("consulta el link con la llave de identidad y traduce el estado", async () => {
+    const fetchImpl = reply({ id: "LNK_1", total: 1000, status: "PAID", payment_method: "NEQUI", transaction_id: "TQ1", reference: "NN-1" });
+    const gw = new BoldPaymentGateway(active(), new NoopPaymentGateway(), fetchImpl as unknown as typeof fetch);
+    expect(await gw.lookup("LNK_1")).toEqual({ status: "pagada", totalUnits: 1000, detail: "NEQUI · transacción TQ1" });
+    const [url, init] = fetchImpl.mock.calls[0] as unknown as [string, RequestInit];
+    expect(url).toBe("https://integrations.api.bold.co/online/link/v1/LNK_1");
+    expect((init.headers as Record<string, string>).Authorization).toBe("x-api-key pk_live");
+    for (const [status, expected] of [["REJECTED", "fallida"], ["ACTIVE", "pendiente"], ["PROCESSING", "pendiente"], ["EXPIRED", "pendiente"]] as const) {
+      const gw2 = new BoldPaymentGateway(active(), new NoopPaymentGateway(), reply({ status, total: 1000 }) as unknown as typeof fetch);
+      expect((await gw2.lookup("LNK_1"))?.status).toBe(expected);
+    }
+  });
+
+  it("sin Bold activo, referencia ajena, 404 o red caída: null", async () => {
+    const off = vi.fn();
+    expect(await new BoldPaymentGateway(new InMemoryPaymentSettingsRepository(), new NoopPaymentGateway(), off).lookup("LNK_1")).toBeNull();
+    expect(await new BoldPaymentGateway(active(), new NoopPaymentGateway(), off).lookup("noop-nn-1")).toBeNull();
+    expect(off).not.toHaveBeenCalled();
+    expect(await new BoldPaymentGateway(active(), new NoopPaymentGateway(), reply({ errors: [{ code: "PL_000" }] }, 404) as unknown as typeof fetch).lookup("LNK_X")).toBeNull();
+    const boom = vi.fn(async () => { throw new TypeError("fetch failed"); });
+    expect(await new BoldPaymentGateway(active(), new NoopPaymentGateway(), boom as unknown as typeof fetch).lookup("LNK_1")).toBeNull();
   });
 });

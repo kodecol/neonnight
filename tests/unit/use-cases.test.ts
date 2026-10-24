@@ -274,7 +274,7 @@ describe("Checkout", () => {
   });
 
   it("con Bold activo abre la pasarela y guarda la referencia", async () => {
-    const payments = { createSession: vi.fn(async () => ({ reference: "LNK_1", redirectUrl: "https://checkout.bold.co/LNK_1", status: "pendiente" as const })) };
+    const payments = { createSession: vi.fn(async () => ({ reference: "LNK_1", redirectUrl: "https://checkout.bold.co/LNK_1", status: "pendiente" as const })), lookup: vi.fn(async () => null) };
     const paymentSettings = new InMemoryPaymentSettingsRepository({ ...DEFAULT_PAYMENT_SETTINGS, enabled: true, identityKey: "pk_test" });
     const { uc, orders } = make(SEED_PRODUCTS, { payments, paymentSettings });
     const res = await uc.execute(body([{ productId: "w-03", quantity: 1 }]), OPTS);

@@ -1,5 +1,5 @@
 import type { Order } from "@/domain/entities/order";
-import type { PaymentGateway, PaymentSession } from "@/application/ports/payment-gateway";
+import type { GatewayPaymentStatus, PaymentGateway, PaymentSession } from "@/application/ports/payment-gateway";
 
 /**
  * Stub: no cobra nada. Devuelve la orden como "pendiente" y redirige a la
@@ -10,5 +10,9 @@ export class NoopPaymentGateway implements PaymentGateway {
     const url = new URL(returnUrl);
     url.searchParams.set("orden", order.id);
     return { reference: `noop-${order.id}`, redirectUrl: url.toString(), status: "pendiente" };
+  }
+
+  async lookup(): Promise<GatewayPaymentStatus | null> {
+    return null;
   }
 }

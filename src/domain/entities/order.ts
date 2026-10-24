@@ -44,7 +44,7 @@ export interface OrderConsent {
 export type PaymentMethod = "bold" | "manual";
 
 export type OrderEventType = "creado" | "pagado" | "cancelado" | "fallido" | "eliminado" | "restaurado" | "pago-tras-eliminar" | "revisado";
-export type OrderEventActor = "admin" | "webhook" | "cliente";
+export type OrderEventActor = "admin" | "webhook" | "verificacion" | "cliente";
 
 /** Auditoría: qué le pasó al pedido, cuándo y quién lo hizo. */
 export interface OrderEvent {
